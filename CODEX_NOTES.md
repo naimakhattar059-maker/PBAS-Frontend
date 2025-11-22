@@ -20,6 +20,7 @@
 - Auth screens: Login, Register (invitation-aware), Forgot/Reset password, Email verification. Routes defined in `App.jsx`, layouts in `components/AuthLayout`.
 - API layer in `src/api/auth.js` with fetch wrapper in `src/apiClient.js`; state handled via `src/store/authSlice.js`.
 - Git author for this project is set to `Nouman Shafi <noumanshafi856@gmail.com>` in the local repo.
+- Git/SSH: use key `id_ed25519_noumanshafi856` for pushes to GitHub in this project; default key/user (NoumanTeotc) only outside this repo.
 
 ## Structure
 - `src/App.jsx` entry wiring; `src` holds components/assets.
