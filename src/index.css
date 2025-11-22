@@ -1,0 +1,30 @@
+@import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&display=swap");
+
+:root {
+  font-family: "Manrope", "Helvetica Neue", sans-serif;
+  line-height: 1.5;
+  font-weight: 400;
+  background-color: #f6f8fc;
+  color: #1f2a44;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background-color: #f6f8fc;
+}
+
+a {
+  color: #2f89ff;
+}
+
+a:hover {
+  color: #1f6fd6;
+}
