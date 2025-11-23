@@ -1,14 +1,18 @@
 import { CheckCircleTwoTone, WarningTwoTone } from "@ant-design/icons";
 import { Button, Typography, Spin, message } from "antd";
 import { useEffect, useState } from "react";
-import { useSearchParams, Link } from "react-router-dom";
+import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import AuthLayout from "../components/AuthLayout";
 import { verifyEmail } from "../api/auth";
+import { useDispatch } from "react-redux";
+import { setAuth } from "../store/authSlice";
 
 const { Title, Text } = Typography;
 
 const VerifyEmail = () => {
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
   const token = searchParams.get("token");
   const [state, setState] = useState({ status: "loading", message: "" });
 
@@ -19,8 +23,12 @@ const VerifyEmail = () => {
         return;
       }
       try {
-        await verifyEmail(token);
+        const result = await verifyEmail(token);
         setState({ status: "success", message: "Email verified successfully." });
+        if (result.token && result.user) {
+          dispatch(setAuth({ user: result.user, token: result.token }));
+          navigate("/dashboard", { replace: true });
+        }
       } catch (err) {
         setState({ status: "error", message: err.message });
         message.error(err.message);

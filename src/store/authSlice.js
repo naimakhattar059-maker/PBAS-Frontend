@@ -91,6 +91,11 @@ const authSlice = createSlice({
       state.token = null;
       persist(state);
     },
+    setAuth: (state, action) => {
+      state.user = action.payload.user;
+      state.token = action.payload.token;
+      persist(state);
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -153,6 +158,9 @@ const authSlice = createSlice({
         state.status = "succeeded";
         if (action.payload.user) {
           state.user = action.payload.user;
+          if (action.payload.token) {
+            state.token = action.payload.token;
+          }
           persist(state);
         }
       })
@@ -175,5 +183,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { logout } = authSlice.actions;
+export const { logout, setAuth } = authSlice.actions;
 export default authSlice.reducer;

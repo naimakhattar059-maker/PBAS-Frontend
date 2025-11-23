@@ -21,6 +21,8 @@
 - API layer in `src/api/auth.js` with fetch wrapper in `src/apiClient.js`; state handled via `src/store/authSlice.js`.
 - Git author for this project is set to `Nouman Shafi <noumanshafi856@gmail.com>` in the local repo.
 - Git/SSH: use key `id_ed25519_noumanshafi856` for pushes to GitHub in this project; default key/user (NoumanTeotc) only outside this repo.
+- Protected app layout in `components/AppLayout.jsx` with responsive drawer + side menu (Dashboard, Users, Students). Protected routing via `components/ProtectedRoute.jsx`; dashboard pages under `src/pages/`.
+- Email verification page auto-verifies token and logs in (requires backend to return JWT in verify response).
 
 ## Structure
 - `src/App.jsx` entry wiring; `src` holds components/assets.

@@ -16,8 +16,9 @@ const Login = () => {
   useEffect(() => {
     if (token) {
       message.success("Logged in");
+      navigate("/dashboard");
     }
-  }, [token]);
+  }, [token, navigate]);
 
   const onFinish = async (values) => {
     try {

@@ -12,7 +12,7 @@ const { Text } = Typography;
 const Register = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { status, error } = useSelector((state) => state.auth);
+  const { status, error, token } = useSelector((state) => state.auth);
   const [searchParams] = useSearchParams();
   const [invitation, setInvitation] = useState(null);
   const invitationToken = searchParams.get("invitation_token");
@@ -29,6 +29,12 @@ const Register = () => {
     };
     loadInvitation();
   }, [invitationToken]);
+
+  useEffect(() => {
+    if (token) {
+      navigate("/dashboard");
+    }
+  }, [token, navigate]);
 
   const onFinish = async (values) => {
     try {
