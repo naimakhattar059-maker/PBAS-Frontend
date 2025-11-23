@@ -1,11 +1,6 @@
 import { useState } from "react";
 import { Layout, Menu, Button, Grid, Drawer, Typography } from "antd";
-import {
-  MenuFoldOutlined,
-  DashboardOutlined,
-  TeamOutlined,
-  UserOutlined,
-} from "@ant-design/icons";
+import { MenuFoldOutlined, DashboardOutlined, TeamOutlined, UserOutlined } from "@ant-design/icons";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import "./AppLayout.css";
 import { useDispatch } from "react-redux";
@@ -54,9 +49,14 @@ const AppLayout = ({ children }) => {
             <div className="brand-dot" />
             <span>Budget Automation</span>
           </div>
-          {menu}
+          <div className="menu-container">{menu}</div>
           <div className="sider-footer">
-            <Button block danger onClick={handleLogout} className="logout-button">
+            <Button
+              type="text"
+              size="small"
+              onClick={handleLogout}
+              className="logout-button"
+            >
               Logout
             </Button>
           </div>
@@ -67,7 +67,8 @@ const AppLayout = ({ children }) => {
           {isMobile && (
             <Button
               type="text"
-              icon={<MenuFoldOutlined />}
+              size="small"
+              icon={<MenuFoldOutlined style={{ fontSize: 18 }} />}
               onClick={() => setDrawerOpen(true)}
               className="menu-button"
             />
@@ -75,11 +76,6 @@ const AppLayout = ({ children }) => {
           <Title level={4} className="header-title">
             {navItems.find((i) => i.key === location.pathname)?.label || "Dashboard"}
           </Title>
-          {!isMobile && (
-            <Button type="default" onClick={handleLogout}>
-              Logout
-            </Button>
-          )}
         </Header>
         <Content className="app-content">{children}</Content>
       </Layout>
@@ -95,9 +91,9 @@ const AppLayout = ({ children }) => {
           <div className="brand-dot" />
           <span>Budget Automation</span>
         </div>
-        {menu}
+        <div className="menu-container">{menu}</div>
         <div className="drawer-footer">
-          <Button block danger onClick={handleLogout} className="logout-button">
+          <Button type="link" block danger onClick={handleLogout} className="logout-button">
             Logout
           </Button>
         </div>

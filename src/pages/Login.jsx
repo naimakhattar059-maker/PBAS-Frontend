@@ -3,15 +3,18 @@ import { Button, Checkbox, Form, Input, Space, Typography, message } from "antd"
 import { Link, useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import AuthLayout from "../components/AuthLayout";
-import { login } from "../store/authSlice";
-import { useEffect } from "react";
+import { login, resendVerification } from "../store/authSlice";
+import { useEffect, useState } from "react";
 
 const { Text } = Typography;
 
 const Login = () => {
+  const [form] = Form.useForm();
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { status, error, token } = useSelector((state) => state.auth);
+  const [verificationNeeded, setVerificationNeeded] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState("");
 
   useEffect(() => {
     if (token) {
@@ -21,22 +24,42 @@ const Login = () => {
   }, [token, navigate]);
 
   const onFinish = async (values) => {
+    setVerificationNeeded(false);
+    setPendingEmail(values.email);
     try {
       await dispatch(login({ email: values.email, password: values.password })).unwrap();
     } catch (err) {
-      message.error(err);
+      if (err.payload?.needs_verification) {
+        setVerificationNeeded(true);
+        message.warning("Email not verified. Please verify to continue.");
+      } else {
+        message.error(err.message || err);
+      }
+    }
+  };
+
+  const resend = async () => {
+    const email = pendingEmail || form.getFieldValue("email");
+    if (!email) {
+      return message.info("Enter your email to resend verification.");
+    }
+    try {
+      await dispatch(resendVerification(email)).unwrap();
+      message.info(`Verification email sent to ${email}`);
+    } catch (err) {
+      message.error(err.message || err);
     }
   };
 
   return (
     <AuthLayout title="Log in" subtitle="Access the Budget Automation System.">
-      <Form layout="vertical" onFinish={onFinish} requiredMark="optional">
+      <Form layout="vertical" onFinish={onFinish} requiredMark="optional" form={form}>
         <Form.Item
           label="Email"
           name="email"
           rules={[{ required: true, message: "Please enter your email" }]}
         >
-          <Input size="large" prefix={<MailOutlined />} placeholder="Enter email" />
+          <Input size="middle" prefix={<MailOutlined />} placeholder="Enter email" />
         </Form.Item>
 
         <Form.Item
@@ -45,7 +68,7 @@ const Login = () => {
           rules={[{ required: true, message: "Please enter your password" }]}
         >
           <Input.Password
-            size="large"
+            size="middle"
             prefix={<LockOutlined />}
             placeholder="Enter your password"
           />
@@ -77,6 +100,15 @@ const Login = () => {
           <Text>Don't have an account?</Text>
           <Link to="/register">Register</Link>
         </Space>
+
+        {verificationNeeded ? (
+          <Space style={{ marginTop: 12 }}>
+            <Text type="warning">Email not verified.</Text>
+            <Button type="link" size="small" onClick={resend}>
+              Resend verification
+            </Button>
+          </Space>
+        ) : null}
       </Form>
     </AuthLayout>
   );
