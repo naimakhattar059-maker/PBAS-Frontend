@@ -29,7 +29,7 @@ export const login = createAsyncThunk("auth/login", async (payload, thunkAPI) =>
   try {
     return await authApi.login(payload);
   } catch (err) {
-    return thunkAPI.rejectWithValue(err.message);
+    return thunkAPI.rejectWithValue({ message: err.message, payload: err.payload });
   }
 });
 
@@ -111,7 +111,7 @@ const authSlice = createSlice({
       })
       .addCase(login.rejected, (state, action) => {
         state.status = "failed";
-        state.error = action.payload || action.error.message;
+        state.error = action.payload?.message || action.payload || action.error.message;
       })
       .addCase(register.pending, (state) => {
         state.status = "loading";
@@ -119,9 +119,7 @@ const authSlice = createSlice({
       })
       .addCase(register.fulfilled, (state, action) => {
         state.status = "succeeded";
-        state.user = action.payload.user;
-        state.token = action.payload.token;
-        persist(state);
+        state.info = action.payload.message;
       })
       .addCase(register.rejected, (state, action) => {
         state.status = "failed";

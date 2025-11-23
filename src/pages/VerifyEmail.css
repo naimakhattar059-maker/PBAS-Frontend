@@ -1,0 +1,54 @@
+.verify-shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  background: radial-gradient(120% 120% at 20% 10%, rgba(79, 140, 255, 0.08), transparent),
+    radial-gradient(120% 120% at 80% 0%, rgba(38, 77, 173, 0.08), transparent),
+    #f7f9fc;
+}
+
+.verify-panel {
+  max-width: 620px;
+  width: 100%;
+  text-align: center;
+  background: #fff;
+  padding: 32px 28px 36px;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(32, 55, 110, 0.12);
+  border: 1px solid #eef1f7;
+}
+
+.verify-icon {
+  font-size: 44px;
+  margin-bottom: 12px;
+}
+
+.verify-title {
+  margin: 0 0 8px;
+  font-size: 24px;
+  font-weight: 700;
+  color: #1f2a44;
+  letter-spacing: -0.01em;
+}
+
+.verify-subtitle {
+  margin: 0 0 18px;
+  color: #4b5873;
+  font-size: 15px;
+}
+
+.verify-actions {
+  margin-top: 18px;
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+
+@media (max-width: 640px) {
+  .verify-panel {
+    padding: 24px 22px 30px;
+    border-radius: 14px;
+  }
+}

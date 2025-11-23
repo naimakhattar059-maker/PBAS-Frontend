@@ -1,5 +1,5 @@
 import { LockOutlined, MailOutlined, UserOutlined, IdcardOutlined } from "@ant-design/icons";
-import { Button, Col, Form, Input, Row, Space, Typography, message, Tag } from "antd";
+import { Button, Col, Form, Input, Row, Space, Typography, message, Tag, Modal } from "antd";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import AuthLayout from "../components/AuthLayout";
@@ -10,9 +10,10 @@ import { fetchInvitation } from "../api/auth";
 const { Text } = Typography;
 
 const Register = () => {
+  const [form] = Form.useForm();
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { status, error, token } = useSelector((state) => state.auth);
+  const { status, error } = useSelector((state) => state.auth);
   const [searchParams] = useSearchParams();
   const [invitation, setInvitation] = useState(null);
   const invitationToken = searchParams.get("invitation_token");
@@ -30,18 +31,13 @@ const Register = () => {
     loadInvitation();
   }, [invitationToken]);
 
-  useEffect(() => {
-    if (token) {
-      navigate("/dashboard");
-    }
-  }, [token, navigate]);
-
   const onFinish = async (values) => {
     try {
-      await dispatch(
+      const email = values.email;
+      const payload = await dispatch(
         register({
           user: {
-            email: values.email,
+            email,
             username: values.username,
             student_id: values.student_id,
             password: values.password,
@@ -50,10 +46,17 @@ const Register = () => {
           invitationToken,
         })
       ).unwrap();
-      message.success("Account created");
-      navigate("/login");
+
+      Modal.info({
+        title: "Verify your email",
+        content: `We sent a verification link to ${email}. Please check your inbox to activate your account.`,
+        onOk: () => navigate("/login"),
+      });
+      if (!payload?.message) {
+        message.success("Account created");
+      }
     } catch (err) {
-      message.error(err);
+      message.error(err.message || err);
     }
   };
 
@@ -72,7 +75,7 @@ const Register = () => {
           <Text type="secondary"> Invitation email: {invitation.email}</Text>
         </div>
       ) : null}
-      <Form layout="vertical" onFinish={onFinish} requiredMark="optional">
+      <Form layout="vertical" onFinish={onFinish} requiredMark="optional" form={form}>
         <Row gutter={16}>
           <Col xs={24} md={12}>
             <Form.Item
@@ -85,7 +88,7 @@ const Register = () => {
               ]}
             >
               <Input
-                size="large"
+                size="middle"
                 prefix={<MailOutlined />}
                 placeholder="Enter your email"
                 disabled={Boolean(invitation?.email)}
@@ -98,7 +101,7 @@ const Register = () => {
               name="username"
               rules={[{ required: true, message: "Please enter a username" }]}
             >
-              <Input size="large" prefix={<UserOutlined />} placeholder="Enter your username" />
+              <Input size="middle" prefix={<UserOutlined />} placeholder="Enter your username" />
             </Form.Item>
           </Col>
         </Row>
@@ -106,7 +109,7 @@ const Register = () => {
         <Row gutter={16}>
           <Col xs={24} md={12}>
             <Form.Item label="Student ID" name="student_id">
-              <Input size="large" prefix={<IdcardOutlined />} placeholder="Optional student ID" />
+              <Input size="middle" prefix={<IdcardOutlined />} placeholder="Optional student ID" />
             </Form.Item>
           </Col>
         </Row>
@@ -119,7 +122,7 @@ const Register = () => {
               rules={[{ required: true, message: "Please enter a password" }]}
             >
               <Input.Password
-                size="large"
+                size="middle"
                 prefix={<LockOutlined />}
                 placeholder="Enter your password"
               />
@@ -143,7 +146,7 @@ const Register = () => {
               ]}
             >
               <Input.Password
-                size="large"
+                size="middle"
                 prefix={<LockOutlined />}
                 placeholder="Confirm your password"
               />
