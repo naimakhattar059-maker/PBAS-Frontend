@@ -6,8 +6,10 @@ import {
   TeamOutlined,
   UserOutlined,
 } from "@ant-design/icons";
-import { Link, useLocation } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import "./AppLayout.css";
+import { useDispatch } from "react-redux";
+import { logout } from "../store/authSlice";
 
 const { Header, Sider, Content } = Layout;
 const { useBreakpoint } = Grid;
@@ -24,6 +26,13 @@ const AppLayout = ({ children }) => {
   const location = useLocation();
   const screens = useBreakpoint();
   const isMobile = !screens.md;
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+
+  const handleLogout = () => {
+    dispatch(logout());
+    navigate("/login");
+  };
 
   const menu = (
     <Menu
@@ -46,6 +55,11 @@ const AppLayout = ({ children }) => {
             <span>Budget Automation</span>
           </div>
           {menu}
+          <div className="sider-footer">
+            <Button block danger onClick={handleLogout} className="logout-button">
+              Logout
+            </Button>
+          </div>
         </Sider>
       )}
       <Layout>
@@ -61,6 +75,11 @@ const AppLayout = ({ children }) => {
           <Title level={4} className="header-title">
             {navItems.find((i) => i.key === location.pathname)?.label || "Dashboard"}
           </Title>
+          {!isMobile && (
+            <Button type="default" onClick={handleLogout}>
+              Logout
+            </Button>
+          )}
         </Header>
         <Content className="app-content">{children}</Content>
       </Layout>
@@ -77,6 +96,11 @@ const AppLayout = ({ children }) => {
           <span>Budget Automation</span>
         </div>
         {menu}
+        <div className="drawer-footer">
+          <Button block danger onClick={handleLogout} className="logout-button">
+            Logout
+          </Button>
+        </div>
       </Drawer>
     </Layout>
   );

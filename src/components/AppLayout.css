@@ -3,18 +3,19 @@
 }
 
 .app-sider {
-  background: #0f172a;
-  color: #fff;
+  background: #f5f7fb;
+  color: #1f2a44;
+  border-right: 1px solid #e8ecf3;
 }
 
 .app-sider .ant-menu {
-  background: #0f172a;
+  background: #f5f7fb;
   border-inline-end: none;
-  color: #e2e8f0;
+  color: #1f2a44;
 }
 
 .app-sider .ant-menu-item-selected {
-  background: rgba(47, 137, 255, 0.16) !important;
+  background: rgba(47, 137, 255, 0.12) !important;
 }
 
 .app-header {
@@ -42,7 +43,7 @@
   gap: 10px;
   padding: 18px 16px 10px;
   font-weight: 700;
-  color: #e2e8f0;
+  color: #1f2a44;
   letter-spacing: -0.01em;
 }
 
@@ -51,6 +52,15 @@
   height: 12px;
   border-radius: 50%;
   background: #2f89ff;
+}
+
+.sider-footer,
+.drawer-footer {
+  padding: 16px;
+}
+
+.logout-button {
+  font-weight: 600;
 }
 
 .menu-button {
