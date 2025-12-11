@@ -59,7 +59,7 @@ const Login = () => {
           name="email"
           rules={[{ required: true, message: "Please enter your email" }]}
         >
-          <Input size="middle" prefix={<MailOutlined />} placeholder="Enter email" />
+          <Input size="small" prefix={<MailOutlined />} placeholder="Enter email" />
         </Form.Item>
 
         <Form.Item
@@ -68,7 +68,7 @@ const Login = () => {
           rules={[{ required: true, message: "Please enter your password" }]}
         >
           <Input.Password
-            size="middle"
+            size="small"
             prefix={<LockOutlined />}
             placeholder="Enter your password"
           />
@@ -83,7 +83,7 @@ const Login = () => {
           type="primary"
           htmlType="submit"
           block
-          size="large"
+          size="small"
           loading={status === "loading"}
           style={{ marginTop: 4 }}
         >
@@ -95,11 +95,6 @@ const Login = () => {
             {error}
           </Text>
         ) : null}
-
-        <Space style={{ marginTop: 16 }}>
-          <Text>Don't have an account?</Text>
-          <Link to="/register">Register</Link>
-        </Space>
 
         {verificationNeeded ? (
           <Space style={{ marginTop: 12 }}>
