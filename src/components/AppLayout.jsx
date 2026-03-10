@@ -30,13 +30,10 @@ const navItems = [
   { key: '/users', icon: <UserOutlined />, label: 'User Management' },
   { key: '/departments', icon: <ApartmentOutlined />, label: 'Department Management' },
   { key: '/budget', icon: <FundOutlined />, label: 'Budget Management' },
-  { key: '/expenses', icon: <DollarCircleOutlined />, label: 'Expense Management' },
   { key: '/payroll', icon: <CalculatorOutlined />, label: 'Payroll Management' },
-  { key: '/fees', icon: <BankOutlined />, label: 'Fee Management' },
   { key: '/reports', icon: <FileTextOutlined />, label: 'Reports' },
   { key: '/notifications', icon: <BellOutlined />, label: 'Notifications' },
   { key: '/requests', icon: <CheckCircleOutlined />, label: 'Requests & Approvals' },
-  { key: '/students', icon: <TeamOutlined />, label: 'Students' },
   { key: '/settings', icon: <SettingOutlined />, label: 'Settings' },
 ];
 
@@ -71,7 +68,7 @@ const AppLayout = ({ children }) => {
   return (
     <Layout className='app-shell'>
       {!isMobile && (
-        <Sider width={220} className='app-sider' breakpoint='md' collapsedWidth='0'>
+        <Sider width={280} className='app-sider' breakpoint='md' collapsedWidth='0'>
           <div className='brand'>
             <div className='brand-dot' />
             <span>Budget Automation</span>
@@ -106,7 +103,7 @@ const AppLayout = ({ children }) => {
             <div className='header-eyebrow'>{(currentNav?.label || 'Dashboard').toUpperCase()}</div>
           </div>
           <div className='header-userchip'>
-            <Avatar size={40} className='header-avatar'>
+            <Avatar size={34} className='header-avatar'>
               {(user?.username || 'User')[0]}
             </Avatar>
             <div className='chip-meta'>
@@ -123,7 +120,7 @@ const AppLayout = ({ children }) => {
         placement='left'
         onClose={() => setDrawerOpen(false)}
         bodyStyle={{ padding: 0 }}
-        width={240}
+        width={300}
       >
         <div className='brand mobile'>
           <div className='brand-dot' />

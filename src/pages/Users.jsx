@@ -2,29 +2,66 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Button,
   Card,
-  Col,
   Form,
+  Image,
   Input,
-  Row,
+  Modal,
+  Popconfirm,
   Select,
   Space,
   Table,
   Tag,
   Typography,
+  Upload,
   message,
 } from "antd";
+import { UploadOutlined } from "@ant-design/icons";
 import { useSelector } from "react-redux";
-import { createUser, deleteUser, listUsers, updateUser } from "../api/users";
+import { createUser, deleteUser, listUsers, updateUser, updateUserActivation } from "../api/users";
 import "./Users.css";
 
 const { Title, Text } = Typography;
 
+const ROLE_OPTIONS = [
+  { value: "head_of_institute", label: "Head of Institute" },
+  { value: "admin_officer", label: "Admin Officer" },
+  { value: "accountant", label: "Accountant" },
+  { value: "staff", label: "Staff" },
+  { value: "staff/hod", label: "HOD" },
+  { value: "staff/coordinator", label: "Coordinator" },
+  { value: "staff/librarian", label: "Librarian" },
+  { value: "staff/college_assistant", label: "College Assistant" },
+];
+
 const roleColors = {
-  admin: "volcano",
-  teacher: "geekblue",
-  principal: "purple",
-  student: "green",
+  head_of_institute: "purple",
+  admin_officer: "cyan",
+  accountant: "gold",
+  staff: "green",
 };
+
+const formatLabel = (value) =>
+  value
+    ?.split("_")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ") || "-";
+
+const formatCnicInput = (value) => {
+  const digits = value?.replace(/\D/g, "").slice(0, 13) || "";
+  const part1 = digits.slice(0, 5);
+  const part2 = digits.slice(5, 12);
+  const part3 = digits.slice(12, 13);
+
+  return [part1, part2, part3].filter(Boolean).join("-");
+};
+
+const fileToDataUrl = (file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
 
 const Users = () => {
   const { token, user: currentUser } = useSelector((state) => state.auth);
@@ -33,6 +70,11 @@ const Users = () => {
   const [saving, setSaving] = useState(false);
   const [rows, setRows] = useState([]);
   const [editingId, setEditingId] = useState(null);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [discardModalOpen, setDiscardModalOpen] = useState(false);
+  const [imagePreview, setImagePreview] = useState({ open: false, src: "", title: "" });
+  const roleSelection = Form.useWatch("roleSelection", form);
+  const selectedRole = roleSelection?.startsWith("staff") ? "staff" : roleSelection;
 
   const loadUsers = async () => {
     setLoading(true);
@@ -54,18 +96,40 @@ const Users = () => {
   const handleSubmit = async (values) => {
     setSaving(true);
     try {
+      const [role, staffSubRole] = values.roleSelection?.split("/") || [];
+      const selectedFile = values.attachment_image?.[0]?.originFileObj;
+      const payload = {
+        username: values.username,
+        father_name: values.father_name,
+        email: values.email,
+        cnic: formatCnicInput(values.cnic),
+        department: values.department,
+        designation: values.designation,
+        role,
+        staff_sub_role: role === "staff" ? staffSubRole || null : null,
+        attachment_image_data: selectedFile
+          ? await fileToDataUrl(selectedFile)
+          : values.attachment_image_data || null,
+      };
+
       if (editingId) {
-        await updateUser(token, editingId, values);
+        await updateUser(token, editingId, payload);
         message.success("User updated");
       } else {
-        await createUser(token, values);
+        await createUser(token, payload);
         message.success("User created and credentials emailed");
       }
       form.resetFields();
       setEditingId(null);
+      setModalOpen(false);
+      setDiscardModalOpen(false);
       loadUsers();
     } catch (err) {
-      message.error(err.message || "Action failed");
+      if (err.message === "Unauthorized") {
+        message.error("Your session is not valid. Please log in again.");
+      } else {
+        message.error(err.message || "Action failed");
+      }
     } finally {
       setSaving(false);
     }
@@ -73,12 +137,44 @@ const Users = () => {
 
   const startEdit = (record) => {
     setEditingId(record.id);
+    setModalOpen(true);
     form.setFieldsValue({
       email: record.email,
       username: record.username,
-      student_id: record.student_id,
-      role: record.role,
+      cnic: record.cnic,
+      father_name: record.father_name,
+      designation: record.designation,
+      department: record.department,
+      roleSelection:
+        record.role === "staff" && record.staff_sub_role ? `staff/${record.staff_sub_role}` : record.role,
+      attachment_image_data: record.attachment_image_data || null,
+      attachment_image: undefined,
     });
+  };
+
+  const openCreateModal = () => {
+    setEditingId(null);
+    form.resetFields();
+    form.setFieldsValue({ roleSelection: "staff", attachment_image_data: null, attachment_image: undefined });
+    setModalOpen(true);
+  };
+
+  const closeModal = () => {
+    if (form.isFieldsTouched()) {
+      setDiscardModalOpen(true);
+      return;
+    }
+
+    setEditingId(null);
+    setModalOpen(false);
+    form.resetFields();
+  };
+
+  const discardChanges = () => {
+    setDiscardModalOpen(false);
+    setEditingId(null);
+    setModalOpen(false);
+    form.resetFields();
   };
 
   const handleDelete = async (id) => {
@@ -88,7 +184,24 @@ const Users = () => {
       message.success("User deleted");
       loadUsers();
     } catch (err) {
-      message.error(err.message || "Delete failed");
+      if (err.message === "Unauthorized") {
+        message.error("Your session is not valid. Please log in again.");
+      } else {
+        message.error(err.message || "Delete failed");
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleToggleActivation = async (record) => {
+    setSaving(true);
+    try {
+      await updateUserActivation(token, record.id, !record.active);
+      message.success(record.active ? "User deactivated" : "User activated");
+      loadUsers();
+    } catch (err) {
+      message.error(err.message || "Status update failed");
     } finally {
       setSaving(false);
     }
@@ -97,13 +210,50 @@ const Users = () => {
   const columns = useMemo(() => {
     const base = [
       { title: "Name", dataIndex: "username", key: "username" },
+      {
+        title: "Image",
+        key: "image",
+        width: 90,
+        render: (_, record) =>
+          record.attachment_image_data ? (
+            <Image
+              className="user-list-image"
+              src={record.attachment_image_data}
+              alt={record.username}
+              preview={false}
+              onClick={() =>
+                setImagePreview({
+                  open: true,
+                  src: record.attachment_image_data,
+                  title: record.username,
+                })
+              }
+            />
+          ) : (
+            <Text type="secondary">No image</Text>
+          ),
+      },
       { title: "Email", dataIndex: "email", key: "email" },
-      { title: "Student ID", dataIndex: "student_id", key: "student_id" },
+      { title: "CNIC", dataIndex: "cnic", key: "cnic" },
+      { title: "Father Name", dataIndex: "father_name", key: "father_name" },
+      { title: "Designation", dataIndex: "designation", key: "designation", render: formatLabel },
+      { title: "Department", dataIndex: "department", key: "department" },
+      {
+        title: "Status",
+        dataIndex: "active",
+        key: "active",
+        render: (active) => <Tag color={active ? "green" : "red"}>{active ? "Active" : "Inactive"}</Tag>,
+      },
       {
         title: "Role",
-        dataIndex: "role",
         key: "role",
-        render: (role) => <Tag color={roleColors[role] || "default"}>{role}</Tag>,
+        render: (_, record) => (
+          <Tag color={roleColors[record.role] || "default"}>
+            {record.role === "staff" && record.staff_sub_role
+              ? `${formatLabel(record.role)} / ${formatLabel(record.staff_sub_role)}`
+              : formatLabel(record.role)}
+          </Tag>
+        ),
       },
     ];
 
@@ -117,6 +267,17 @@ const Users = () => {
             <Button type="link" onClick={() => startEdit(record)}>
               Edit
             </Button>
+            <Popconfirm
+              title={record.active ? "Deactivate this user?" : "Activate this user?"}
+              onConfirm={() => handleToggleActivation(record)}
+              okText={record.active ? "Deactivate" : "Activate"}
+              cancelText="Cancel"
+              disabled={record.id === currentUser?.id}
+            >
+              <Button type="link" disabled={record.id === currentUser?.id}>
+                {record.active ? "Deactivate" : "Activate"}
+              </Button>
+            </Popconfirm>
             <Button danger type="link" onClick={() => handleDelete(record.id)}>
               Delete
             </Button>
@@ -125,7 +286,7 @@ const Users = () => {
       });
     }
     return base;
-  }, [currentUser]);
+  }, [currentUser, saving]);
 
   return (
     <div className="users-page">
@@ -136,76 +297,166 @@ const Users = () => {
             Team & Access
           </Title>
         </div>
-        <Tag color="blue">{rows.length} users</Tag>
+        <Space>
+          <Tag color="blue">{rows.length} users</Tag>
+          {currentUser?.role === "admin" && (
+            <Button type="primary" onClick={openCreateModal}>
+              Add User
+            </Button>
+          )}
+        </Space>
       </div>
 
-      <Row gutter={[16, 16]}>
-        <Col xs={24} md={10}>
-          <Card className="users-card" title={editingId ? "Update user" : "Add new user"}>
-            <Form
-              layout="vertical"
-              form={form}
-              onFinish={handleSubmit}
-              initialValues={{ role: "student" }}
-              disabled={saving}
-            >
-              <Form.Item label="Full name" name="username" rules={[{ required: true, message: "Name is required" }]}>
-                <Input placeholder="e.g. Jane Doe" />
-              </Form.Item>
-              <Form.Item
-                label="Email"
-                name="email"
-                rules={[{ required: true, message: "Email is required" }, { type: "email", message: "Invalid email" }]}
-              >
-                <Input placeholder="user@school.edu" />
-              </Form.Item>
-              <Form.Item label="Student ID (optional)" name="student_id">
-                <Input placeholder="For students only" />
-              </Form.Item>
-              <Form.Item label="Role" name="role" rules={[{ required: true, message: "Select a role" }]}>
-                <Select
-                  options={[
-                    { value: "admin", label: "Admin" },
-                    { value: "teacher", label: "Teacher" },
-                    { value: "principal", label: "Principal" },
-                    { value: "student", label: "Student" },
-                  ]}
-                />
-              </Form.Item>
-              <Space>
-                <Button type="primary" htmlType="submit" loading={saving}>
-                  {editingId ? "Save changes" : "Create user"}
-                </Button>
-                {editingId && (
-                  <Button
-                    onClick={() => {
-                      setEditingId(null);
-                      form.resetFields();
-                    }}
-                  >
-                    Cancel
-                  </Button>
-                )}
-              </Space>
-              <Text type="secondary" style={{ display: "block", marginTop: 8 }}>
-                Passwords are generated automatically and emailed to the user.
-              </Text>
-            </Form>
-          </Card>
-        </Col>
+      <Card className="users-card" title="User list">
+        <Table
+          loading={loading}
+          columns={columns}
+          dataSource={rows}
+          rowKey="id"
+          pagination={{ pageSize: 8 }}
+          scroll={{ x: 1100 }}
+        />
+      </Card>
 
-        <Col xs={24} md={14}>
-          <Card className="users-card" title="User list">
-            <Table
-              loading={loading}
-              columns={columns}
-              dataSource={rows}
-              rowKey="id"
-              pagination={{ pageSize: 8 }}
+      <Modal
+        open={modalOpen}
+        title={editingId ? "Update user" : "Add new user"}
+        onCancel={closeModal}
+        footer={null}
+        destroyOnClose
+        width={560}
+      >
+        <Form
+          className="users-form"
+          layout="vertical"
+          form={form}
+          onFinish={handleSubmit}
+          initialValues={{ roleSelection: "staff" }}
+          disabled={saving}
+        >
+          <Form.Item label="Full name" name="username" rules={[{ required: true, message: "Name is required" }]}>
+            <Input size="small" placeholder="e.g. Jane Doe" />
+          </Form.Item>
+          <Form.Item
+            label="Father name"
+            name="father_name"
+            rules={[{ required: true, message: "Father name is required" }]}
+          >
+            <Input size="small" placeholder="e.g. John Doe" />
+          </Form.Item>
+          <Form.Item
+            label="Email"
+            name="email"
+            rules={[{ required: true, message: "Email is required" }, { type: "email", message: "Invalid email" }]}
+          >
+            <Input size="small" placeholder="user@school.edu" />
+          </Form.Item>
+          <Form.Item
+            label="CNIC"
+            name="cnic"
+            rules={[
+              { required: true, message: "CNIC is required" },
+              { pattern: /^\d{5}-\d{7}-\d{1}$/, message: "CNIC must be in 35202-1234567-1 format" },
+            ]}
+            normalize={formatCnicInput}
+          >
+            <Input size="small" inputMode="numeric" maxLength={15} placeholder="e.g. 35202-1234567-1" />
+          </Form.Item>
+          <Form.Item label="Department" name="department" rules={[{ required: true, message: "Department is required" }]}>
+            <Input size="small" placeholder="e.g. Administration" />
+          </Form.Item>
+          <Form.Item label="Role" name="roleSelection" rules={[{ required: true, message: "Select a role" }]}>
+            <Select
+              size="small"
+              options={ROLE_OPTIONS}
+              placeholder="Select role"
+              allowClear
+              showSearch
+              optionFilterProp="label"
             />
-          </Card>
-        </Col>
-      </Row>
+          </Form.Item>
+          <Form.Item
+            label="Designation"
+            name="designation"
+            rules={[{ required: true, message: "Designation is required" }]}
+          >
+            <Input
+              size="small"
+              placeholder={selectedRole === "staff" ? "e.g. Senior Coordinator" : "e.g. Accounts Officer"}
+            />
+          </Form.Item>
+          <Form.Item label="Attachment" name="attachment_image" valuePropName="fileList" getValueFromEvent={(event) => event?.fileList}>
+            <Upload
+              accept="image/*"
+              beforeUpload={() => false}
+              maxCount={1}
+              listType="text"
+            >
+              <Button size="small" icon={<UploadOutlined />}>
+                Add Image
+              </Button>
+            </Upload>
+          </Form.Item>
+          {form.getFieldValue("attachment_image_data") && !form.getFieldValue("attachment_image")?.length ? (
+            <div className="existing-image-block">
+              <Text type="secondary">Current attachment</Text>
+              <Image
+                className="user-list-image"
+                src={form.getFieldValue("attachment_image_data")}
+                alt="Current attachment"
+                preview={false}
+                onClick={() =>
+                  setImagePreview({
+                    open: true,
+                    src: form.getFieldValue("attachment_image_data"),
+                    title: form.getFieldValue("username") || "User attachment",
+                  })
+                }
+              />
+            </div>
+          ) : null}
+          <Space>
+            <Button size="small" type="primary" htmlType="submit" loading={saving}>
+              {editingId ? "Save changes" : "Create user"}
+            </Button>
+            <Button size="small" onClick={closeModal}>Cancel</Button>
+          </Space>
+          <Text type="secondary" style={{ display: "block", marginTop: 8 }}>
+            Passwords are generated automatically and emailed to the user.
+          </Text>
+        </Form>
+      </Modal>
+
+      <Modal
+        open={discardModalOpen}
+        title="Discard changes?"
+        onCancel={() => setDiscardModalOpen(false)}
+        zIndex={2100}
+        maskClosable={false}
+        footer={
+          <Space>
+            <Button size="small" onClick={() => setDiscardModalOpen(false)}>
+              Cancel
+            </Button>
+            <Button size="small" danger type="primary" onClick={discardChanges}>
+              Discard
+            </Button>
+          </Space>
+        }
+        width={420}
+      >
+        <Text type="secondary">You have unsaved changes in this form. Discard them and close the modal?</Text>
+      </Modal>
+
+      <Modal
+        open={imagePreview.open}
+        title={imagePreview.title}
+        footer={null}
+        onCancel={() => setImagePreview({ open: false, src: "", title: "" })}
+        width={720}
+      >
+        <img className="user-preview-image" src={imagePreview.src} alt={imagePreview.title} />
+      </Modal>
     </div>
   );
 };

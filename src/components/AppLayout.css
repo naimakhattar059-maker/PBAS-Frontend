@@ -6,17 +6,30 @@
 .app-sider {
   background: linear-gradient(180deg, hsla(197, 58%, 48%, 0.12), hsla(188, 33%, 83%, 0.4));
   color: #0c324f;
-  border-right: 1px solid rgba(12, 86, 133, 0.08);
   display: flex;
   flex-direction: column;
   padding-top: 8px;
+  border-right: none !important;
+  box-shadow: none !important;
+}
+
+.app-sider .ant-layout-sider-children {
+  border-right: none !important;
 }
 
 .app-sider .ant-menu {
   background: transparent;
-  border-inline-end: none;
+  border-inline-end: none !important;
   color: #0c324f;
   font-size: 13px;
+}
+
+.app-sider .ant-menu-inline,
+.app-sider .ant-menu-light.ant-menu-inline,
+.ant-drawer .ant-menu,
+.ant-drawer .ant-menu-inline,
+.ant-drawer .ant-menu-light.ant-menu-inline {
+  border-inline-end: none !important;
 }
 
 .app-sider .ant-menu-item-selected {
@@ -24,9 +37,19 @@
   border-radius: 12px;
 }
 
+.app-sider .ant-menu-item::after,
+.app-sider .ant-menu-submenu::after,
+.ant-drawer .ant-menu-item::after,
+.ant-drawer .ant-menu-submenu::after {
+  border-inline-end: none !important;
+}
+
 .app-header {
   background: hsla(188, 33%, 83%, 1);
-  padding: 12px 20px;
+  height: 60px;
+  min-height: 60px;
+  padding: 6px 16px;
+  line-height: 1.2;
   display: flex;
   align-items: center;
   gap: 12px;
@@ -45,21 +68,25 @@
 }
 
 .header-eyebrow {
-  font-size: 10px;
+  font-size: 16px;
   letter-spacing: 0.12em;
   color: #0c5685;
+  font-weight: 600;
 }
 
 .header-userchip {
   margin-left: auto;
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
 }
 
 .header-avatar {
   background: hsla(197, 58%, 48%, 1);
   font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .chip-meta {
@@ -71,18 +98,19 @@
 .chip-name {
   font-weight: 700;
   color: #0c324f;
+  font-size: 12px;
 }
 
 .chip-role {
   color: #6c7a86;
-  font-size: 12px;
+  font-size: 11px;
   text-transform: lowercase;
 }
 
 .app-content {
   padding: 20px;
   background: #f3f8fb;
-  min-height: calc(100vh - 64px);
+  min-height: calc(100vh - 60px);
 }
 
 .brand {
@@ -105,6 +133,12 @@
 .menu-container {
   flex: 1;
   padding-inline: 8px;
+  scrollbar-width: none;
+}
+
+.menu-container::-webkit-scrollbar {
+  width: 0;
+  height: 0;
 }
 
 .sider-footer,
@@ -113,7 +147,6 @@
   display: flex;
   justify-content: flex-start;
   margin-top: auto;
-  border-top: 1px solid rgba(12, 86, 133, 0.08);
 }
 
 .logout-button {

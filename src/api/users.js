@@ -9,5 +9,8 @@ export const createUser = (token, user) =>
 export const updateUser = (token, id, user) =>
   apiRequest(`/api/v1/users/${id}`, { method: "PUT", token, body: { user } });
 
+export const updateUserActivation = (token, id, active) =>
+  apiRequest(`/api/v1/users/${id}/activation`, { method: "PATCH", token, body: { active } });
+
 export const deleteUser = (token, id) =>
   apiRequest(`/api/v1/users/${id}`, { method: "DELETE", token });

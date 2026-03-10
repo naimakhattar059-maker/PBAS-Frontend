@@ -6,6 +6,12 @@ export const login = (payload) =>
     body: { email: payload.email, password: payload.password },
   });
 
+export const validateSession = (token) =>
+  apiRequest("/api/v1/session", {
+    method: "GET",
+    token,
+  });
+
 export const register = ({ user, invitationToken }) =>
   apiRequest("/api/v1/registrations", {
     method: "POST",

@@ -14,6 +14,13 @@ const parseResponse = async (response) => {
   const payload = isJson ? await response.json() : await response.text();
 
   if (!response.ok) {
+    if (response.status === 401 && token) {
+      localStorage.removeItem("authState");
+      if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+        window.location.href = "/login";
+      }
+    }
+
     const message = isJson ? payload.error || payload.errors || payload.message : payload;
     const error = new Error(message || `Request failed with status ${response.status}`);
     if (isJson && typeof payload === "object") {
