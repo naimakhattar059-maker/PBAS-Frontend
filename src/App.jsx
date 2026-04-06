@@ -25,7 +25,7 @@ const App = () => {
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/users" element={<Users />} />
           <Route path="/students" element={<Students />} />
-          <Route path="/departments" element={<Placeholder title="Department Management" />} />
+          <Route path="/departments" element={<Placeholder title="Resource Request Management" />} />
           <Route path="/budget" element={<Placeholder title="Budget Management" />} />
           <Route path="/expenses" element={<Placeholder title="Expense Management" />} />
           <Route path="/payroll" element={<Placeholder title="Payroll Management" />} />

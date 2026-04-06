@@ -28,7 +28,7 @@ const { Title } = Typography;
 const navItems = [
   { key: '/dashboard', icon: <DashboardOutlined />, label: 'Dashboard' },
   { key: '/users', icon: <UserOutlined />, label: 'User Management' },
-  { key: '/departments', icon: <ApartmentOutlined />, label: 'Department Management' },
+  { key: '/departments', icon: <ApartmentOutlined />, label: 'Resource Request Management' },
   { key: '/budget', icon: <FundOutlined />, label: 'Budget Management' },
   { key: '/payroll', icon: <CalculatorOutlined />, label: 'Payroll Management' },
   { key: '/reports', icon: <FileTextOutlined />, label: 'Reports' },
