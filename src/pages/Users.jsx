@@ -26,18 +26,14 @@ const ROLE_OPTIONS = [
   { value: "head_of_institute", label: "Head of Institute" },
   { value: "admin_officer", label: "Admin Officer" },
   { value: "accountant", label: "Accountant" },
-  { value: "staff", label: "Staff" },
-  { value: "staff/hod", label: "HOD" },
-  { value: "staff/coordinator", label: "Coordinator" },
-  { value: "staff/librarian", label: "Librarian" },
-  { value: "staff/college_assistant", label: "College Assistant" },
+  { value: "office_assistant", label: "Office Assistant" },
 ];
 
 const roleColors = {
   head_of_institute: "purple",
   admin_officer: "cyan",
   accountant: "gold",
-  staff: "green",
+  office_assistant: "blue",
 };
 
 const formatLabel = (value) =>
@@ -73,8 +69,6 @@ const Users = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [discardModalOpen, setDiscardModalOpen] = useState(false);
   const [imagePreview, setImagePreview] = useState({ open: false, src: "", title: "" });
-  const roleSelection = Form.useWatch("roleSelection", form);
-  const selectedRole = roleSelection?.startsWith("staff") ? "staff" : roleSelection;
 
   const loadUsers = async () => {
     setLoading(true);
@@ -96,7 +90,6 @@ const Users = () => {
   const handleSubmit = async (values) => {
     setSaving(true);
     try {
-      const [role, staffSubRole] = values.roleSelection?.split("/") || [];
       const selectedFile = values.attachment_image?.[0]?.originFileObj;
       const payload = {
         username: values.username,
@@ -105,8 +98,8 @@ const Users = () => {
         cnic: formatCnicInput(values.cnic),
         department: values.department,
         designation: values.designation,
-        role,
-        staff_sub_role: role === "staff" ? staffSubRole || null : null,
+        role: values.roleSelection,
+        staff_sub_role: null,
         attachment_image_data: selectedFile
           ? await fileToDataUrl(selectedFile)
           : values.attachment_image_data || null,
@@ -145,8 +138,7 @@ const Users = () => {
       father_name: record.father_name,
       designation: record.designation,
       department: record.department,
-      roleSelection:
-        record.role === "staff" && record.staff_sub_role ? `staff/${record.staff_sub_role}` : record.role,
+      roleSelection: record.role,
       attachment_image_data: record.attachment_image_data || null,
       attachment_image: undefined,
     });
@@ -155,7 +147,11 @@ const Users = () => {
   const openCreateModal = () => {
     setEditingId(null);
     form.resetFields();
-    form.setFieldsValue({ roleSelection: "staff", attachment_image_data: null, attachment_image: undefined });
+    form.setFieldsValue({
+      roleSelection: "head_of_institute",
+      attachment_image_data: null,
+      attachment_image: undefined,
+    });
     setModalOpen(true);
   };
 
@@ -331,7 +327,7 @@ const Users = () => {
           layout="vertical"
           form={form}
           onFinish={handleSubmit}
-          initialValues={{ roleSelection: "staff" }}
+          initialValues={{ roleSelection: "head_of_institute" }}
           disabled={saving}
         >
           <Form.Item label="Full name" name="username" rules={[{ required: true, message: "Name is required" }]}>
@@ -380,10 +376,7 @@ const Users = () => {
             name="designation"
             rules={[{ required: true, message: "Designation is required" }]}
           >
-            <Input
-              size="small"
-              placeholder={selectedRole === "staff" ? "e.g. Senior Coordinator" : "e.g. Accounts Officer"}
-            />
+            <Input size="small" placeholder="e.g. Accounts Officer" />
           </Form.Item>
           <Form.Item label="Attachment" name="attachment_image" valuePropName="fileList" getValueFromEvent={(event) => event?.fileList}>
             <Upload
