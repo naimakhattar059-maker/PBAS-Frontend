@@ -6,6 +6,8 @@ import VerifyEmail from "./pages/VerifyEmail";
 import Dashboard from "./pages/Dashboard";
 import Users from "./pages/Users";
 import Students from "./pages/Students";
+import BudgetManagement from "./pages/BudgetManagement";
+import Settings from "./pages/Settings";
 import Placeholder from "./pages/Placeholder";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AppLayout from "./components/AppLayout";
@@ -26,14 +28,14 @@ const App = () => {
           <Route path="/users" element={<Users />} />
           <Route path="/students" element={<Students />} />
           <Route path="/departments" element={<Placeholder title="Resource Request Management" />} />
-          <Route path="/budget" element={<Placeholder title="Budget Management" />} />
+          <Route path="/budget" element={<BudgetManagement />} />
           <Route path="/expenses" element={<Placeholder title="Expense Management" />} />
           <Route path="/payroll" element={<Placeholder title="Payroll Management" />} />
           <Route path="/fees" element={<Placeholder title="Fee Management" />} />
           <Route path="/reports" element={<Placeholder title="Reports" />} />
           <Route path="/notifications" element={<Placeholder title="Notifications" />} />
           <Route path="/requests" element={<Placeholder title="Requests & Approvals" />} />
-          <Route path="/settings" element={<Placeholder title="Settings" />} />
+          <Route path="/settings" element={<Settings />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/login" replace />} />

@@ -8,7 +8,7 @@ const buildHeaders = (token, extra = {}) => ({
   ...extra,
 });
 
-const parseResponse = async (response) => {
+const parseResponse = async (response, token) => {
   const contentType = response.headers.get("content-type") || "";
   const isJson = contentType.includes("application/json");
   const payload = isJson ? await response.json() : await response.text();
@@ -21,7 +21,11 @@ const parseResponse = async (response) => {
       }
     }
 
-    const message = isJson ? payload.error || payload.errors || payload.message : payload;
+    const message = isJson
+      ? payload.error ||
+        (Array.isArray(payload.errors) ? payload.errors.join(", ") : payload.errors) ||
+        payload.message
+      : payload;
     const error = new Error(message || `Request failed with status ${response.status}`);
     if (isJson && typeof payload === "object") {
       error.payload = payload;
@@ -39,5 +43,5 @@ export const apiRequest = async (path, { method = "GET", body, token, headers } 
     body: body ? JSON.stringify(body) : undefined,
   });
 
-  return parseResponse(response);
+  return parseResponse(response, token);
 };

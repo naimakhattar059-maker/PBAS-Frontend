@@ -19,6 +19,7 @@ import { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { logout } from '../store/authSlice';
+import { getAvatarInitial } from '../utils/userAvatar';
 import './AppLayout.css';
 
 const { Header, Sider, Content } = Layout;
@@ -103,8 +104,8 @@ const AppLayout = ({ children }) => {
             <div className='header-eyebrow'>{(currentNav?.label || 'Dashboard').toUpperCase()}</div>
           </div>
           <div className='header-userchip'>
-            <Avatar size={34} className='header-avatar'>
-              {(user?.username || 'User')[0]}
+            <Avatar size={34} src={user?.attachment_image_data || undefined} className='header-avatar'>
+              {user?.attachment_image_data ? null : getAvatarInitial(user?.username)}
             </Avatar>
             <div className='chip-meta'>
               <span className='chip-name'>{user?.username || 'User'}</span>

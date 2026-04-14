@@ -1,12 +1,13 @@
 .dashboard-page {
-  background: linear-gradient(135deg, hsla(197, 58%, 48%, 0.12), hsla(188, 33%, 83%, 0.35));
+  background: #ffffff;
   padding: 18px 16px;
   border-radius: 18px;
   min-height: calc(100vh - 90px);
+  border: 1px solid rgba(12, 86, 133, 0.08);
 }
 
 .dashboard-shell {
-  background: linear-gradient(135deg, hsla(0, 0%, 100%, 0.9), hsla(188, 33%, 83%, 0.55));
+  background: #ffffff;
   border-radius: 20px;
   padding: 18px;
   box-shadow: 0 14px 36px rgba(12, 86, 133, 0.12);
@@ -44,7 +45,7 @@
 }
 
 .stat-card {
-  background: linear-gradient(180deg, hsla(0, 0%, 100%, 0.98), hsla(188, 33%, 83%, 0.4));
+  background: #ffffff;
   border: 1px solid rgba(12, 86, 133, 0.12);
   box-shadow: 0 14px 36px rgba(12, 86, 133, 0.12);
   border-radius: 16px;
