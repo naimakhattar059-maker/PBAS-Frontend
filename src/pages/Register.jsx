@@ -1,4 +1,4 @@
-import { LockOutlined, MailOutlined, UserOutlined, IdcardOutlined } from "@ant-design/icons";
+import { LockOutlined, MailOutlined, UserOutlined } from "@ant-design/icons";
 import { Button, Col, Form, Input, Row, Space, Typography, message, Tag, Modal } from "antd";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
@@ -39,7 +39,6 @@ const Register = () => {
           user: {
             email,
             username: values.username,
-            student_id: values.student_id,
             password: values.password,
             password_confirmation: values.password_confirmation,
           },
@@ -105,15 +104,6 @@ const Register = () => {
             </Form.Item>
           </Col>
         </Row>
-
-        <Row gutter={16}>
-          <Col xs={24} md={12}>
-            <Form.Item label="Student ID" name="student_id">
-              <Input size="middle" prefix={<IdcardOutlined />} placeholder="Optional student ID" />
-            </Form.Item>
-          </Col>
-        </Row>
-
         <Row gutter={16}>
           <Col xs={24} md={12}>
             <Form.Item

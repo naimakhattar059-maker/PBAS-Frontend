@@ -1,12 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import {
   Button,
-  Card,
   Form,
   Image,
   Input,
   Modal,
-  Popconfirm,
+  Popover,
   Select,
   Space,
   Table,
@@ -16,6 +15,7 @@ import {
   message,
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
+import { DeleteOutlined, EditOutlined, MoreOutlined, StopOutlined } from "@ant-design/icons";
 import { useSelector } from "react-redux";
 import { createUser, deleteUser, listUsers, updateUser, updateUserActivation } from "../api/users";
 import "./Users.css";
@@ -69,12 +69,13 @@ const Users = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [discardModalOpen, setDiscardModalOpen] = useState(false);
   const [imagePreview, setImagePreview] = useState({ open: false, src: "", title: "" });
+  const [popoverOpenId, setPopoverOpenId] = useState(null);
 
   const loadUsers = async () => {
     setLoading(true);
     try {
       const payload = await listUsers(token);
-      setRows(payload.users || []);
+      setRows((payload.users || []).filter((row) => row.id !== currentUser?.id));
     } catch (err) {
       message.error(err.message || "Could not load users");
     } finally {
@@ -85,7 +86,7 @@ const Users = () => {
   useEffect(() => {
     if (token) loadUsers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token]);
+  }, [token, currentUser?.id]);
 
   const handleSubmit = async (values) => {
     setSaving(true);
@@ -190,6 +191,18 @@ const Users = () => {
     }
   };
 
+  const confirmDelete = (record) => {
+    setPopoverOpenId(null);
+    Modal.confirm({
+      title: "Delete user?",
+      content: `Are you sure you want to delete ${record.username}?`,
+      okText: "Delete",
+      okButtonProps: { danger: true },
+      cancelText: "Cancel",
+      onOk: () => handleDelete(record.id),
+    });
+  };
+
   const handleToggleActivation = async (record) => {
     setSaving(true);
     try {
@@ -201,6 +214,20 @@ const Users = () => {
     } finally {
       setSaving(false);
     }
+  };
+
+  const confirmActivation = (record) => {
+    setPopoverOpenId(null);
+    Modal.confirm({
+      title: record.active ? "Deactivate user?" : "Activate user?",
+      content: record.active
+        ? `Are you sure you want to deactivate ${record.username}?`
+        : `Are you sure you want to activate ${record.username}?`,
+      okText: record.active ? "Deactivate" : "Activate",
+      cancelText: "Cancel",
+      okButtonProps: record.active ? { danger: true } : undefined,
+      onOk: () => handleToggleActivation(record),
+    });
   };
 
   const columns = useMemo(() => {
@@ -257,40 +284,59 @@ const Users = () => {
       base.push({
         title: "Actions",
         key: "actions",
-        width: 160,
+        width: 88,
         render: (_, record) => (
-          <Space size="small">
-            <Button type="link" onClick={() => startEdit(record)}>
-              Edit
-            </Button>
-            <Popconfirm
-              title={record.active ? "Deactivate this user?" : "Activate this user?"}
-              onConfirm={() => handleToggleActivation(record)}
-              okText={record.active ? "Deactivate" : "Activate"}
-              cancelText="Cancel"
-              disabled={record.id === currentUser?.id}
-            >
-              <Button type="link" disabled={record.id === currentUser?.id}>
-                {record.active ? "Deactivate" : "Activate"}
-              </Button>
-            </Popconfirm>
-            <Button danger type="link" onClick={() => handleDelete(record.id)}>
-              Delete
-            </Button>
-          </Space>
+          <Popover
+            trigger="click"
+            placement="bottomRight"
+            overlayClassName="user-menu-popover"
+            open={popoverOpenId === record.id}
+            onOpenChange={(open) => setPopoverOpenId(open ? record.id : null)}
+            content={
+              <Space direction="vertical" className="user-menu">
+                <Button
+                  type="text"
+                  icon={<EditOutlined />}
+                  onClick={() => {
+                    setPopoverOpenId(null);
+                    startEdit(record);
+                  }}
+                >
+                  Edit
+                </Button>
+                <Button
+                  type="text"
+                  icon={<StopOutlined />}
+                  disabled={record.id === currentUser?.id}
+                  onClick={() => confirmActivation(record)}
+                >
+                  {record.active ? "Deactivate" : "Activate"}
+                </Button>
+                <Button danger type="text" icon={<DeleteOutlined />} onClick={() => confirmDelete(record)}>
+                  Delete
+                </Button>
+              </Space>
+            }
+          >
+            <Button
+              type="text"
+              className="user-more-button"
+              icon={<MoreOutlined />}
+              aria-label={`Actions for user ${record.id}`}
+            />
+          </Popover>
         ),
       });
     }
     return base;
-  }, [currentUser, saving]);
+  }, [currentUser, popoverOpenId]);
 
   return (
     <div className="users-page">
       <div className="users-header">
         <div>
-          <Text className="eyebrow">User Management</Text>
           <Title level={3} style={{ margin: 0 }}>
-            Team & Access
+            User Management
           </Title>
         </div>
         <Space>
@@ -303,7 +349,7 @@ const Users = () => {
         </Space>
       </div>
 
-      <Card className="users-card" title="User list">
+      <div className="users-table-shell">
         <Table
           loading={loading}
           columns={columns}
@@ -312,7 +358,7 @@ const Users = () => {
           pagination={{ pageSize: 8 }}
           scroll={{ x: 1100 }}
         />
-      </Card>
+      </div>
 
       <Modal
         open={modalOpen}

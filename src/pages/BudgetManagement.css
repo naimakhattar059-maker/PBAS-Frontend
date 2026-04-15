@@ -1,0 +1,148 @@
+.budget-page {
+  padding: 16px;
+}
+
+.budget-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.budget-header h3.ant-typography {
+  margin: 4px 0 6px;
+  color: #1f3450;
+  font-weight: 800;
+}
+
+.budget-add-button {
+  height: 32px;
+  padding-inline: 12px;
+  font-size: 13px;
+}
+
+.budget-card,
+.budget-empty-card {
+  border: 1px solid rgba(18, 76, 112, 0.1);
+  box-shadow: 0 16px 38px rgba(19, 82, 123, 0.12);
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.budget-page .ant-modal .ant-form-item {
+  margin-bottom: 14px;
+}
+
+.budget-page .ant-modal .ant-select-selector,
+.budget-page .ant-modal .ant-input-number {
+  min-height: 42px !important;
+}
+
+.budget-amount-input {
+  width: 100%;
+}
+
+.budget-grid-shell {
+  min-height: 100%;
+}
+
+.budget-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.budget-card {
+  min-height: 204px;
+}
+
+.budget-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.budget-card-label {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color: #0c5685;
+  font-size: 11px;
+}
+
+.budget-card h4.ant-typography {
+  margin: 6px 0 0;
+  color: #20364f;
+  font-weight: 800;
+}
+
+.budget-more-button {
+  color: #315a7c;
+  width: 34px !important;
+  min-width: 34px;
+  height: 34px;
+  padding: 0 !important;
+  border-radius: 50% !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.budget-amount-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 26px 0 18px;
+  color: #11486c;
+  font-size: 28px;
+  font-weight: 800;
+}
+
+.budget-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.budget-meta-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #526379;
+}
+
+.budget-menu {
+  min-width: 160px;
+  gap: 0 !important;
+}
+
+.budget-menu .ant-btn {
+  width: 100%;
+  height: 42px;
+  justify-content: flex-start;
+  padding-inline: 12px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.budget-menu-popover .ant-popover-inner {
+  padding: 10px;
+  border-radius: 18px;
+}
+
+.budget-menu-popover .ant-popover-inner-content {
+  padding: 0;
+}
+
+@media (max-width: 768px) {
+  .budget-header {
+    flex-direction: column;
+  }
+
+  .budget-amount-row {
+    font-size: 24px;
+  }
+}

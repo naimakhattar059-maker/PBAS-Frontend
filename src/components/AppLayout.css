@@ -1,15 +1,14 @@
 .app-shell {
   min-height: 100vh;
-  background: #f6f9fc;
+  background: #f7f9fc;
 }
 
 .app-sider {
-  background: linear-gradient(180deg, hsla(197, 58%, 48%, 0.12), hsla(188, 33%, 83%, 0.4));
+  background: #ffffff;
   color: #0c324f;
   display: flex;
   flex-direction: column;
-  padding-top: 8px;
-  border-right: none !important;
+  border-right: 1px solid rgba(12, 86, 133, 0.08) !important;
   box-shadow: none !important;
 }
 
@@ -45,7 +44,7 @@
 }
 
 .app-header {
-  background: hsla(188, 33%, 83%, 1);
+  background: #ffffff;
   height: 60px;
   min-height: 60px;
   padding: 6px 16px;
@@ -53,7 +52,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  border-bottom: none;
+  border-bottom: 1px solid rgba(12, 86, 133, 0.08);
 }
 
 .header-title {
@@ -82,7 +81,8 @@
 }
 
 .header-avatar {
-  background: hsla(197, 58%, 48%, 1);
+  background: #d8eff8;
+  color: #1d5676;
   font-weight: 700;
   display: inline-flex;
   align-items: center;
@@ -108,8 +108,8 @@
 }
 
 .app-content {
-  padding: 20px;
-  background: #f3f8fb;
+  /* padding: 20px; */
+  background: #f7f9fc;
   min-height: calc(100vh - 60px);
 }
 
@@ -166,8 +166,8 @@
   color: #0c324f;
 }
 
-@media (max-width: 768px) {
+/* @media (max-width: 768px) {
   .app-content {
     padding: 16px;
   }
-}
+} */

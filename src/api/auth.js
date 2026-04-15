@@ -19,7 +19,6 @@ export const register = ({ user, invitationToken }) =>
       user: {
         email: user.email,
         username: user.username,
-        student_id: user.student_id,
         password: user.password,
         password_confirmation: user.password_confirmation,
       },

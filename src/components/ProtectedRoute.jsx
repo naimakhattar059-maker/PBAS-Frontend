@@ -2,7 +2,7 @@ import { Navigate, Outlet } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useEffect, useState } from "react";
 import AppLayout from "./AppLayout";
-import { logout } from "../store/authSlice";
+import { logout, setAuth } from "../store/authSlice";
 import { validateSession } from "../api/auth";
 
 const ProtectedRoute = () => {
@@ -19,6 +19,9 @@ const ProtectedRoute = () => {
     }
 
     validateSession(token)
+      .then((payload) => {
+        dispatch(setAuth({ token, user: payload.user }));
+      })
       .catch(() => {
         dispatch(logout());
       })
