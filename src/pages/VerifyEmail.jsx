@@ -1,5 +1,5 @@
 import { CheckCircleTwoTone, WarningTwoTone } from "@ant-design/icons";
-import { Button, Typography, Spin, message } from "antd";
+import { Button, Typography, Spin } from "antd";
 import { useEffect, useState } from "react";
 import { useSearchParams, Link, useNavigate } from "react-router-dom";
 import { verifyEmail } from "../api/auth";
@@ -38,7 +38,7 @@ const VerifyEmail = () => {
       }
     };
     run();
-  }, [token]);
+  }, [dispatch, navigate, token]);
 
   const renderContent = () => {
     if (state.status === "loading") {

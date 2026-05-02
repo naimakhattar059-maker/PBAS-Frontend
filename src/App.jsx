@@ -5,8 +5,11 @@ import ResetPassword from "./pages/ResetPassword";
 import VerifyEmail from "./pages/VerifyEmail";
 import Dashboard from "./pages/Dashboard";
 import Users from "./pages/Users";
-import Students from "./pages/Students";
+import Requests from "./pages/Requests";
+import Payroll from "./pages/Payroll";
 import BudgetManagement from "./pages/BudgetManagement";
+import Reports from "./pages/Reports";
+import Notifications from "./pages/Notifications";
 import Settings from "./pages/Settings";
 import Placeholder from "./pages/Placeholder";
 import ProtectedRoute from "./components/ProtectedRoute";
@@ -26,15 +29,13 @@ const App = () => {
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/users" element={<Users />} />
-          <Route path="/students" element={<Students />} />
           <Route path="/departments" element={<Placeholder title="Resource Request Management" />} />
           <Route path="/budget" element={<BudgetManagement />} />
           <Route path="/expenses" element={<Placeholder title="Expense Management" />} />
-          <Route path="/payroll" element={<Placeholder title="Payroll Management" />} />
-          <Route path="/fees" element={<Placeholder title="Fee Management" />} />
-          <Route path="/reports" element={<Placeholder title="Reports" />} />
-          <Route path="/notifications" element={<Placeholder title="Notifications" />} />
-          <Route path="/requests" element={<Placeholder title="Requests & Approvals" />} />
+          <Route path="/payroll" element={<Payroll />} />
+          <Route path="/reports" element={<Reports />} />
+          <Route path="/notifications" element={<Notifications />} />
+          <Route path="/requests" element={<Requests />} />
           <Route path="/settings" element={<Settings />} />
         </Route>
 

@@ -21,6 +21,8 @@ import {
 } from "@ant-design/icons";
 import { useSelector } from "react-redux";
 import { createBudget, deleteBudget, listBudgets, updateBudget } from "../api/budgets";
+import AccessDenied from "../components/AccessDenied";
+import { hasAnyPermission, hasPermission } from "../utils/permissions";
 import "./BudgetManagement.css";
 
 const { Title, Text } = Typography;
@@ -79,7 +81,7 @@ const handleAmountKeyDown = (event) => {
 };
 
 const BudgetManagement = () => {
-  const { token } = useSelector((state) => state.auth);
+  const { token, user: currentUser } = useSelector((state) => state.auth);
   const [form] = Form.useForm();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -89,12 +91,25 @@ const BudgetManagement = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const [discardModalOpen, setDiscardModalOpen] = useState(false);
   const startYear = Form.useWatch("start_year", form);
+  const canViewBudgets = hasAnyPermission(currentUser, ["view_budgets"]);
+  const canCreateBudgets = hasPermission(currentUser, "create_budgets");
+  const canUpdateBudgets = hasPermission(currentUser, "update_budgets");
+  const canDeleteBudgets = hasPermission(currentUser, "delete_budgets");
+  const canManageBudgetActions = canUpdateBudgets || canDeleteBudgets;
 
   const isEditing = Boolean(editingId);
 
   const endYearOptions = useMemo(
     () => yearOptions.filter((option) => !startYear || option.value >= startYear),
     [startYear]
+  );
+  const totalBudgetAmount = useMemo(
+    () => budgets.reduce((sum, budget) => sum + Number(budget.amount || 0), 0),
+    [budgets]
+  );
+  const totalRemainingAmount = useMemo(
+    () => budgets.reduce((sum, budget) => sum + Number(budget.remaining_amount ?? budget.amount ?? 0), 0),
+    [budgets]
   );
 
   const loadBudgets = async () => {
@@ -110,19 +125,22 @@ const BudgetManagement = () => {
   };
 
   useEffect(() => {
-    if (token) {
+    if (token && canViewBudgets) {
       loadBudgets();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token]);
+  }, [canViewBudgets, token]);
 
   const resetForm = () => {
     setEditingId(null);
     form.resetFields();
     form.setFieldsValue({
+      name: "",
       budget_type: "normal",
       start_year: currentYear,
       end_year: currentYear + 1,
+      budget_head: "",
+      budget_category: "",
     });
   };
 
@@ -131,13 +149,20 @@ const BudgetManagement = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  if (!canViewBudgets) {
+    return <AccessDenied title="Budget Management" />;
+  }
+
   const handleSubmit = async (values) => {
     setSaving(true);
     const payload = {
+      name: values.name?.trim(),
       start_year: values.start_year,
       end_year: values.end_year,
       amount: values.amount,
       budget_type: values.budget_type,
+      budget_head: values.budget_head?.trim() || null,
+      budget_category: values.budget_category?.trim() || null,
     };
 
     try {
@@ -164,10 +189,13 @@ const BudgetManagement = () => {
     setEditingId(budget.id);
     setModalOpen(true);
     form.setFieldsValue({
+      name: budget.name,
       start_year: budget.start_year,
       end_year: budget.end_year,
       amount: Number(budget.amount),
       budget_type: budget.budget_type,
+      budget_head: budget.budget_head || "",
+      budget_category: budget.budget_category || "",
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -197,10 +225,16 @@ const BudgetManagement = () => {
 
   const actionMenu = (budget) => (
     <Space direction="vertical" className="budget-menu">
-      <Button type="text" icon={<EditOutlined />} onClick={() => handleEdit(budget)}>
+      <Button type="text" icon={<EditOutlined />} disabled={!canUpdateBudgets} onClick={() => handleEdit(budget)}>
         Edit
       </Button>
-      <Button danger type="text" icon={<DeleteOutlined />} onClick={() => handleDelete(budget)}>
+      <Button
+        danger
+        type="text"
+        icon={<DeleteOutlined />}
+        disabled={!canDeleteBudgets}
+        onClick={() => handleDelete(budget)}
+      >
         Delete
       </Button>
     </Space>
@@ -231,18 +265,23 @@ const BudgetManagement = () => {
     <div className="budget-page">
       <div className="budget-header">
         <div>
-          <Title level={3}>Budgets & Allocation Years</Title>
+          <Title level={3}>Budget Management</Title>
           <Text type="secondary">
-            Create, update, and remove budget entries for each financial year range.
+            Create budgets, tag them with head/category, and track remaining balance after approvals.
           </Text>
         </div>
-        <Space>
-          <Tag color="blue">{budgets.length} budgets</Tag>
+        {canCreateBudgets ? (
           <Button type="primary" size="small" className="budget-add-button" onClick={openCreateModal}>
             Add Budget
           </Button>
-        </Space>
+        ) : null}
       </div>
+
+      <Card className="budget-total-card" bordered={false}>
+        <Text className="budget-total-label">Total Budget</Text>
+        <Title level={3}>PKR {formatAmount(totalBudgetAmount)}</Title>
+        <Text type="secondary">Remaining: PKR {formatAmount(totalRemainingAmount)}</Text>
+      </Card>
 
       <div className="budget-grid-shell">
         {budgets.length === 0 && !loading ? (
@@ -256,23 +295,30 @@ const BudgetManagement = () => {
                 <div className="budget-card-top">
                   <div>
                     <Text className="budget-card-label">Budget</Text>
-                    <Title level={4}>{budget.start_year} - {budget.end_year}</Title>
+                    <Title level={4}>{budget.name}</Title>
+                    <Text type="secondary" className="budget-card-years">
+                      {budget.start_year} - {budget.end_year}
+                    </Text>
                   </div>
-                  <Popover
-                    trigger="click"
-                    placement="bottomRight"
-                    content={actionMenu(budget)}
-                    overlayClassName="budget-menu-popover"
-                    open={popoverOpenId === budget.id}
-                    onOpenChange={(open) => setPopoverOpenId(open ? budget.id : null)}
-                  >
-                    <Button
-                      type="text"
-                      className="budget-more-button"
-                      icon={<MoreOutlined />}
-                      aria-label={`Actions for budget ${budget.id}`}
-                    />
-                  </Popover>
+                  {canManageBudgetActions ? (
+                    <Popover
+                      trigger="click"
+                      placement="bottomRight"
+                      content={actionMenu(budget)}
+                      overlayClassName="budget-menu-popover"
+                      open={popoverOpenId === budget.id}
+                      onOpenChange={(open) => setPopoverOpenId(open ? budget.id : null)}
+                    >
+                      <Button
+                        type="text"
+                        className="budget-more-button"
+                        icon={<MoreOutlined />}
+                        aria-label={`Actions for budget ${budget.id}`}
+                      />
+                    </Popover>
+                  ) : (
+                    <Tag color="default">Read only</Tag>
+                  )}
                 </div>
 
                 <div className="budget-amount-row">
@@ -288,6 +334,16 @@ const BudgetManagement = () => {
                     {titleCase(budget.budget_type)}
                   </Tag>
                 </div>
+
+                <div className="budget-meta-row">
+                  <Tag color="cyan">{budget.budget_head || "No head"}</Tag>
+                  <Tag color="geekblue">{budget.budget_category || "No category"}</Tag>
+                </div>
+
+                <div className="budget-meta-row">
+                  <Text type="secondary">Remaining: PKR {formatAmount(budget.remaining_amount ?? budget.amount)}</Text>
+                  <Text type="secondary">Spent: PKR {formatAmount(budget.spent_amount || 0)}</Text>
+                </div>
               </Card>
             ))}
           </div>
@@ -302,6 +358,14 @@ const BudgetManagement = () => {
         destroyOnHidden
       >
         <Form form={form} layout="vertical" onFinish={handleSubmit}>
+          <Form.Item
+            label="Budget name"
+            name="name"
+            rules={[{ required: true, message: "Enter the budget name" }]}
+          >
+            <Input placeholder="Enter budget name" maxLength={120} />
+          </Form.Item>
+
           <Form.Item
             label="Start year"
             name="start_year"
@@ -362,6 +426,14 @@ const BudgetManagement = () => {
             rules={[{ required: true, message: "Select the budget type" }]}
           >
             <Select options={typeOptions} placeholder="Select budget type" />
+          </Form.Item>
+
+          <Form.Item label="Budget head" name="budget_head">
+            <Input placeholder="e.g. Primary budget head" maxLength={120} />
+          </Form.Item>
+
+          <Form.Item label="Budget category" name="budget_category">
+            <Input placeholder="e.g. Supplementary category" maxLength={120} />
           </Form.Item>
 
           <Space>

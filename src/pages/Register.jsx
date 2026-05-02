@@ -24,7 +24,7 @@ const Register = () => {
       try {
         const data = await fetchInvitation(invitationToken);
         setInvitation(data.invitation);
-      } catch (e) {
+      } catch {
         message.warning("Invitation is invalid or expired");
       }
     };

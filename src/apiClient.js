@@ -25,7 +25,19 @@ const parseResponse = async (response, token) => {
       ? payload.error ||
         (Array.isArray(payload.errors) ? payload.errors.join(", ") : payload.errors) ||
         payload.message
-      : payload;
+      : (() => {
+          const text = String(payload || "").trim();
+          const looksLikeHtml =
+            /^<!doctype html/i.test(text) ||
+            /^<html[\s>]/i.test(text) ||
+            text.includes("ActionController: Exception caught");
+
+          if (looksLikeHtml) {
+            return "Server error. Please try again.";
+          }
+
+          return text || `Request failed with status ${response.status}`;
+        })();
     const error = new Error(message || `Request failed with status ${response.status}`);
     if (isJson && typeof payload === "object") {
       error.payload = payload;
