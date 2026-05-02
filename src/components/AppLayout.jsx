@@ -1,6 +1,5 @@
 import {
   ApartmentOutlined,
-  BankOutlined,
   BellOutlined,
   CalculatorOutlined,
   CheckCircleOutlined,
@@ -20,6 +19,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { logout } from '../store/authSlice';
 import { getAvatarInitial } from '../utils/userAvatar';
+import { hasPermission } from '../utils/permissions';
 import './AppLayout.css';
 
 const { Header, Sider, Content } = Layout;
@@ -27,15 +27,15 @@ const { useBreakpoint } = Grid;
 const { Title } = Typography;
 
 const navItems = [
-  { key: '/dashboard', icon: <DashboardOutlined />, label: 'Dashboard' },
-  { key: '/users', icon: <UserOutlined />, label: 'User Management' },
-  { key: '/departments', icon: <ApartmentOutlined />, label: 'Resource Request Management' },
-  { key: '/budget', icon: <FundOutlined />, label: 'Budget Management' },
-  { key: '/payroll', icon: <CalculatorOutlined />, label: 'Payroll Management' },
-  { key: '/reports', icon: <FileTextOutlined />, label: 'Reports' },
-  { key: '/notifications', icon: <BellOutlined />, label: 'Notifications' },
-  { key: '/requests', icon: <CheckCircleOutlined />, label: 'Requests & Approvals' },
-  { key: '/settings', icon: <SettingOutlined />, label: 'Settings' },
+  { key: '/dashboard', icon: <DashboardOutlined />, label: 'Dashboard', permission: 'view_dashboard' },
+  { key: '/users', icon: <UserOutlined />, label: 'User Management', permission: 'view_users' },
+  { key: '/departments', icon: <ApartmentOutlined />, label: 'Resource Request Management', permission: 'view_requests' },
+  { key: '/budget', icon: <FundOutlined />, label: 'Budget Management', permission: 'view_budgets' },
+  { key: '/payroll', icon: <CalculatorOutlined />, label: 'Payroll Management', permission: 'view_payroll' },
+  { key: '/reports', icon: <FileTextOutlined />, label: 'Reports', permission: 'view_reports' },
+  { key: '/notifications', icon: <BellOutlined />, label: 'Notifications', permission: 'view_notifications' },
+  { key: '/requests', icon: <CheckCircleOutlined />, label: 'Requests & Approvals', permission: 'view_requests' },
+  { key: '/settings', icon: <SettingOutlined />, label: 'Settings', permission: 'manage_profile' },
 ];
 
 const AppLayout = ({ children }) => {
@@ -52,13 +52,14 @@ const AppLayout = ({ children }) => {
     navigate('/login');
   };
 
-  const currentNav = navItems.find((i) => i.key === location.pathname);
+  const visibleNavItems = navItems.filter((item) => hasPermission(user, item.permission));
+  const currentNav = visibleNavItems.find((i) => i.key === location.pathname);
 
   const menu = (
     <Menu
       mode='inline'
       selectedKeys={[location.pathname]}
-      items={navItems.map((item) => ({
+      items={visibleNavItems.map((item) => ({
         key: item.key,
         icon: item.icon,
         label: <Link to={item.key}>{item.label}</Link>,

@@ -8,13 +8,12 @@ import { validateSession } from "../api/auth";
 const ProtectedRoute = () => {
   const dispatch = useDispatch();
   const { token } = useSelector((state) => state.auth);
-  const [checking, setChecking] = useState(true);
+  const [checking, setChecking] = useState(() => Boolean(token));
 
   useEffect(() => {
     let active = true;
 
     if (!token) {
-      setChecking(false);
       return undefined;
     }
 

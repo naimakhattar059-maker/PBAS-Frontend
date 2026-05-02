@@ -5,7 +5,7 @@ const stored = (() => {
   try {
     const raw = localStorage.getItem("authState");
     return raw ? JSON.parse(raw) : null;
-  } catch (e) {
+  } catch {
     return null;
   }
 })();

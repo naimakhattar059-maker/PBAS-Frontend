@@ -2,7 +2,6 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Card,
   Col,
-  Progress,
   Row,
   Space,
   Table,
@@ -18,8 +17,18 @@ import "./Dashboard.css";
 const { Title, Text } = Typography;
 
 const statusTag = (status) => {
-  const color = status === "Completed" ? "green" : status === "Pending" ? "orange" : "blue";
-  return <Tag color={color}>{status}</Tag>;
+  const colors = {
+    read: "green",
+    unread: "orange",
+    approved: "green",
+    rejected: "red",
+    generated: "blue",
+    verified: "cyan",
+    submitted: "gold",
+    draft: "default",
+  };
+
+  return <Tag color={colors[status] || "blue"}>{status}</Tag>;
 };
 
 const Dashboard = () => {
@@ -44,10 +53,8 @@ const Dashboard = () => {
 
   const activityColumns = useMemo(
     () => [
-      { title: "Date", dataIndex: "date", key: "date", width: 110 },
-      { title: "Time", dataIndex: "time", key: "time", width: 90 },
-      { title: "User", dataIndex: "user", key: "user" },
-      { title: "Activity", dataIndex: "activity", key: "activity" },
+      { title: "Title", dataIndex: "title", key: "title" },
+      { title: "Subtitle", dataIndex: "subtitle", key: "subtitle" },
       {
         title: "Status",
         dataIndex: "status",
@@ -60,6 +67,57 @@ const Dashboard = () => {
   );
 
   const quickActions = data?.quick_actions || [];
+  const formatValue = (key, value) => {
+    if (value == null) return "—";
+    if (key === "budget_available" || key === "expense_this_month") {
+      return value;
+    }
+    return value;
+  };
+
+  const liveSignals = useMemo(() => {
+    const requestStatuses = data?.charts?.request_statuses || [];
+    const payrollStatuses = data?.charts?.payroll_statuses || [];
+    const budgetTypes = data?.charts?.budget_types || [];
+    const mostCommon = (items) =>
+      items.reduce(
+        (best, item) => (!best || item.value > best.value ? item : best),
+        null
+      );
+
+    const topRequest = mostCommon(requestStatuses);
+    const topPayroll = mostCommon(payrollStatuses);
+    const topBudgetType = mostCommon(budgetTypes);
+
+    return [
+      topRequest
+        ? {
+            label: "Top request status",
+            value: `${topRequest.name}: ${topRequest.value}`,
+            tone: "blue",
+          }
+        : null,
+      topPayroll
+        ? {
+            label: "Top payroll status",
+            value: `${topPayroll.name}: ${topPayroll.value}`,
+            tone: "violet",
+          }
+        : null,
+      topBudgetType
+        ? {
+            label: "Budget mix",
+            value: `${topBudgetType.name}: ${topBudgetType.value}`,
+            tone: "amber",
+          }
+        : null,
+      {
+        label: "Unread notifications",
+        value: `${data?.system_health?.unread_notifications ?? 0}`,
+        tone: "mint",
+      },
+    ].filter(Boolean);
+  }, [data]);
 
   return (
     <div className="dashboard-page">
@@ -77,13 +135,18 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <Row gutter={[16, 16]} className="stat-row">
-          {["users", "pending_approvals", "budget_available", "expense_this_month"].map((key) => (
+        <Row gutter={[18, 18]} className="stat-row">
+      {[
+            { key: "users", label: "Users", accent: "aqua" },
+            { key: "pending_approvals", label: "Pending Approvals", accent: "violet" },
+            { key: "budget_available", label: "Budget Available", accent: "amber" },
+            { key: "expense_this_month", label: "Expense This Month", accent: "mint" },
+          ].map(({ key, label, accent }) => (
             <Col xs={24} sm={12} lg={6} key={key}>
-              <Card className="stat-card" loading={loading} bordered={false}>
-                <Text className="stat-label">{key.replace(/_/g, " ")}</Text>
+              <Card className={`stat-card stat-card-${accent}`} loading={loading} bordered={false}>
+                <Text className="stat-label">{label}</Text>
                 <div className="stat-value">
-                  {data?.totals?.[key] || (loading ? "…" : "—")}
+                  {formatValue(key, data?.totals?.[key] || (loading ? "…" : "—"))}
                 </div>
                 <Text type="secondary">Updated just now</Text>
               </Card>
@@ -92,30 +155,38 @@ const Dashboard = () => {
         </Row>
       </div>
 
-      <Row gutter={[16, 16]}>
+      <Row gutter={[18, 18]}>
         <Col xs={24} xl={16}>
-          <Card className="panel-card" title="Recent Activities" loading={loading}>
+          <Card className="panel-card panel-card-wide" title="Recent Activities" loading={loading}>
             <Table
               size="small"
               columns={activityColumns}
               dataSource={data?.recent_activities || []}
-              rowKey={(row, idx) => `${row.user}-${idx}`}
+              rowKey={(row, idx) => `${row.title}-${idx}`}
               pagination={false}
             />
           </Card>
-          <Row gutter={[16, 16]}>
+          <Row gutter={[18, 18]}>
             <Col xs={24} md={12}>
-              <Card className="panel-card" title="Upcoming cutoffs" loading={loading}>
-                <ul className="bullets">
-                  <li>Payroll freeze on 27 Nov</li>
-                  <li>Department budget review on 30 Nov</li>
-                  <li>Fee reminder email batch on 01 Dec</li>
-                </ul>
+              <Card className="panel-card panel-card-tight" title="Live signals" loading={loading}>
+                <div className="signals-list">
+                  {liveSignals.map((signal) => (
+                    <div className={`signal-card signal-${signal.tone}`} key={signal.label}>
+                      <div className="signal-row">
+                        <span className="signal-dot" />
+                        <div>
+                          <Text className="signal-label">{signal.label}</Text>
+                          <div className="signal-value">{signal.value}</div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </Card>
             </Col>
             <Col xs={24} md={12}>
-              <Card className="panel-card" title="Quick actions" loading={loading}>
-                <Space wrap size={8}>
+              <Card className="panel-card panel-card-tight" title="Quick actions" loading={loading}>
+                <Space wrap size={8} className="quick-actions">
                   {(quickActions.length ? quickActions : [{ label: "New user" }, { label: "Export report" }]).map(
                     (action) => (
                       <Button key={action.label} type="primary" ghost>
@@ -130,28 +201,42 @@ const Dashboard = () => {
         </Col>
 
         <Col xs={24} xl={8}>
-          <Card className="panel-card" title="Fee collection & cashflow" loading={loading}>
-            <div className="chart-row">
-              <Progress
-                type="dashboard"
-                percent={data?.charts?.fee_collection?.paid_percentage || 0}
-                strokeColor="#2f89ff"
-              />
-              <div className="chart-meta">
-                <Title level={4}>
-                  {data?.charts?.fee_collection?.paid_percentage
-                    ? `${data.charts.fee_collection.paid_percentage}%`
-                    : loading
-                    ? "…"
-                    : "—"}
-                </Title>
-                <Text type="secondary">Paid of total fees</Text>
-                <Tag color="green">{data?.charts?.fee_collection?.month_delta || "+12%"}</Tag>
+          <Card className="panel-card panel-card-stretch" title="Activity mix" loading={loading}>
+            <Space direction="vertical" size={16} style={{ width: "100%" }}>
+              <div>
+                <Text type="secondary">Request statuses</Text>
+                <div style={{ marginTop: 8 }}>
+                  {(data?.charts?.request_statuses || []).map((item) => (
+                    <Tag key={item.name} color="blue">
+                      {item.name}: {item.value}
+                    </Tag>
+                  ))}
+                </div>
               </div>
-            </div>
+              <div>
+                <Text type="secondary">Payroll statuses</Text>
+                <div style={{ marginTop: 8 }}>
+                  {(data?.charts?.payroll_statuses || []).map((item) => (
+                    <Tag key={item.name} color="green">
+                      {item.name}: {item.value}
+                    </Tag>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <Text type="secondary">Budget types</Text>
+                <div style={{ marginTop: 8 }}>
+                  {(data?.charts?.budget_types || []).map((item) => (
+                    <Tag key={item.name} color="purple">
+                      {item.name}: {item.value}
+                    </Tag>
+                  ))}
+                </div>
+              </div>
+            </Space>
           </Card>
 
-          <Card className="panel-card" title="System health" loading={loading}>
+          <Card className="panel-card panel-card-stretch" title="System health" loading={loading}>
             <div className="health-grid">
               <div>
                 <Text type="secondary">API uptime</Text>
@@ -166,8 +251,8 @@ const Dashboard = () => {
                 </div>
               </div>
               <div>
-                <Text type="secondary">Incidents</Text>
-                <div className="health-value">{data?.system_health?.open_incidents || "1 minor"}</div>
+                <Text type="secondary">Unread notifications</Text>
+                <div className="health-value">{data?.system_health?.unread_notifications ?? 0}</div>
               </div>
             </div>
           </Card>

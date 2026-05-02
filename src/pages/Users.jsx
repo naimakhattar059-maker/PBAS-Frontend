@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Button,
   Form,
@@ -18,6 +18,8 @@ import { UploadOutlined } from "@ant-design/icons";
 import { DeleteOutlined, EditOutlined, MoreOutlined, StopOutlined } from "@ant-design/icons";
 import { useSelector } from "react-redux";
 import { createUser, deleteUser, listUsers, updateUser, updateUserActivation } from "../api/users";
+import AccessDenied from "../components/AccessDenied";
+import { hasAnyPermission, hasPermission } from "../utils/permissions";
 import "./Users.css";
 
 const { Title, Text } = Typography;
@@ -70,6 +72,11 @@ const Users = () => {
   const [discardModalOpen, setDiscardModalOpen] = useState(false);
   const [imagePreview, setImagePreview] = useState({ open: false, src: "", title: "" });
   const [popoverOpenId, setPopoverOpenId] = useState(null);
+  const canViewUsers = hasAnyPermission(currentUser, ["view_users"]);
+  const canCreateUsers = hasPermission(currentUser, "create_users");
+  const canUpdateUsers = hasPermission(currentUser, "update_users");
+  const canDeleteUsers = hasPermission(currentUser, "delete_users");
+  const canToggleStatus = hasPermission(currentUser, "change_user_status");
 
   const loadUsers = async () => {
     setLoading(true);
@@ -84,9 +91,9 @@ const Users = () => {
   };
 
   useEffect(() => {
-    if (token) loadUsers();
+    if (token && canViewUsers) loadUsers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, currentUser?.id]);
+  }, [token, currentUser?.id, canViewUsers]);
 
   const handleSubmit = async (values) => {
     setSaving(true);
@@ -230,7 +237,7 @@ const Users = () => {
     });
   };
 
-  const columns = useMemo(() => {
+  const columns = (() => {
     const base = [
       { title: "Name", dataIndex: "username", key: "username" },
       {
@@ -280,7 +287,7 @@ const Users = () => {
       },
     ];
 
-    if (currentUser?.role === "admin") {
+    if (canUpdateUsers || canDeleteUsers || canToggleStatus) {
       base.push({
         title: "Actions",
         key: "actions",
@@ -297,6 +304,7 @@ const Users = () => {
                 <Button
                   type="text"
                   icon={<EditOutlined />}
+                  disabled={!canUpdateUsers}
                   onClick={() => {
                     setPopoverOpenId(null);
                     startEdit(record);
@@ -307,12 +315,18 @@ const Users = () => {
                 <Button
                   type="text"
                   icon={<StopOutlined />}
-                  disabled={record.id === currentUser?.id}
+                  disabled={record.id === currentUser?.id || !canToggleStatus}
                   onClick={() => confirmActivation(record)}
                 >
                   {record.active ? "Deactivate" : "Activate"}
                 </Button>
-                <Button danger type="text" icon={<DeleteOutlined />} onClick={() => confirmDelete(record)}>
+                <Button
+                  danger
+                  type="text"
+                  icon={<DeleteOutlined />}
+                  disabled={!canDeleteUsers}
+                  onClick={() => confirmDelete(record)}
+                >
                   Delete
                 </Button>
               </Space>
@@ -329,7 +343,11 @@ const Users = () => {
       });
     }
     return base;
-  }, [currentUser, popoverOpenId]);
+  })();
+
+  if (!canViewUsers) {
+    return <AccessDenied title="User Management" />;
+  }
 
   return (
     <div className="users-page">
@@ -341,7 +359,7 @@ const Users = () => {
         </div>
         <Space>
           <Tag color="blue">{rows.length} users</Tag>
-          {currentUser?.role === "admin" && (
+          {canCreateUsers && (
             <Button type="primary" onClick={openCreateModal}>
               Add User
             </Button>

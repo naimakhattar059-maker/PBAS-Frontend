@@ -3,6 +3,9 @@ import { apiRequest } from "../apiClient";
 export const listBudgets = (token) =>
   apiRequest("/api/v1/budgets", { method: "GET", token });
 
+export const listBudgetOptions = (token) =>
+  apiRequest("/api/v1/budgets/options", { method: "GET", token });
+
 export const createBudget = (token, budget) =>
   apiRequest("/api/v1/budgets", { method: "POST", token, body: { budget } });
 

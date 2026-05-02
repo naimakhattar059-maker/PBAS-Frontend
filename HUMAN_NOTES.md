@@ -9,7 +9,7 @@ This is the React/Vite UI for the Budget Automation System.
 4) UI uses Ant Design with theme tokens in `src/theme.js`; Redux store lives in `src/store`.
 5) Git author for this repo is set locally to `Nouman Shafi <noumanshafi856@gmail.com>`
 6) Use SSH key `id_ed25519_noumanshafi856` for GitHub with this repo; default key/user only outside this project.
-7) Protected pages: `/dashboard`, `/users`, `/students` (side menu + mobile drawer). Email verification page auto-verifies via the link and logs you in.
+7) Protected pages: `/dashboard`, `/users`, `/budget-setup`, `/requests`, `/payroll`, `/reports`, `/notifications` (side menu + mobile drawer). Email verification page auto-verifies via the link and logs you in.
 
 ## Working on features
 - Use this file to briefly describe new screens, flows, and how to try them.

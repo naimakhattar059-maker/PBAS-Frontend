@@ -1,15 +1,19 @@
 .app-shell {
   min-height: 100vh;
-  background: #f7f9fc;
+  background:
+    radial-gradient(circle at top left, rgba(74, 181, 190, 0.18), transparent 18%),
+    radial-gradient(circle at top right, rgba(244, 176, 104, 0.14), transparent 16%),
+    linear-gradient(180deg, #eef8f8 0%, #f5faf5 100%);
 }
 
 .app-sider {
-  background: #ffffff;
-  color: #0c324f;
+  background:
+    linear-gradient(180deg, rgba(52, 126, 145, 0.98) 0%, rgba(72, 168, 173, 0.98) 100%);
+  color: #f8fffe;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid rgba(12, 86, 133, 0.08) !important;
-  box-shadow: none !important;
+  border-right: 1px solid rgba(74, 181, 190, 0.14) !important;
+  box-shadow: 10px 0 28px rgba(74, 181, 190, 0.12) !important;
 }
 
 .app-sider .ant-layout-sider-children {
@@ -19,8 +23,23 @@
 .app-sider .ant-menu {
   background: transparent;
   border-inline-end: none !important;
-  color: #0c324f;
+  color: rgba(255, 255, 255, 0.96);
   font-size: 13px;
+}
+
+.app-sider .ant-menu-item,
+.app-sider .ant-menu-item a,
+.app-sider .ant-menu-submenu-title,
+.app-sider .ant-menu-title-content,
+.app-sider .anticon {
+  color: rgba(255, 255, 255, 0.96) !important;
+}
+
+.app-sider .ant-menu-item:hover,
+.app-sider .ant-menu-item:hover .anticon,
+.app-sider .ant-menu-submenu-title:hover,
+.app-sider .ant-menu-submenu-title:hover .anticon {
+  color: #fff7e3 !important;
 }
 
 .app-sider .ant-menu-inline,
@@ -32,8 +51,14 @@
 }
 
 .app-sider .ant-menu-item-selected {
-  background: rgba(12, 86, 133, 0.14) !important;
+  background: linear-gradient(90deg, rgba(255, 248, 232, 0.28), rgba(255, 255, 255, 0.14)) !important;
   border-radius: 12px;
+}
+
+.app-sider .ant-menu-item-selected,
+.app-sider .ant-menu-item-selected .anticon,
+.app-sider .ant-menu-item-selected .ant-menu-title-content {
+  color: #fff7e3 !important;
 }
 
 .app-sider .ant-menu-item::after,
@@ -44,7 +69,7 @@
 }
 
 .app-header {
-  background: #ffffff;
+  background: linear-gradient(90deg, rgba(236, 251, 252, 0.94), rgba(255, 248, 238, 0.92));
   height: 60px;
   min-height: 60px;
   padding: 6px 16px;
@@ -53,6 +78,7 @@
   align-items: center;
   gap: 12px;
   border-bottom: 1px solid rgba(12, 86, 133, 0.08);
+  backdrop-filter: blur(18px);
 }
 
 .header-title {
@@ -69,7 +95,7 @@
 .header-eyebrow {
   font-size: 16px;
   letter-spacing: 0.12em;
-  color: #0c5685;
+  color: #338b98;
   font-weight: 600;
 }
 
@@ -81,8 +107,8 @@
 }
 
 .header-avatar {
-  background: #d8eff8;
-  color: #1d5676;
+  background: linear-gradient(135deg, #7ddad3, #ffd59e);
+  color: #184c56;
   font-weight: 700;
   display: inline-flex;
   align-items: center;
@@ -97,19 +123,21 @@
 
 .chip-name {
   font-weight: 700;
-  color: #0c324f;
+  color: #163c4e;
   font-size: 12px;
 }
 
 .chip-role {
-  color: #6c7a86;
+  color: #4f6f74;
   font-size: 11px;
   text-transform: lowercase;
 }
 
 .app-content {
-  /* padding: 20px; */
-  background: #f7f9fc;
+  background:
+    radial-gradient(circle at bottom left, rgba(74, 181, 190, 0.06), transparent 22%),
+    radial-gradient(circle at bottom right, rgba(244, 176, 104, 0.07), transparent 18%),
+    linear-gradient(180deg, rgba(237, 249, 249, 0.94), rgba(249, 250, 242, 0.94));
   min-height: calc(100vh - 60px);
 }
 
@@ -119,7 +147,7 @@
   gap: 10px;
   padding: 18px 16px 12px;
   font-weight: 700;
-  color: #0c324f;
+  color: #f8fffe;
   letter-spacing: -0.01em;
 }
 
@@ -127,7 +155,7 @@
   width: 12px;
   height: 12px;
   border-radius: 50%;
-  background: hsla(197, 58%, 48%, 1);
+  background: linear-gradient(135deg, #ffd59e, #7ee0d7);
 }
 
 .menu-container {
@@ -152,7 +180,7 @@
 .logout-button {
   font-weight: 600;
   text-align: left;
-  color: #b02a2a !important;
+  color: #fff2db !important;
   padding-left: 0;
 }
 
@@ -163,7 +191,7 @@
 }
 
 .menu-button {
-  color: #0c324f;
+  color: #f8fffe;
 }
 
 /* @media (max-width: 768px) {
