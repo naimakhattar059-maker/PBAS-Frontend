@@ -18,7 +18,7 @@ import {
   Upload,
   message,
 } from "antd";
-import { DeleteOutlined, EditOutlined, MoreOutlined, UploadOutlined } from "@ant-design/icons";
+import { DeleteOutlined, EditOutlined, FilterOutlined, MoreOutlined, UploadOutlined } from "@ant-design/icons";
 import { useSelector } from "react-redux";
 import AccessDenied from "../components/AccessDenied";
 import { hasAnyPermission, hasPermission } from "../utils/permissions";
@@ -50,6 +50,9 @@ const priorityOptions = [
   { value: "normal", label: "Normal" },
   { value: "high", label: "High" },
 ];
+
+const capFirst = (value) =>
+  value ? `${String(value).charAt(0).toUpperCase()}${String(value).slice(1)}` : value;
 
 const statusColors = {
   draft: "default",
@@ -361,7 +364,7 @@ const Requests = () => {
       width: 160,
       ellipsis: true,
     },
-    { title: "Type", dataIndex: "request_type", key: "request_type", width: 100 },
+    { title: "Type", dataIndex: "request_type", key: "request_type", width: 100, render: (value) => capFirst(value) },
     {
       title: "Department",
       dataIndex: "department",
@@ -381,7 +384,11 @@ const Requests = () => {
       dataIndex: "priority",
       key: "priority",
       width: 100,
-      render: (priority) => <Tag color={priority === "high" ? "red" : priority === "low" ? "green" : "blue"}>{priority}</Tag>,
+      render: (priority) => (
+        <Tag color={priority === "high" ? "red" : priority === "low" ? "green" : "blue"}>
+          {capFirst(priority)}
+        </Tag>
+      ),
     },
     {
       title: "Amount",
@@ -430,7 +437,7 @@ const Requests = () => {
       dataIndex: "status",
       key: "status",
       width: 110,
-      render: (status) => <Tag color={statusColors[status] || "default"}>{status}</Tag>,
+      render: (status) => <Tag color={statusColors[status] || "default"}>{capFirst(status)}</Tag>,
     },
     {
       title: "Actions",
@@ -452,15 +459,23 @@ const Requests = () => {
 
   return (
     <div className="budget-page">
-      <div className="budget-header">
-        <div>
-          <Title level={3}>Requests & Approvals</Title>
+      <div className="budget-header requests-header">
+        <div className="requests-heading-stack">
+          <div className="requests-title-block">
+            <Title level={3}>Requests & Approvals</Title>
+            {canCreateRequests ? (
+              <Button type="primary" size="small" className="budget-add-button requests-new-button" onClick={openCreate}>
+                New Request
+              </Button>
+            ) : null}
+          </div>
           <Text type="secondary">Office Assistant enters requests, Admin Officer verifies, and HOI approves.</Text>
         </div>
-        <Space>
+        <Space className="requests-header-actions">
           <Select
             allowClear
-            style={{ width: 180 }}
+            className="requests-status-filter"
+            suffixIcon={<FilterOutlined />}
             value={statusFilter}
             onChange={setStatusFilter}
             placeholder="Filter status"
@@ -472,20 +487,17 @@ const Requests = () => {
               { value: "rejected", label: "Rejected" },
             ]}
           />
-          {canCreateRequests ? (
-            <Button type="primary" size="small" className="budget-add-button" onClick={openCreate}>
-              New Request
-            </Button>
-          ) : null}
         </Space>
       </div>
 
-      <Row gutter={[16, 16]}>
+      <Row gutter={[16, 16]} className="requests-status-row">
         {Object.entries(counts).map(([key, value]) => (
           <Col xs={12} sm={8} lg={4} key={key}>
-            <Card bordered={false}>
-              <Text type="secondary">{key}</Text>
-              <Title level={3} style={{ marginBottom: 0 }}>
+            <Card bordered={false} className={`request-stat-card request-stat-card-${key}`}>
+              <Text type="secondary" className="request-stat-label">
+                {capFirst(key)}
+              </Text>
+              <Title level={3} style={{ marginBottom: 0 }} className="request-stat-value">
                 {value}
               </Title>
             </Card>
@@ -493,7 +505,7 @@ const Requests = () => {
         ))}
       </Row>
 
-      <Card style={{ marginTop: 16 }}>
+      <Card style={{ marginTop: 16 }} className="requests-table-card">
         <div className="requests-table-shell">
           <Table
             className="requests-table"
@@ -501,7 +513,7 @@ const Requests = () => {
             columns={columns}
             dataSource={items}
             rowKey="id"
-            pagination={{ pageSize: 8 }}
+            pagination={{ pageSize: 6, size: "small", showSizeChanger: false, position: ["bottomRight"] }}
             tableLayout="fixed"
             scroll={{ x: 1180 }}
           />

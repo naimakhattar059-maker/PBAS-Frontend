@@ -29,14 +29,14 @@ const App = () => {
         <Route element={<ProtectedRoute />}>
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/users" element={<Users />} />
-          <Route path="/departments" element={<Placeholder title="Resource Request Management" />} />
+          <Route path="/departments" element={<Requests />} />
           <Route path="/budget" element={<BudgetManagement />} />
           <Route path="/expenses" element={<Placeholder title="Expense Management" />} />
           <Route path="/payroll" element={<Payroll />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/notifications" element={<Notifications />} />
-          <Route path="/requests" element={<Requests />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/requests" element={<Navigate to="/departments" replace />} />
         </Route>
 
         <Route path="*" element={<Navigate to="/login" replace />} />

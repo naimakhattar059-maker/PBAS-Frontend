@@ -5,8 +5,9 @@ const { Content } = Layout;
 
 const AuthLayout = ({ children, title, subtitle }) => (
   <Layout className="auth-shell">
+    <div className="auth-hero-panel" aria-hidden="true" />
     <Content className="auth-content">
-      <div className="auth-card">
+      <div className="auth-form-panel">
         {title ? <h1 className="auth-title">{title}</h1> : null}
         {subtitle ? <p className="auth-subtitle">{subtitle}</p> : null}
         {children}

@@ -2,21 +2,19 @@ import {
   ApartmentOutlined,
   BellOutlined,
   CalculatorOutlined,
-  CheckCircleOutlined,
   DashboardOutlined,
-  DollarCircleOutlined,
   FileTextOutlined,
   FundOutlined,
   LogoutOutlined,
   MenuFoldOutlined,
   SettingOutlined,
-  TeamOutlined,
   UserOutlined,
 } from '@ant-design/icons';
-import { Avatar, Button, Drawer, Grid, Layout, Menu, Typography } from 'antd';
-import { useState } from 'react';
+import { Avatar, Badge, Button, Drawer, Grid, Layout, Menu, Typography, message } from 'antd';
+import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { listNotifications } from '../api/notifications';
 import { logout } from '../store/authSlice';
 import { getAvatarInitial } from '../utils/userAvatar';
 import { hasPermission } from '../utils/permissions';
@@ -24,7 +22,6 @@ import './AppLayout.css';
 
 const { Header, Sider, Content } = Layout;
 const { useBreakpoint } = Grid;
-const { Title } = Typography;
 
 const navItems = [
   { key: '/dashboard', icon: <DashboardOutlined />, label: 'Dashboard', permission: 'view_dashboard' },
@@ -34,7 +31,6 @@ const navItems = [
   { key: '/payroll', icon: <CalculatorOutlined />, label: 'Payroll Management', permission: 'view_payroll' },
   { key: '/reports', icon: <FileTextOutlined />, label: 'Reports', permission: 'view_reports' },
   { key: '/notifications', icon: <BellOutlined />, label: 'Notifications', permission: 'view_notifications' },
-  { key: '/requests', icon: <CheckCircleOutlined />, label: 'Requests & Approvals', permission: 'view_requests' },
   { key: '/settings', icon: <SettingOutlined />, label: 'Settings', permission: 'manage_profile' },
 ];
 
@@ -46,11 +42,31 @@ const AppLayout = ({ children }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
+  const [unreadCount, setUnreadCount] = useState(0);
 
   const handleLogout = () => {
     dispatch(logout());
     navigate('/login');
   };
+
+  useEffect(() => {
+    const loadUnread = async () => {
+      if (!user?.token || !hasPermission(user, 'view_notifications')) {
+        setUnreadCount(0);
+        return;
+      }
+
+      try {
+        const payload = await listNotifications(user.token);
+        setUnreadCount((payload.notifications || []).filter((item) => !item.read).length);
+      } catch (err) {
+        setUnreadCount(0);
+        message.error(err.message || 'Failed to load notification count');
+      }
+    };
+
+    loadUnread();
+  }, [user]);
 
   const visibleNavItems = navItems.filter((item) => hasPermission(user, item.permission));
   const currentNav = visibleNavItems.find((i) => i.key === location.pathname);
@@ -71,10 +87,6 @@ const AppLayout = ({ children }) => {
     <Layout className='app-shell'>
       {!isMobile && (
         <Sider width={280} className='app-sider' breakpoint='md' collapsedWidth='0'>
-          <div className='brand'>
-            <div className='brand-dot' />
-            <span>Budget Automation</span>
-          </div>
           <div className='menu-container'>{menu}</div>
           <div className='sider-footer'>
             <Button
@@ -104,30 +116,41 @@ const AppLayout = ({ children }) => {
           <div className='header-left'>
             <div className='header-eyebrow'>{(currentNav?.label || 'Dashboard').toUpperCase()}</div>
           </div>
-          <div className='header-userchip'>
-            <Avatar size={34} src={user?.attachment_image_data || undefined} className='header-avatar'>
-              {user?.attachment_image_data ? null : getAvatarInitial(user?.username)}
-            </Avatar>
-            <div className='chip-meta'>
-              <span className='chip-name'>{user?.username || 'User'}</span>
-              <span className='chip-role'>{(user?.role || 'admin').toLowerCase()}</span>
-            </div>
+          <div className='header-actions'>
+            {hasPermission(user, 'view_notifications') ? (
+              <Button
+                type='text'
+                className='header-icon-button'
+                onClick={() => navigate('/notifications')}
+                aria-label='Open notifications'
+              >
+                <Badge count={unreadCount} size='small' offset={[-2, 2]}>
+                  <BellOutlined style={{ fontSize: 24 }} />
+                </Badge>
+              </Button>
+            ) : null}
+            <Button
+              type='text'
+              className='header-avatar-button'
+              onClick={() => navigate('/settings')}
+              aria-label='Open settings'
+            >
+              <Avatar size={34} src={user?.attachment_image_data || undefined} className='header-avatar'>
+                {user?.attachment_image_data ? null : getAvatarInitial(user?.username)}
+              </Avatar>
+            </Button>
           </div>
         </Header>
         <Content className='app-content'>{children}</Content>
       </Layout>
 
-      <Drawer
+        <Drawer
         open={drawerOpen}
         placement='left'
         onClose={() => setDrawerOpen(false)}
         bodyStyle={{ padding: 0 }}
         width={300}
       >
-        <div className='brand mobile'>
-          <div className='brand-dot' />
-          <span>Budget Automation</span>
-        </div>
         <div className='menu-container'>{menu}</div>
         <div className='drawer-footer'>
           <Button
