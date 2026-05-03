@@ -11,7 +11,6 @@ const requiredPermissions = {
   "Payroll Management": "view_payroll",
   Reports: "view_reports",
   Notifications: "view_notifications",
-  "Requests & Approvals": "view_requests",
 };
 
 const Placeholder = ({ title }) => {

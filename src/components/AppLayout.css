@@ -99,11 +99,55 @@
   font-weight: 600;
 }
 
-.header-userchip {
+.header-actions {
   margin-left: auto;
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.header-icon-button,
+.header-avatar-button {
+  width: 42px;
+  min-width: 42px;
+  height: 42px;
+  padding: 0 !important;
+  border-radius: 14px !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.header-icon-button {
+  color: #214a57;
+  font-size: 18px;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.header-avatar-button {
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.header-icon-button:hover,
+.header-icon-button:focus,
+.header-avatar-button:hover,
+.header-avatar-button:focus {
+  background: transparent !important;
+  color: #214a57 !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.header-icon-button:active,
+.header-avatar-button:active {
+  background: transparent !important;
+  color: #214a57 !important;
+  border: 0 !important;
+  box-shadow: none !important;
 }
 
 .header-avatar {
@@ -115,22 +159,8 @@
   justify-content: center;
 }
 
-.chip-meta {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.2;
-}
-
-.chip-name {
-  font-weight: 700;
-  color: #163c4e;
-  font-size: 12px;
-}
-
-.chip-role {
-  color: #4f6f74;
-  font-size: 11px;
-  text-transform: lowercase;
+.header-icon-button .ant-badge-count {
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.9);
 }
 
 .app-content {
@@ -191,11 +221,14 @@
 }
 
 .menu-button {
-  color: #f8fffe;
+  color: #214a57;
+  background: transparent !important;
+  border: 0 !important;
+  box-shadow: none !important;
 }
 
-/* @media (max-width: 768px) {
-  .app-content {
-    padding: 16px;
-  }
-} */
+.menu-button:hover,
+.menu-button:focus {
+  color: #1e5c68 !important;
+  background: rgba(255, 255, 255, 0.52) !important;
+}

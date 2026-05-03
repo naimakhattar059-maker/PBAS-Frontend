@@ -7,7 +7,6 @@ import {
   Table,
   Tag,
   Typography,
-  Button,
   message,
 } from "antd";
 import { useSelector } from "react-redux";
@@ -66,7 +65,6 @@ const Dashboard = () => {
     []
   );
 
-  const quickActions = data?.quick_actions || [];
   const formatValue = (key, value) => {
     if (value == null) return "—";
     if (key === "budget_available" || key === "expense_this_month") {
@@ -156,7 +154,7 @@ const Dashboard = () => {
       </div>
 
       <Row gutter={[18, 18]}>
-        <Col xs={24} xl={16}>
+        <Col xs={24}>
           <Card className="panel-card panel-card-wide" title="Recent Activities" loading={loading}>
             <Table
               size="small"
@@ -166,41 +164,29 @@ const Dashboard = () => {
               pagination={false}
             />
           </Card>
-          <Row gutter={[18, 18]}>
-            <Col xs={24} md={12}>
-              <Card className="panel-card panel-card-tight" title="Live signals" loading={loading}>
-                <div className="signals-list">
-                  {liveSignals.map((signal) => (
-                    <div className={`signal-card signal-${signal.tone}`} key={signal.label}>
-                      <div className="signal-row">
-                        <span className="signal-dot" />
-                        <div>
-                          <Text className="signal-label">{signal.label}</Text>
-                          <div className="signal-value">{signal.value}</div>
-                        </div>
-                      </div>
+        </Col>
+      </Row>
+
+      <Row gutter={[18, 18]}>
+        <Col xs={24} xl={12}>
+          <Card className="panel-card panel-card-tight" title="Live signals" loading={loading}>
+            <div className="signals-list">
+              {liveSignals.map((signal) => (
+                <div className={`signal-card signal-${signal.tone}`} key={signal.label}>
+                  <div className="signal-row">
+                    <span className="signal-dot" />
+                    <div>
+                      <Text className="signal-label">{signal.label}</Text>
+                      <div className="signal-value">{signal.value}</div>
                     </div>
-                  ))}
+                  </div>
                 </div>
-              </Card>
-            </Col>
-            <Col xs={24} md={12}>
-              <Card className="panel-card panel-card-tight" title="Quick actions" loading={loading}>
-                <Space wrap size={8} className="quick-actions">
-                  {(quickActions.length ? quickActions : [{ label: "New user" }, { label: "Export report" }]).map(
-                    (action) => (
-                      <Button key={action.label} type="primary" ghost>
-                        {action.label}
-                      </Button>
-                    )
-                  )}
-                </Space>
-              </Card>
-            </Col>
-          </Row>
+              ))}
+            </div>
+          </Card>
         </Col>
 
-        <Col xs={24} xl={8}>
+        <Col xs={24} xl={12}>
           <Card className="panel-card panel-card-stretch" title="Activity mix" loading={loading}>
             <Space direction="vertical" size={16} style={{ width: "100%" }}>
               <div>
@@ -234,27 +220,6 @@ const Dashboard = () => {
                 </div>
               </div>
             </Space>
-          </Card>
-
-          <Card className="panel-card panel-card-stretch" title="System health" loading={loading}>
-            <div className="health-grid">
-              <div>
-                <Text type="secondary">API uptime</Text>
-                <div className="health-value">{data?.system_health?.api_uptime || "99.9%"}</div>
-              </div>
-              <div>
-                <Text type="secondary">Avg response</Text>
-                <div className="health-value">
-                  {data?.system_health?.avg_response_time_ms
-                    ? `${data.system_health.avg_response_time_ms} ms`
-                    : "240 ms"}
-                </div>
-              </div>
-              <div>
-                <Text type="secondary">Unread notifications</Text>
-                <div className="health-value">{data?.system_health?.unread_notifications ?? 0}</div>
-              </div>
-            </div>
           </Card>
         </Col>
       </Row>
