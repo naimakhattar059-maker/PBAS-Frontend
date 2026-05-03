@@ -33,7 +33,6 @@ describe("Dashboard", () => {
         avg_response_time_ms: 180,
         unread_notifications: 4,
       },
-      quick_actions: [{ label: "New request" }],
     });
 
     const store = createTestStore({
@@ -58,8 +57,8 @@ describe("Dashboard", () => {
     expect(screen.getByText("7")).toBeInTheDocument();
     expect(screen.getByText("PKR 1,250,000")).toBeInTheDocument();
     expect(screen.getByText("PKR 325,000")).toBeInTheDocument();
-    expect(screen.getByText("New request")).toBeInTheDocument();
-    expect(screen.getByText("99.8%")).toBeInTheDocument();
-    expect(screen.getByText("4")).toBeInTheDocument();
+    expect(screen.getByText("Live signals")).toBeInTheDocument();
+    expect(screen.getByText("Activity mix")).toBeInTheDocument();
+    expect(screen.getAllByText("submitted: 3").length).toBeGreaterThan(0);
   });
 });
