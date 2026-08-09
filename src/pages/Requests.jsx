@@ -62,6 +62,10 @@ const statusColors = {
   rejected: "red",
 };
 
+const isHeadOfInstitute = (user) => user?.role === "head_of_institute";
+const isHoiActionableResourceRequest = (record) =>
+  record.request_type === "resource" && record.status === "verified";
+
 const fileToDataUrl = (file) =>
   new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -84,11 +88,11 @@ const Requests = () => {
   const [statusFilter, setStatusFilter] = useState(null);
   const [auditPreview, setAuditPreview] = useState({ open: false, title: "", entries: [] });
 
-  const canViewRequests = hasAnyPermission(currentUser, ["view_requests"]);
+  const canViewRequests = hasAnyPermission(currentUser, ["view_requests"]) || isHeadOfInstitute(currentUser);
   const canCreateRequests = hasPermission(currentUser, "create_requests");
   const canUpdateRequests = hasPermission(currentUser, "update_requests");
   const canVerifyRequests = hasPermission(currentUser, "verify_requests");
-  const canApproveRequests = hasPermission(currentUser, "approve_requests");
+  const canApproveRequests = hasPermission(currentUser, "approve_requests") || isHeadOfInstitute(currentUser);
   const budgetOptions = useMemo(
     () =>
       budgets.map((budget) => ({
@@ -302,7 +306,10 @@ const Requests = () => {
       </Button>
       <Button
         type="text"
-        disabled={!record.actions?.can_approve || !canApproveRequests}
+        disabled={
+          !canApproveRequests ||
+          !(record.actions?.can_approve || (isHeadOfInstitute(currentUser) && isHoiActionableResourceRequest(record)))
+        }
         onClick={() => {
           setPopoverOpenId(null);
           Modal.confirm({
@@ -319,7 +326,10 @@ const Requests = () => {
       <Button
         danger
         type="text"
-        disabled={!record.actions?.can_reject || !canApproveRequests}
+        disabled={
+          !canApproveRequests ||
+          !(record.actions?.can_reject || (isHeadOfInstitute(currentUser) && isHoiActionableResourceRequest(record)))
+        }
         onClick={() => {
           setPopoverOpenId(null);
           Modal.confirm({

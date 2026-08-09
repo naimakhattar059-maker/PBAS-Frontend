@@ -9,6 +9,7 @@ const requiredPermissions = {
   "Resource Request Management": "view_requests",
   "Expense Management": "view_reports",
   "Payroll Management": "view_payroll",
+  "Internal Revenue": "view_budgets",
   Reports: "view_reports",
   Notifications: "view_notifications",
 };

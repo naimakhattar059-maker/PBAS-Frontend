@@ -24,10 +24,11 @@ const Login = () => {
   }, [token, navigate]);
 
   const onFinish = async (values) => {
+    const email = values.email?.trim();
     setVerificationNeeded(false);
-    setPendingEmail(values.email);
+    setPendingEmail(email);
     try {
-      await dispatch(login({ email: values.email, password: values.password })).unwrap();
+      await dispatch(login({ email, password: values.password })).unwrap();
     } catch (err) {
       if (err.payload?.needs_verification) {
         setVerificationNeeded(true);
@@ -39,7 +40,7 @@ const Login = () => {
   };
 
   const resend = async () => {
-    const email = pendingEmail || form.getFieldValue("email");
+    const email = (pendingEmail || form.getFieldValue("email"))?.trim();
     if (!email) {
       return message.info("Enter your email to resend verification.");
     }

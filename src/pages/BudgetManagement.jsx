@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   Button,
   Card,
+  DatePicker,
   Empty,
   Form,
   Input,
@@ -9,7 +10,9 @@ import {
   Popover,
   Select,
   Space,
+  Table,
   Tag,
+  Timeline,
   Typography,
   message,
 } from "antd";
@@ -18,7 +21,9 @@ import {
   DeleteOutlined,
   EditOutlined,
   MoreOutlined,
+  SearchOutlined,
 } from "@ant-design/icons";
+import dayjs from "dayjs";
 import { useSelector } from "react-redux";
 import { createBudget, deleteBudget, listBudgets, updateBudget } from "../api/budgets";
 import AccessDenied from "../components/AccessDenied";
@@ -35,10 +40,6 @@ const MAX_BUDGET_WHOLE_DIGITS = 13;
 const MAX_BUDGET_DECIMALS = 2;
 
 const currentYear = new Date().getFullYear();
-const yearOptions = Array.from({ length: 21 }, (_, index) => {
-  const year = currentYear - 5 + index;
-  return { value: year, label: String(year) };
-});
 
 const formatAmount = (amount) =>
   new Intl.NumberFormat("en-PK", {
@@ -46,7 +47,19 @@ const formatAmount = (amount) =>
     maximumFractionDigits: 2,
   }).format(Number(amount || 0));
 
-const titleCase = (value) => value.charAt(0).toUpperCase() + value.slice(1);
+const titleCase = (value = "") => value.charAt(0).toUpperCase() + value.slice(1);
+const toYearNumber = (value) => {
+  if (!value) {
+    return undefined;
+  }
+
+  return typeof value.year === "function" ? value.year() : Number(value);
+};
+const toStartDatePickerValue = (year) => (year ? dayjs(`${Number(year)}-01-01`) : null);
+const toEndDatePickerValue = (year) => (year ? dayjs(`${Number(year)}-12-31`) : null);
+const normalizeBudgetCategory = (category) => String(category || "").trim().toLowerCase();
+const isBudgetArchived = (budget) => Number(budget.end_year || budget.start_year) < currentYear;
+const rangesOverlap = (startA, endA, startB, endB) => Number(startA) <= Number(endB) && Number(startB) <= Number(endA);
 const sanitizeAmountInput = (value) => {
   const sanitized = String(value || "").replace(/[^\d.]/g, "");
   const [whole = "", ...decimalParts] = sanitized.split(".");
@@ -80,6 +93,35 @@ const handleAmountKeyDown = (event) => {
   }
 };
 
+const getBudgetYear = (budget) => Number(budget.start_year || currentYear);
+const matchesSelectedYear = (budget, selectedYear) => {
+  if (!selectedYear || selectedYear === "all") {
+    return true;
+  }
+
+  const year = Number(selectedYear);
+  const start = Number(budget.start_year);
+  const end = Number(budget.end_year || budget.start_year);
+
+  return year >= start && year <= end;
+};
+
+const getBudgetSearchText = (budget) =>
+  [
+    budget.name,
+    budget.start_year,
+    budget.end_year,
+    budget.amount,
+    budget.remaining_amount,
+    budget.spent_amount,
+    budget.budget_type,
+    budget.budget_head,
+    budget.budget_category,
+  ]
+    .filter((value) => value !== null && value !== undefined)
+    .join(" ")
+    .toLowerCase();
+
 const BudgetManagement = () => {
   const { token, user: currentUser } = useSelector((state) => state.auth);
   const [form] = Form.useForm();
@@ -90,6 +132,9 @@ const BudgetManagement = () => {
   const [popoverOpenId, setPopoverOpenId] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [discardModalOpen, setDiscardModalOpen] = useState(false);
+  const [auditPreview, setAuditPreview] = useState({ open: false, title: "", entries: [] });
+  const [searchText, setSearchText] = useState("");
+  const [selectedYear, setSelectedYear] = useState("all");
   const startYear = Form.useWatch("start_year", form);
   const canViewBudgets = hasAnyPermission(currentUser, ["view_budgets"]);
   const canCreateBudgets = hasPermission(currentUser, "create_budgets");
@@ -99,10 +144,6 @@ const BudgetManagement = () => {
 
   const isEditing = Boolean(editingId);
 
-  const endYearOptions = useMemo(
-    () => yearOptions.filter((option) => !startYear || option.value >= startYear),
-    [startYear]
-  );
   const totalBudgetAmount = useMemo(
     () => budgets.reduce((sum, budget) => sum + Number(budget.amount || 0), 0),
     [budgets]
@@ -110,6 +151,58 @@ const BudgetManagement = () => {
   const totalRemainingAmount = useMemo(
     () => budgets.reduce((sum, budget) => sum + Number(budget.remaining_amount ?? budget.amount ?? 0), 0),
     [budgets]
+  );
+  const totalUtilizedAmount = useMemo(
+    () => budgets.reduce((sum, budget) => sum + Number(budget.spent_amount || 0), 0),
+    [budgets]
+  );
+  const availableYears = useMemo(
+    () =>
+      Array.from(new Set(budgets.map((budget) => getBudgetYear(budget))))
+        .filter(Boolean)
+        .sort((a, b) => b - a)
+        .map((year) => ({ value: year, label: String(year) })),
+    [budgets]
+  );
+  const filteredBudgets = useMemo(() => {
+    const normalizedSearch = searchText.trim().toLowerCase();
+
+    return budgets.filter((budget) => {
+      const yearMatches = matchesSelectedYear(budget, selectedYear);
+      const searchMatches = !normalizedSearch || getBudgetSearchText(budget).includes(normalizedSearch);
+
+      return yearMatches && searchMatches;
+    });
+  }, [budgets, searchText, selectedYear]);
+  const groupedBudgets = useMemo(() => {
+    const groups = filteredBudgets.reduce((acc, budget) => {
+      const year = getBudgetYear(budget);
+      const existing = acc.get(year) || [];
+      acc.set(year, [...existing, budget]);
+      return acc;
+    }, new Map());
+
+    return Array.from(groups.entries())
+      .sort(([yearA], [yearB]) => yearB - yearA)
+      .map(([year, yearBudgets]) => ({
+        year,
+        budgets: [...yearBudgets].sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""))),
+        total: yearBudgets.reduce((sum, budget) => sum + Number(budget.amount || 0), 0),
+        remaining: yearBudgets.reduce((sum, budget) => sum + Number(budget.remaining_amount ?? budget.amount ?? 0), 0),
+        utilized: yearBudgets.reduce((sum, budget) => sum + Number(budget.spent_amount || 0), 0),
+      }));
+  }, [filteredBudgets]);
+  const filteredTotalAmount = useMemo(
+    () => filteredBudgets.reduce((sum, budget) => sum + Number(budget.amount || 0), 0),
+    [filteredBudgets]
+  );
+  const filteredRemainingAmount = useMemo(
+    () => filteredBudgets.reduce((sum, budget) => sum + Number(budget.remaining_amount ?? budget.amount ?? 0), 0),
+    [filteredBudgets]
+  );
+  const filteredUtilizedAmount = useMemo(
+    () => filteredBudgets.reduce((sum, budget) => sum + Number(budget.spent_amount || 0), 0),
+    [filteredBudgets]
   );
 
   const loadBudgets = async () => {
@@ -137,8 +230,8 @@ const BudgetManagement = () => {
     form.setFieldsValue({
       name: "",
       budget_type: "normal",
-      start_year: currentYear,
-      end_year: currentYear + 1,
+      start_year: toStartDatePickerValue(currentYear),
+      end_year: toEndDatePickerValue(currentYear + 1),
       budget_head: "",
       budget_category: "",
     });
@@ -153,18 +246,37 @@ const BudgetManagement = () => {
     return <AccessDenied title="Budget Management" />;
   }
 
+  const hasDuplicateBudget = ({ startYear, endYear, category }) =>
+    budgets.some((budget) => {
+      if (editingId && String(budget.id) === String(editingId)) {
+        return false;
+      }
+
+      return (
+        normalizeBudgetCategory(budget.budget_category) === normalizeBudgetCategory(category) &&
+        rangesOverlap(startYear, endYear, budget.start_year, budget.end_year || budget.start_year)
+      );
+    });
+
   const handleSubmit = async (values) => {
-    setSaving(true);
+    const startYearValue = toYearNumber(values.start_year);
+    const endYearValue = toYearNumber(values.end_year);
     const payload = {
       name: values.name?.trim(),
-      start_year: values.start_year,
-      end_year: values.end_year,
+      start_year: startYearValue,
+      end_year: endYearValue,
       amount: values.amount,
       budget_type: values.budget_type,
       budget_head: values.budget_head?.trim() || null,
       budget_category: values.budget_category?.trim() || null,
     };
 
+    if (hasDuplicateBudget({ startYear: startYearValue, endYear: endYearValue, category: payload.budget_category })) {
+      message.error("This category already has a budget in the selected year. Edit the existing budget instead.");
+      return;
+    }
+
+    setSaving(true);
     try {
       if (editingId) {
         await updateBudget(token, editingId, payload);
@@ -185,13 +297,18 @@ const BudgetManagement = () => {
   };
 
   const handleEdit = (budget) => {
+    if (isBudgetArchived(budget)) {
+      message.warning("Archived previous-year budgets cannot be changed");
+      return;
+    }
+
     setPopoverOpenId(null);
     setEditingId(budget.id);
     setModalOpen(true);
     form.setFieldsValue({
       name: budget.name,
-      start_year: budget.start_year,
-      end_year: budget.end_year,
+      start_year: toStartDatePickerValue(budget.start_year),
+      end_year: toEndDatePickerValue(budget.end_year),
       amount: Number(budget.amount),
       budget_type: budget.budget_type,
       budget_head: budget.budget_head || "",
@@ -201,6 +318,11 @@ const BudgetManagement = () => {
   };
 
   const handleDelete = (budget) => {
+    if (isBudgetArchived(budget)) {
+      message.warning("Archived previous-year budgets cannot be deleted");
+      return;
+    }
+
     setPopoverOpenId(null);
     Modal.confirm({
       title: "Delete budget?",
@@ -225,20 +347,134 @@ const BudgetManagement = () => {
 
   const actionMenu = (budget) => (
     <Space direction="vertical" className="budget-menu">
-      <Button type="text" icon={<EditOutlined />} disabled={!canUpdateBudgets} onClick={() => handleEdit(budget)}>
+      <Button
+        type="text"
+        icon={<EditOutlined />}
+        disabled={!canUpdateBudgets || isBudgetArchived(budget)}
+        onClick={() => handleEdit(budget)}
+      >
         Edit
+      </Button>
+      <Button
+        type="text"
+        disabled={!Array.isArray(budget.audit_entries) || budget.audit_entries.length === 0}
+        onClick={() => {
+          setPopoverOpenId(null);
+          setAuditPreview({
+            open: true,
+            title: budget.name,
+            entries: budget.audit_entries || [],
+          });
+        }}
+      >
+        Audit
       </Button>
       <Button
         danger
         type="text"
         icon={<DeleteOutlined />}
-        disabled={!canDeleteBudgets}
+        disabled={!canDeleteBudgets || isBudgetArchived(budget)}
         onClick={() => handleDelete(budget)}
       >
         Delete
       </Button>
     </Space>
   );
+
+  const budgetColumns = [
+    {
+      title: "Budget",
+      dataIndex: "name",
+      key: "name",
+      fixed: "left",
+      width: 240,
+      render: (value, budget) => (
+        <div className="budget-table-title">
+          <Text strong>{value}</Text>
+          <Text type="secondary">
+            {budget.start_year} - {budget.end_year}
+          </Text>
+        </div>
+      ),
+    },
+    {
+      title: "Head / Category",
+      key: "classification",
+      width: 240,
+      render: (_, budget) => (
+        <Space size={[6, 6]} wrap>
+          <Tag color="cyan">{budget.budget_head || "No head"}</Tag>
+          <Tag color="geekblue">{budget.budget_category || "No category"}</Tag>
+        </Space>
+      ),
+    },
+    {
+      title: "Type",
+      dataIndex: "budget_type",
+      key: "budget_type",
+      width: 150,
+      render: (value) => (
+        <Tag color={value === "supplementary" ? "orange" : "blue"}>{titleCase(value || "normal")}</Tag>
+      ),
+    },
+    {
+      title: "Status",
+      key: "status",
+      width: 130,
+      render: (_, budget) =>
+        isBudgetArchived(budget) ? <Tag color="default">Archived</Tag> : <Tag color="green">Active</Tag>,
+    },
+    {
+      title: "Budget Amount",
+      dataIndex: "amount",
+      key: "amount",
+      align: "right",
+      width: 170,
+      render: (value) => <Text strong>PKR {formatAmount(value)}</Text>,
+    },
+    {
+      title: "Utilized Budget",
+      dataIndex: "spent_amount",
+      key: "spent_amount",
+      align: "right",
+      width: 150,
+      render: (value) => <Text type="secondary">PKR {formatAmount(value || 0)}</Text>,
+    },
+    {
+      title: "Remaining",
+      key: "remaining_amount",
+      align: "right",
+      width: 170,
+      render: (_, budget) => <Text>PKR {formatAmount(budget.remaining_amount ?? budget.amount)}</Text>,
+    },
+    ...(canManageBudgetActions
+      ? [
+          {
+            title: "",
+            key: "actions",
+            align: "right",
+            width: 72,
+            render: (_, budget) => (
+              <Popover
+                trigger="click"
+                placement="bottomRight"
+                content={actionMenu(budget)}
+                overlayClassName="budget-menu-popover"
+                open={popoverOpenId === budget.id}
+                onOpenChange={(open) => setPopoverOpenId(open ? budget.id : null)}
+              >
+                <Button
+                  type="text"
+                  className="budget-more-button"
+                  icon={<MoreOutlined />}
+                  aria-label={`Actions for budget ${budget.id}`}
+                />
+              </Popover>
+            ),
+          },
+        ]
+      : []),
+  ];
 
   const openCreateModal = () => {
     resetForm();
@@ -278,75 +514,96 @@ const BudgetManagement = () => {
       </div>
 
       <Card className="budget-total-card" bordered={false}>
-        <Text className="budget-total-label">Total Budget</Text>
-        <Title level={3}>PKR {formatAmount(totalBudgetAmount)}</Title>
-        <Text type="secondary">Remaining: PKR {formatAmount(totalRemainingAmount)}</Text>
+        <div className="budget-summary-grid">
+          <div>
+            <Text className="budget-total-label">Total Budget</Text>
+            <Title level={3}>PKR {formatAmount(totalBudgetAmount)}</Title>
+            <Text type="secondary">
+              Remaining: PKR {formatAmount(totalRemainingAmount)} - Utilized: PKR {formatAmount(totalUtilizedAmount)}
+            </Text>
+          </div>
+          <div>
+            <Text className="budget-total-label">Current View</Text>
+            <Title level={3}>PKR {formatAmount(filteredTotalAmount)}</Title>
+            <Text type="secondary">
+              {filteredBudgets.length} record{filteredBudgets.length === 1 ? "" : "s"} - Remaining: PKR{" "}
+              {formatAmount(filteredRemainingAmount)} - Utilized: PKR {formatAmount(filteredUtilizedAmount)}
+            </Text>
+          </div>
+          <div>
+            <Text className="budget-total-label">Budget Years</Text>
+            <Title level={3}>{availableYears.length}</Title>
+            <Text type="secondary">Grouped into separate yearly tables</Text>
+          </div>
+        </div>
       </Card>
 
-      <div className="budget-grid-shell">
+      <Card className="budget-filter-card" bordered={false}>
+        <div className="budget-filter-row">
+          <Input
+            allowClear
+            className="budget-search-input"
+            prefix={<SearchOutlined />}
+            placeholder="Search name, head, category, type, year, or amount"
+            value={searchText}
+            onChange={(event) => setSearchText(event.target.value)}
+          />
+          <Select
+            className="budget-year-filter"
+            value={selectedYear}
+            onChange={setSelectedYear}
+            options={[{ value: "all", label: "All years" }, ...availableYears]}
+          />
+        </div>
+      </Card>
+
+      <div className="budget-year-sections">
         {budgets.length === 0 && !loading ? (
           <Card className="budget-empty-card">
             <Empty description="No budgets added yet" />
           </Card>
+        ) : groupedBudgets.length === 0 && !loading ? (
+          <Card className="budget-empty-card">
+            <Empty description="No budgets match your search" />
+          </Card>
         ) : (
-          <div className="budget-grid">
-            {budgets.map((budget) => (
-              <Card key={budget.id} className="budget-card" loading={loading} bordered={false}>
-                <div className="budget-card-top">
+          groupedBudgets.map((group) => (
+            <Card
+              key={group.year}
+              className="budget-year-card"
+              loading={loading}
+              bordered={false}
+              title={
+                <div className="budget-year-title">
                   <div>
-                    <Text className="budget-card-label">Budget</Text>
-                    <Title level={4}>{budget.name}</Title>
-                    <Text type="secondary" className="budget-card-years">
-                      {budget.start_year} - {budget.end_year}
+                    <Title level={4}>{group.year} Budgets</Title>
+                    <Text type="secondary">
+                      {group.budgets.length} record{group.budgets.length === 1 ? "" : "s"} in this year
                     </Text>
                   </div>
-                  {canManageBudgetActions ? (
-                    <Popover
-                      trigger="click"
-                      placement="bottomRight"
-                      content={actionMenu(budget)}
-                      overlayClassName="budget-menu-popover"
-                      open={popoverOpenId === budget.id}
-                      onOpenChange={(open) => setPopoverOpenId(open ? budget.id : null)}
-                    >
-                      <Button
-                        type="text"
-                        className="budget-more-button"
-                        icon={<MoreOutlined />}
-                        aria-label={`Actions for budget ${budget.id}`}
-                      />
-                    </Popover>
-                  ) : (
-                    <Tag color="default">Read only</Tag>
-                  )}
-                </div>
-
-                <div className="budget-amount-row">
-                  <span>PKR {formatAmount(budget.amount)}</span>
-                </div>
-
-                <div className="budget-meta-row">
-                  <div className="budget-meta-item">
-                    <CalendarOutlined />
-                    <Text>{budget.start_year} to {budget.end_year}</Text>
+                  <div className="budget-year-total">
+                    <Text className="budget-total-label">Year Total</Text>
+                    <Text strong>PKR {formatAmount(group.total)}</Text>
+                    <Text type="secondary">
+                      Remaining: PKR {formatAmount(group.remaining)} - Utilized: PKR {formatAmount(group.utilized)}
+                    </Text>
                   </div>
-                  <Tag color={budget.budget_type === "supplementary" ? "orange" : "blue"}>
-                    {titleCase(budget.budget_type)}
-                  </Tag>
                 </div>
-
-                <div className="budget-meta-row">
-                  <Tag color="cyan">{budget.budget_head || "No head"}</Tag>
-                  <Tag color="geekblue">{budget.budget_category || "No category"}</Tag>
-                </div>
-
-                <div className="budget-meta-row">
-                  <Text type="secondary">Remaining: PKR {formatAmount(budget.remaining_amount ?? budget.amount)}</Text>
-                  <Text type="secondary">Spent: PKR {formatAmount(budget.spent_amount || 0)}</Text>
-                </div>
-              </Card>
-            ))}
-          </div>
+              }
+            >
+              <div className="budget-table-shell">
+                <Table
+                  className="budget-year-table"
+                  columns={budgetColumns}
+                  dataSource={group.budgets}
+                  rowKey="id"
+                  size="middle"
+                  scroll={{ x: 1120 }}
+                  pagination={group.budgets.length > 8 ? { pageSize: 8, showSizeChanger: false } : false}
+                />
+              </div>
+            </Card>
+          ))
         )}
       </div>
 
@@ -367,30 +624,45 @@ const BudgetManagement = () => {
           </Form.Item>
 
           <Form.Item
-            label="Start year"
+            label="Start date"
             name="start_year"
-            rules={[{ required: true, message: "Select the start year" }]}
+            rules={[{ required: true, message: "Select the start date" }]}
           >
-            <Select options={yearOptions} placeholder="Select start year" />
+            <DatePicker
+              format="DD MMM YYYY"
+              className="budget-year-picker"
+              suffixIcon={<CalendarOutlined />}
+              placeholder="Select start date"
+            />
           </Form.Item>
 
           <Form.Item
-            label="End year"
+            label="End date"
             name="end_year"
             dependencies={["start_year"]}
             rules={[
-              { required: true, message: "Select the end year" },
+              { required: true, message: "Select the end date" },
               ({ getFieldValue }) => ({
                 validator(_, value) {
-                  if (!value || !getFieldValue("start_year") || value >= getFieldValue("start_year")) {
+                  const selectedStartDate = getFieldValue("start_year");
+
+                  if (!value || !selectedStartDate || value.isSame(selectedStartDate, "day") || value.isAfter(selectedStartDate, "day")) {
                     return Promise.resolve();
                   }
-                  return Promise.reject(new Error("End year must be after or equal to start year"));
+                  return Promise.reject(new Error("End date must be after or equal to start date"));
                 },
               }),
             ]}
           >
-            <Select options={endYearOptions} placeholder="Select end year" />
+            <DatePicker
+              format="DD MMM YYYY"
+              className="budget-year-picker"
+              suffixIcon={<CalendarOutlined />}
+              placeholder="Select end date"
+              disabledDate={(date) => {
+                return Boolean(startYear && date.isBefore(startYear, "day"));
+              }}
+            />
           </Form.Item>
 
           <Form.Item
@@ -432,7 +704,11 @@ const BudgetManagement = () => {
             <Input placeholder="e.g. Primary budget head" maxLength={120} />
           </Form.Item>
 
-          <Form.Item label="Budget category" name="budget_category">
+          <Form.Item
+            label="Budget category"
+            name="budget_category"
+            rules={[{ required: true, message: "Enter the budget category" }]}
+          >
             <Input placeholder="e.g. Supplementary category" maxLength={120} />
           </Form.Item>
 
@@ -461,6 +737,37 @@ const BudgetManagement = () => {
         ]}
       >
         <Text type="secondary">You have unsaved budget changes. Closing now will lose them.</Text>
+      </Modal>
+
+      <Modal
+        open={auditPreview.open}
+        title={`Audit history: ${auditPreview.title}`}
+        footer={null}
+        onCancel={() => setAuditPreview({ open: false, title: "", entries: [] })}
+        width={720}
+      >
+        <Timeline
+          items={(auditPreview.entries || []).map((entry, index) => ({
+            key: `${entry.at || "audit"}-${index}`,
+            children: (
+              <div>
+                <Text strong>{entry.action || "Budget changed"}</Text>
+                {entry.by || entry.role ? (
+                  <div>
+                    {entry.by || "Unknown user"}
+                    {entry.role ? ` (${entry.role})` : ""}
+                  </div>
+                ) : null}
+                {entry.note ? <Text type="secondary">{entry.note}</Text> : null}
+                {entry.at ? (
+                  <div>
+                    <Text type="secondary">{entry.at}</Text>
+                  </div>
+                ) : null}
+              </div>
+            ),
+          }))}
+        />
       </Modal>
     </div>
   );

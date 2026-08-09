@@ -1,0 +1,185 @@
+.internal-revenue-page {
+  padding: 16px;
+  min-height: calc(100vh - 90px);
+  background: linear-gradient(180deg, rgba(245, 251, 252, 0.96), rgba(248, 252, 249, 0.96));
+}
+
+.internal-revenue-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.internal-revenue-header h3.ant-typography {
+  margin: 4px 0 6px;
+  color: #234652;
+  font-weight: 800;
+}
+
+.internal-revenue-card {
+  border: 1px solid rgba(74, 181, 190, 0.12);
+  box-shadow: 0 16px 38px rgba(74, 181, 190, 0.1);
+  background: rgba(255, 255, 255, 0.96);
+}
+
+.internal-revenue-card .ant-card-body {
+  padding: 0;
+}
+
+.internal-revenue-table-shell {
+  width: 100%;
+  max-height: calc(100vh - 250px);
+  overflow: auto;
+  border-radius: 8px;
+}
+
+.internal-revenue-spreadsheet {
+  min-width: 3640px;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+  background: #fff;
+}
+
+.internal-revenue-spreadsheet th,
+.internal-revenue-spreadsheet-cell {
+  width: 130px;
+  min-width: 130px;
+  height: 34px;
+  border-right: 1px solid #eceff1;
+  border-bottom: 1px solid #eceff1;
+  color: #334b55;
+  font-size: 12px;
+  vertical-align: middle;
+}
+
+.internal-revenue-spreadsheet th:first-child,
+.internal-revenue-spreadsheet-cell:first-child {
+  width: 120px;
+  min-width: 120px;
+}
+
+.internal-revenue-spreadsheet th {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  height: 30px;
+  color: #587983;
+  background: #f4f9f9;
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.internal-revenue-spreadsheet-cell input {
+  display: block;
+  width: 100%;
+  height: 100%;
+  padding: 5px 8px;
+  border: 0;
+  outline: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  text-align: inherit;
+}
+
+.internal-revenue-spreadsheet-cell input[readonly] {
+  cursor: default;
+  font-weight: inherit;
+}
+
+.internal-revenue-selected-cell {
+  position: relative;
+  box-shadow: inset 0 0 0 2px #1677ff;
+  z-index: 2;
+}
+
+.internal-revenue-dirty-cell {
+  box-shadow: inset 0 0 0 2px #faad14;
+}
+
+.internal-revenue-formula-cell input {
+  color: #12313a;
+  font-weight: 800;
+}
+
+.internal-revenue-title-cell,
+.internal-revenue-fund-cell {
+  color: #111;
+  background: #e6b8b7;
+  font-weight: 800;
+  text-align: center;
+}
+
+.internal-revenue-heading-cell {
+  color: #111;
+  background: #fff;
+  font-weight: 800;
+  text-align: center;
+}
+
+.internal-revenue-green-cell {
+  background: #c6efce;
+}
+
+.internal-revenue-yellow-cell,
+.internal-revenue-closing-cell {
+  background: #ffff00;
+  font-weight: 800;
+}
+
+.internal-revenue-lavender-cell {
+  background: #d9d2e9;
+}
+
+.internal-revenue-total-exp-cell {
+  background: #ffc000;
+  font-weight: 800;
+}
+
+.internal-revenue-inter-divider {
+  border-left: 4px solid #111 !important;
+}
+
+.internal-revenue-reg-divider {
+  border-left: 4px solid #111 !important;
+}
+
+.internal-revenue-month-picker.ant-picker {
+  width: 100%;
+  height: 100%;
+  padding: 0 8px;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  font-weight: 800;
+}
+
+.internal-revenue-month-picker .ant-picker-input > input {
+  color: #111;
+  text-align: center;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.internal-revenue-month-picker .ant-picker-suffix {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .internal-revenue-header {
+    flex-direction: column;
+  }
+
+  .internal-revenue-header .ant-space,
+  .internal-revenue-header .ant-btn {
+    width: 100%;
+  }
+
+  .internal-revenue-table-shell {
+    max-height: calc(100vh - 310px);
+  }
+}

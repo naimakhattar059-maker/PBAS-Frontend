@@ -8,6 +8,84 @@ const buildHeaders = (token, extra = {}) => ({
   ...extra,
 });
 
+const sensitiveKeys = ["password", "password_confirmation", "token", "authorization", "attachment_image_data"];
+
+const redactSensitiveValues = (value) => {
+  if (Array.isArray(value)) {
+    return value.map(redactSensitiveValues);
+  }
+
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, nestedValue]) => [
+        key,
+        sensitiveKeys.includes(key.toLowerCase()) ? "[REDACTED]" : redactSensitiveValues(nestedValue),
+      ])
+    );
+  }
+
+  return value;
+};
+
+const entityFromPath = (path) => {
+  const parts = path.split("?")[0].split("/").filter(Boolean);
+  const apiIndex = parts.indexOf("v1");
+  const resource = parts[apiIndex + 1] || parts.at(-1) || "system";
+  const id = parts[apiIndex + 2] && /^\d+$/.test(parts[apiIndex + 2]) ? parts[apiIndex + 2] : null;
+
+  return {
+    entity_type: resource,
+    entity_id: id,
+  };
+};
+
+const auditActionFromRequest = (method, path) => {
+  const normalizedMethod = method.toUpperCase();
+  const action = path.split("?")[0].split("/").filter(Boolean).at(-1);
+  const customAction = action && !/^\d+$/.test(action) ? action : null;
+
+  if (customAction && !["sessions", "password", "registrations", "email_verifications"].includes(customAction)) {
+    return customAction;
+  }
+
+  if (normalizedMethod === "POST") return "create";
+  if (normalizedMethod === "PUT" || normalizedMethod === "PATCH") return "update";
+  if (normalizedMethod === "DELETE") return "delete";
+  return normalizedMethod.toLowerCase();
+};
+
+const shouldWriteAuditLog = () => false;
+
+const writeAuditLog = async ({ method, path, body, token }) => {
+  if (!shouldWriteAuditLog({ method, path, token })) {
+    return;
+  }
+
+  const { entity_type, entity_id } = entityFromPath(path);
+
+  try {
+    await fetch(`${API_BASE_URL}/api/v1/audit_logs`, {
+      method: "POST",
+      headers: buildHeaders(token),
+      body: JSON.stringify({
+        audit_log: {
+          action: auditActionFromRequest(method, path),
+          entity_type,
+          entity_id,
+          metadata: {
+            method: method.toUpperCase(),
+            path,
+            body: redactSensitiveValues(body || {}),
+            occurred_at: new Date().toISOString(),
+          },
+        },
+      }),
+    });
+  } catch {
+    // Audit logging must never block the user action that already succeeded.
+  }
+};
+
 const parseResponse = async (response, token) => {
   const contentType = response.headers.get("content-type") || "";
   const isJson = contentType.includes("application/json");
@@ -55,5 +133,8 @@ export const apiRequest = async (path, { method = "GET", body, token, headers } 
     body: body ? JSON.stringify(body) : undefined,
   });
 
-  return parseResponse(response, token);
+  const payload = await parseResponse(response, token);
+  await writeAuditLog({ method, path, body, token });
+
+  return payload;
 };

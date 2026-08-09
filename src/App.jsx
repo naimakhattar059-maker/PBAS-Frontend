@@ -8,7 +8,9 @@ import Users from "./pages/Users";
 import Requests from "./pages/Requests";
 import Payroll from "./pages/Payroll";
 import BudgetManagement from "./pages/BudgetManagement";
+import InternalRevenue from "./pages/InternalRevenue";
 import Reports from "./pages/Reports";
+import AuditLogs from "./pages/AuditLogs";
 import Notifications from "./pages/Notifications";
 import Settings from "./pages/Settings";
 import Placeholder from "./pages/Placeholder";
@@ -33,7 +35,9 @@ const App = () => {
           <Route path="/budget" element={<BudgetManagement />} />
           <Route path="/expenses" element={<Placeholder title="Expense Management" />} />
           <Route path="/payroll" element={<Payroll />} />
+          <Route path="/internal-revenue" element={<InternalRevenue />} />
           <Route path="/reports" element={<Reports />} />
+          <Route path="/audit-logs" element={<AuditLogs />} />
           <Route path="/notifications" element={<Notifications />} />
           <Route path="/settings" element={<Settings />} />
           <Route path="/requests" element={<Navigate to="/departments" replace />} />

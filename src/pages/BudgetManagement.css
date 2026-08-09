@@ -51,6 +51,47 @@
   font-weight: 800;
 }
 
+.budget-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.budget-filter-card {
+  margin-bottom: 16px;
+  border: 1px solid rgba(74, 181, 190, 0.12);
+  box-shadow: 0 12px 28px rgba(74, 181, 190, 0.08);
+  background: rgba(255, 255, 255, 0.94);
+}
+
+.budget-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.budget-search-input {
+  min-width: 260px;
+  flex: 1;
+}
+
+.budget-search-input .ant-input-affix-wrapper,
+.budget-search-input.ant-input-affix-wrapper {
+  min-height: 36px;
+  border-radius: 10px;
+}
+
+.budget-year-filter.ant-select {
+  width: 180px;
+}
+
+.budget-year-filter .ant-select-selector {
+  min-height: 36px !important;
+  border-radius: 10px !important;
+  display: flex;
+  align-items: center;
+}
+
 .budget-card,
 .budget-empty-card {
   border: 1px solid rgba(74, 181, 190, 0.12);
@@ -63,7 +104,8 @@
 }
 
 .budget-page .ant-modal .ant-select-selector,
-.budget-page .ant-modal .ant-input-number {
+.budget-page .ant-modal .ant-input-number,
+.budget-page .ant-modal .ant-picker {
   min-height: 30px !important;
 }
 
@@ -71,8 +113,96 @@
   width: 100%;
 }
 
+.budget-year-picker {
+  width: 100%;
+}
+
+.budget-year-picker.ant-picker {
+  border-radius: 10px;
+}
+
 .budget-grid-shell {
   min-height: 100%;
+}
+
+.budget-year-sections {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.budget-year-card {
+  border: 1px solid rgba(74, 181, 190, 0.12);
+  box-shadow: 0 16px 38px rgba(74, 181, 190, 0.1);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(241, 251, 250, 0.98));
+}
+
+.budget-year-card .ant-card-head {
+  border-bottom: 1px solid rgba(74, 181, 190, 0.12);
+  padding: 14px 18px;
+}
+
+.budget-year-card .ant-card-body {
+  padding: 0;
+}
+
+.budget-year-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+}
+
+.budget-year-title h4.ant-typography {
+  margin: 0 0 4px;
+  color: #234652;
+  font-weight: 800;
+}
+
+.budget-year-total {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  text-align: right;
+}
+
+.budget-table-shell {
+  width: 100%;
+  overflow-x: auto;
+}
+
+.budget-year-table {
+  min-width: 1120px;
+}
+
+.budget-year-table .ant-table {
+  background: transparent;
+}
+
+.budget-year-table .ant-table-thead > tr > th {
+  color: #4a5f69;
+  font-size: 13px;
+  font-weight: 700;
+  background: rgba(244, 249, 249, 0.96);
+}
+
+.budget-year-table .ant-table-tbody > tr > td {
+  color: #41575f;
+  font-size: 13px;
+  vertical-align: top;
+}
+
+.budget-year-table .ant-table-pagination {
+  margin: 10px 14px 14px !important;
+}
+
+.budget-table-title {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
 }
 
 .budget-grid {
@@ -377,6 +507,26 @@
 @media (max-width: 768px) {
   .budget-header {
     flex-direction: column;
+  }
+
+  .budget-summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .budget-filter-row,
+  .budget-year-title {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .budget-search-input,
+  .budget-year-filter.ant-select {
+    width: 100%;
+  }
+
+  .budget-year-total {
+    align-items: flex-start;
+    text-align: left;
   }
 
   .requests-header-actions {

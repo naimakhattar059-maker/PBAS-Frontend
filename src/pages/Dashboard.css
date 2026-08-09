@@ -28,6 +28,58 @@
   padding: 4px 2px 2px;
 }
 
+.report-controls {
+  justify-content: flex-end;
+  max-width: 720px;
+}
+
+.report-chart {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.report-chart-row {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.report-chart-label {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.report-chart-track {
+  height: 12px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(74, 181, 190, 0.11);
+}
+
+.report-chart-fill {
+  height: 100%;
+  border-radius: inherit;
+}
+
+.report-chart-blue {
+  background: linear-gradient(90deg, #4e8cff, #75b4ff);
+}
+
+.report-chart-green {
+  background: linear-gradient(90deg, #49b87a, #8ee0b0);
+}
+
+.report-chart-purple {
+  background: linear-gradient(90deg, #8a70dd, #c4a6ff);
+}
+
+.report-chart-orange {
+  background: linear-gradient(90deg, #f0a34c, #f7ca83);
+}
+
 .title-row {
   display: flex;
   align-items: center;
@@ -138,6 +190,23 @@
 .panel-card-wide .ant-table {
   border-radius: 14px;
   overflow: hidden;
+}
+
+.audit-toolbar {
+  width: 100%;
+  justify-content: space-between;
+}
+
+.audit-metadata {
+  margin: 0;
+  padding: 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+  border-radius: 10px;
+  background: rgba(244, 249, 249, 0.96);
+  color: #41575f;
+  font-size: 12px;
+  line-height: 1.5;
 }
 
 .dashboard-shell .ant-col {
@@ -267,6 +336,17 @@
   .dashboard-hero {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .report-controls {
+    justify-content: flex-start;
+    width: 100%;
+  }
+
+  .report-controls .ant-picker,
+  .report-controls .ant-select,
+  .report-controls .ant-btn {
+    width: 100% !important;
   }
 
   .dashboard-page {

@@ -1,5 +1,9 @@
 import "@testing-library/jest-dom/vitest";
 
+const originalGetComputedStyle = window.getComputedStyle;
+
+window.getComputedStyle = (element) => originalGetComputedStyle(element);
+
 if (!window.matchMedia) {
   window.matchMedia = () => ({
     matches: false,

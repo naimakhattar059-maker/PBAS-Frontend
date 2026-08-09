@@ -1,5 +1,7 @@
 import {
   ApartmentOutlined,
+  AuditOutlined,
+  BankOutlined,
   BellOutlined,
   CalculatorOutlined,
   DashboardOutlined,
@@ -14,23 +16,31 @@ import { Avatar, Badge, Button, Drawer, Grid, Layout, Menu, Typography, message 
 import { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { createAuditLog } from '../api/auditLogs';
 import { listNotifications } from '../api/notifications';
 import { logout } from '../store/authSlice';
 import { getAvatarInitial } from '../utils/userAvatar';
-import { hasPermission } from '../utils/permissions';
+import { hasAnyPermission, hasPermission } from '../utils/permissions';
 import './AppLayout.css';
 
 const { Header, Sider, Content } = Layout;
 const { useBreakpoint } = Grid;
 
 const navItems = [
-  { key: '/dashboard', icon: <DashboardOutlined />, label: 'Dashboard', permission: 'view_dashboard' },
+  {
+    key: '/dashboard',
+    icon: <DashboardOutlined />,
+    label: 'Dashboard',
+    headerLabel: 'Dashboard (P.G Budget System)',
+    permission: 'view_dashboard',
+  },
   { key: '/users', icon: <UserOutlined />, label: 'User Management', permission: 'view_users' },
   { key: '/departments', icon: <ApartmentOutlined />, label: 'Resource Request Management', permission: 'view_requests' },
   { key: '/budget', icon: <FundOutlined />, label: 'Budget Management', permission: 'view_budgets' },
   { key: '/payroll', icon: <CalculatorOutlined />, label: 'Payroll Management', permission: 'view_payroll' },
+  { key: '/internal-revenue', icon: <BankOutlined />, label: 'Internal Revenue', permission: 'view_budgets' },
   { key: '/reports', icon: <FileTextOutlined />, label: 'Reports', permission: 'view_reports' },
-  { key: '/notifications', icon: <BellOutlined />, label: 'Notifications', permission: 'view_notifications' },
+  { key: '/audit-logs', icon: <AuditOutlined />, label: 'Audit Logs', permissions: ['view_audit_logs', 'view_reports'] },
   { key: '/settings', icon: <SettingOutlined />, label: 'Settings', permission: 'manage_profile' },
 ];
 
@@ -41,23 +51,35 @@ const AppLayout = ({ children }) => {
   const isMobile = !screens.md;
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { user } = useSelector((state) => state.auth);
+  const { user, token } = useSelector((state) => state.auth);
   const [unreadCount, setUnreadCount] = useState(0);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    if (token) {
+      try {
+        await createAuditLog(token, {
+          action: 'logout',
+          entity_type: 'sessions',
+          metadata: { occurred_at: new Date().toISOString() },
+        });
+      } catch {
+        // Logout must not be blocked if audit logging is unavailable.
+      }
+    }
+
     dispatch(logout());
     navigate('/login');
   };
 
   useEffect(() => {
     const loadUnread = async () => {
-      if (!user?.token || !hasPermission(user, 'view_notifications')) {
+      if (!token || !hasPermission(user, 'view_notifications')) {
         setUnreadCount(0);
         return;
       }
 
       try {
-        const payload = await listNotifications(user.token);
+        const payload = await listNotifications(token);
         setUnreadCount((payload.notifications || []).filter((item) => !item.read).length);
       } catch (err) {
         setUnreadCount(0);
@@ -66,10 +88,13 @@ const AppLayout = ({ children }) => {
     };
 
     loadUnread();
-  }, [user]);
+  }, [token, user]);
 
-  const visibleNavItems = navItems.filter((item) => hasPermission(user, item.permission));
+  const visibleNavItems = navItems.filter((item) =>
+    item.permissions ? hasAnyPermission(user, item.permissions) : hasPermission(user, item.permission)
+  );
   const currentNav = visibleNavItems.find((i) => i.key === location.pathname);
+  const headerLabel = currentNav?.headerLabel || currentNav?.label || 'Dashboard (P.G Budget System)';
 
   const menu = (
     <Menu
@@ -114,7 +139,7 @@ const AppLayout = ({ children }) => {
             />
           )}
           <div className='header-left'>
-            <div className='header-eyebrow'>{(currentNav?.label || 'Dashboard').toUpperCase()}</div>
+            <div className='header-eyebrow'>{headerLabel}</div>
           </div>
           <div className='header-actions'>
             {hasPermission(user, 'view_notifications') ? (

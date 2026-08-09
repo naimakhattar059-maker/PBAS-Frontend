@@ -41,6 +41,5 @@ describe("AppLayout", () => {
     expect(screen.getByText("User Management")).toBeInTheDocument();
     expect(screen.getByText("Budget Management")).toBeInTheDocument();
     expect(screen.getByText("Reports")).toBeInTheDocument();
-    expect(screen.getByText("Notifications")).toBeInTheDocument();
   });
 });
