@@ -111,7 +111,7 @@ const AppLayout = ({ children }) => {
   return (
     <Layout className='app-shell'>
       {!isMobile && (
-        <Sider width={280} className='app-sider' breakpoint='md' collapsedWidth='0'>
+        <Sider width={310} className='app-sider' breakpoint='md' collapsedWidth='0'>
           <div className='menu-container'>{menu}</div>
           <div className='sider-footer'>
             <Button

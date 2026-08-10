@@ -1,30 +1,72 @@
 .app-shell {
   min-height: 100vh;
-  background:
-    radial-gradient(circle at top left, rgba(74, 181, 190, 0.18), transparent 18%),
-    radial-gradient(circle at top right, rgba(244, 176, 104, 0.14), transparent 16%),
-    linear-gradient(180deg, #eef8f8 0%, #f5faf5 100%);
+  background: var(--pbas-sky-100);
 }
 
 .app-sider {
   background:
-    linear-gradient(180deg, rgba(52, 126, 145, 0.98) 0%, rgba(72, 168, 173, 0.98) 100%);
+    radial-gradient(circle at 18% 7%, rgba(34, 211, 238, 0.42), transparent 18%),
+    radial-gradient(circle at 84% 20%, rgba(167, 139, 250, 0.34), transparent 22%),
+    linear-gradient(180deg, #083c88 0%, #0b4c94 34%, #0b3f7e 66%, #082f67 100%);
   color: #f8fffe;
   display: flex;
   flex-direction: column;
-  border-right: 1px solid rgba(74, 181, 190, 0.14) !important;
-  box-shadow: 10px 0 28px rgba(74, 181, 190, 0.12) !important;
+  border-right: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 10px 0 28px rgba(6, 43, 97, 0.22) !important;
+  position: relative;
+  overflow: hidden;
+}
+
+@media (min-width: 768px) {
+  .app-sider {
+    position: fixed !important;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    height: 100vh;
+    z-index: 30;
+  }
+
+  .app-shell > .ant-layout {
+    margin-left: 310px;
+  }
+}
+
+.app-sider::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.13), transparent 38%),
+    radial-gradient(circle at 26% 72%, rgba(255, 209, 102, 0.18), transparent 22%);
+}
+
+.app-sider::after {
+  content: "";
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 88px;
+  height: 1px;
+  pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.34), transparent);
 }
 
 .app-sider .ant-layout-sider-children {
   border-right: none !important;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  z-index: 1;
 }
 
 .app-sider .ant-menu {
   background: transparent;
   border-inline-end: none !important;
-  color: rgba(255, 255, 255, 0.96);
-  font-size: 13px;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 15px;
+  font-weight: 700;
 }
 
 .app-sider .ant-menu-item,
@@ -39,7 +81,7 @@
 .app-sider .ant-menu-item:hover .anticon,
 .app-sider .ant-menu-submenu-title:hover,
 .app-sider .ant-menu-submenu-title:hover .anticon {
-  color: #fff7e3 !important;
+  color: #ffffff !important;
 }
 
 .app-sider .ant-menu-inline,
@@ -51,14 +93,15 @@
 }
 
 .app-sider .ant-menu-item-selected {
-  background: linear-gradient(90deg, rgba(255, 248, 232, 0.28), rgba(255, 255, 255, 0.14)) !important;
-  border-radius: 12px;
+  background: linear-gradient(135deg, rgba(64, 158, 255, 0.78), rgba(42, 206, 187, 0.48)) !important;
+  border-radius: 999px;
+  box-shadow: 0 14px 30px rgba(8, 31, 72, 0.18), inset 0 0 0 1px rgba(255, 255, 255, 0.22);
 }
 
 .app-sider .ant-menu-item-selected,
 .app-sider .ant-menu-item-selected .anticon,
 .app-sider .ant-menu-item-selected .ant-menu-title-content {
-  color: #fff7e3 !important;
+  color: #ffffff !important;
 }
 
 .app-sider .ant-menu-item::after,
@@ -69,16 +112,20 @@
 }
 
 .app-header {
-  background: linear-gradient(90deg, rgba(236, 251, 252, 0.94), rgba(255, 248, 238, 0.92));
-  height: 60px;
-  min-height: 60px;
-  padding: 6px 16px;
+  background:
+    radial-gradient(circle at 92% 50%, rgba(45, 212, 191, 0.22), transparent 16%),
+    linear-gradient(135deg, #0b4c94 0%, #1463c9 45%, #1aa6c8 100%);
+  height: 64px;
+  min-height: 64px;
+  padding: 8px 28px;
   line-height: 1.2;
   display: flex;
   align-items: center;
   gap: 12px;
-  border-bottom: 1px solid rgba(12, 86, 133, 0.08);
-  backdrop-filter: blur(18px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: 0 14px 28px rgba(12, 62, 124, 0.16);
+  backdrop-filter: none;
+  z-index: 10;
 }
 
 .header-title {
@@ -93,10 +140,11 @@
 }
 
 .header-eyebrow {
-  font-size: 16px;
+  font-size: 17px;
   letter-spacing: 0.12em;
-  color: #338b98;
-  font-weight: 600;
+  color: #ffffff;
+  font-weight: 900;
+  text-shadow: 0 2px 10px rgba(4, 28, 62, 0.22);
 }
 
 .header-actions {
@@ -119,41 +167,41 @@
 }
 
 .header-icon-button {
-  color: #214a57;
+  color: #ffffff;
   font-size: 18px;
-  background: transparent !important;
-  border: 0 !important;
-  box-shadow: none !important;
+  background: rgba(255, 255, 255, 0.16) !important;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  box-shadow: 0 8px 18px rgba(7, 26, 58, 0.12) !important;
 }
 
 .header-avatar-button {
-  background: transparent !important;
-  border: 0 !important;
-  box-shadow: none !important;
+  background: rgba(255, 255, 255, 0.16) !important;
+  border: 1px solid rgba(255, 255, 255, 0.22) !important;
+  box-shadow: 0 8px 18px rgba(7, 26, 58, 0.12) !important;
 }
 
 .header-icon-button:hover,
 .header-icon-button:focus,
 .header-avatar-button:hover,
 .header-avatar-button:focus {
-  background: transparent !important;
-  color: #214a57 !important;
-  border: 0 !important;
-  box-shadow: none !important;
+  background: rgba(255, 255, 255, 0.26) !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.36) !important;
+  box-shadow: 0 10px 20px rgba(7, 26, 58, 0.16) !important;
 }
 
 .header-icon-button:active,
 .header-avatar-button:active {
-  background: transparent !important;
-  color: #214a57 !important;
-  border: 0 !important;
-  box-shadow: none !important;
+  background: rgba(255, 255, 255, 0.2) !important;
+  color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.28) !important;
+  box-shadow: 0 6px 14px rgba(7, 26, 58, 0.12) !important;
 }
 
 .header-avatar {
-  background: linear-gradient(135deg, #7ddad3, #ffd59e);
-  color: #184c56;
-  font-weight: 700;
+  background: linear-gradient(135deg, #fff7ad, #9ff8d2);
+  color: #07336d;
+  font-weight: 900;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -164,11 +212,8 @@
 }
 
 .app-content {
-  background:
-    radial-gradient(circle at bottom left, rgba(74, 181, 190, 0.06), transparent 22%),
-    radial-gradient(circle at bottom right, rgba(244, 176, 104, 0.07), transparent 18%),
-    linear-gradient(180deg, rgba(237, 249, 249, 0.94), rgba(249, 250, 242, 0.94));
-  min-height: calc(100vh - 60px);
+  background: var(--pbas-sky-100);
+  min-height: calc(100vh - 64px);
 }
 
 .brand {
@@ -190,8 +235,10 @@
 
 .menu-container {
   flex: 1;
-  padding-inline: 8px;
+  padding: 2px 6px 0;
   scrollbar-width: none;
+  position: relative;
+  z-index: 1;
 }
 
 .menu-container::-webkit-scrollbar {
@@ -210,18 +257,91 @@
 .logout-button {
   font-weight: 600;
   text-align: left;
-  color: #fff2db !important;
-  padding-left: 0;
+  color: #ffffff !important;
+  padding-left: 8px;
+  border-radius: 999px !important;
 }
 
 .app-sider .ant-menu-item {
-  padding-inline: 12px !important;
-  height: 42px;
-  line-height: 42px;
+  padding-inline: 14px !important;
+  height: 56px;
+  line-height: 56px;
+  margin: 4px 8px;
+  width: calc(100% - 16px);
+  border-radius: 18px;
+  transition: background 0.18s ease, box-shadow 0.18s ease, transform 0.18s ease;
+}
+
+.app-sider .ant-menu-item:hover {
+  background: rgba(255, 255, 255, 0.13) !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
+  transform: translateX(3px);
+}
+
+.app-sider .ant-menu-item .anticon {
+  width: 28px;
+  min-width: 28px;
+  height: 28px;
+  margin-inline-end: 10px !important;
+  border-radius: 10px;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  color: #ffffff !important;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+}
+
+.app-sider .ant-menu-item:nth-child(1) .anticon {
+  background: linear-gradient(135deg, #38bdf8, #2563eb);
+}
+
+.app-sider .ant-menu-item:nth-child(2) .anticon {
+  background: linear-gradient(135deg, #fb7185, #e11d48);
+}
+
+.app-sider .ant-menu-item:nth-child(3) .anticon {
+  background: linear-gradient(135deg, #fbbf24, #f97316);
+}
+
+.app-sider .ant-menu-item:nth-child(4) .anticon {
+  background: linear-gradient(135deg, #34d399, #059669);
+}
+
+.app-sider .ant-menu-item:nth-child(5) .anticon {
+  background: linear-gradient(135deg, #a78bfa, #7c3aed);
+}
+
+.app-sider .ant-menu-item:nth-child(6) .anticon {
+  background: linear-gradient(135deg, #2dd4bf, #0f766e);
+}
+
+.app-sider .ant-menu-item:nth-child(7) .anticon {
+  background: linear-gradient(135deg, #60a5fa, #1d4ed8);
+}
+
+.app-sider .ant-menu-item:nth-child(8) .anticon {
+  background: linear-gradient(135deg, #f472b6, #be185d);
+}
+
+.app-sider .ant-menu-item:nth-child(9) .anticon {
+  background: linear-gradient(135deg, #c084fc, #9333ea);
+}
+
+.app-sider .ant-menu-title-content {
+  min-width: 0;
+  font-weight: 800;
+  flex: 1 1 auto;
+}
+
+.app-sider .ant-menu-title-content a {
+  display: block;
+  overflow: visible;
+  text-overflow: clip;
+  white-space: nowrap;
 }
 
 .menu-button {
-  color: #214a57;
+  color: var(--pbas-text);
   background: transparent !important;
   border: 0 !important;
   box-shadow: none !important;
@@ -229,6 +349,6 @@
 
 .menu-button:hover,
 .menu-button:focus {
-  color: #1e5c68 !important;
+  color: var(--pbas-navy-900) !important;
   background: rgba(255, 255, 255, 0.52) !important;
 }

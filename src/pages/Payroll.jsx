@@ -753,7 +753,7 @@ const Payroll = () => {
         ))}
       </Row>
 
-      <Card bordered={false} className="payroll-panel" title="Recent payroll cycles">
+      <Card bordered={false} className="payroll-panel payroll-panel-cycles" title="Recent payroll cycles">
         <Table
           loading={loading}
           columns={payrollColumns}
@@ -766,7 +766,7 @@ const Payroll = () => {
       </Card>
 
       {canManagePayroll ? (
-      <Card bordered={false} className="payroll-panel" title="Recent staff records">
+      <Card bordered={false} className="payroll-panel payroll-panel-staff" title="Recent staff records">
           <Table
             loading={loading}
             columns={staffColumns}
@@ -782,7 +782,7 @@ const Payroll = () => {
   );
 
   const runsTab = (
-    <Card bordered={false} className="payroll-panel">
+    <Card bordered={false} className="payroll-panel payroll-panel-cycles">
       <div className="payroll-toolbar">
         <div>
           <Title level={4} style={{ marginBottom: 4 }}>Payroll cycles</Title>
@@ -811,7 +811,7 @@ const Payroll = () => {
   );
 
   const staffTab = (
-    <Card bordered={false} className="payroll-panel">
+    <Card bordered={false} className="payroll-panel payroll-panel-staff">
       <div className="payroll-toolbar">
         <div>
           <Title level={4} style={{ marginBottom: 4 }}>Staff master</Title>

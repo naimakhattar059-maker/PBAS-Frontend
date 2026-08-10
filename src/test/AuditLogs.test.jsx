@@ -47,9 +47,9 @@ describe("AuditLogs", () => {
 
     renderAuditLogs();
 
-    expect(await screen.findByText("Security activity")).toBeInTheDocument();
-    expect(screen.getByText("UPDATE")).toBeInTheDocument();
-    expect(screen.getByText("budgets")).toBeInTheDocument();
+    expect(await screen.findByText("Security Activity")).toBeInTheDocument();
+    expect(screen.getByText("Updated")).toBeInTheDocument();
+    expect(screen.getByText("Budgets")).toBeInTheDocument();
     expect(screen.getByText("Admin User")).toBeInTheDocument();
   });
 });

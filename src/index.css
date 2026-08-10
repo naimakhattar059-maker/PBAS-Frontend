@@ -1,11 +1,28 @@
 @import url("https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700&display=swap");
 
 :root {
+  --pbas-navy-950: #062b61;
+  --pbas-navy-900: #0a3a78;
+  --pbas-navy-800: #0d4f9b;
+  --pbas-blue-700: #155db2;
+  --pbas-blue-600: #0e7fc0;
+  --pbas-sky-100: #eaf5ff;
+  --pbas-sky-75: #f3f9ff;
+  --pbas-sky-50: #f7fbff;
+  --pbas-cyan-500: #12a2c7;
+  --pbas-teal-500: #18bf91;
+  --pbas-purple-600: #5b2ca0;
+  --pbas-purple-500: #7041b9;
+  --pbas-border: #c8daec;
+  --pbas-text: #09173d;
+  --pbas-muted: #63718c;
+  --pbas-card: #ffffff;
+  --pbas-shadow: 0 10px 26px rgba(9, 45, 98, 0.08);
   font-family: "Manrope", "Helvetica Neue", sans-serif;
   line-height: 1.5;
   font-weight: 400;
-  background-color: #f6f8fc;
-  color: #1f2a44;
+  background-color: var(--pbas-sky-100);
+  color: var(--pbas-text);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -18,13 +35,13 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background-color: #f6f8fc;
+  background-color: var(--pbas-sky-100);
 }
 
 a {
-  color: #2f89ff;
+  color: var(--pbas-blue-700);
 }
 
 a:hover {
-  color: #1f6fd6;
+  color: var(--pbas-navy-900);
 }

@@ -27,6 +27,16 @@ describe("Dashboard", () => {
         request_statuses: [{ name: "submitted", value: 3 }],
         payroll_statuses: [{ name: "generated", value: 2 }],
         budget_types: [{ name: "normal", value: 5 }],
+        budget_overview: {
+          full_budget: 1250000,
+          remaining_budget: 925000,
+          utilized_budget: 325000,
+          formatted: {
+            full_budget: "PKR 1,250,000",
+            remaining_budget: "PKR 925,000",
+            utilized_budget: "PKR 325,000",
+          },
+        },
       },
       system_health: {
         api_uptime: "99.8%",
@@ -55,9 +65,10 @@ describe("Dashboard", () => {
     await waitFor(() => expect(fetchDashboard).toHaveBeenCalled());
     expect(screen.getByText("24")).toBeInTheDocument();
     expect(screen.getByText("7")).toBeInTheDocument();
-    expect(screen.getByText("PKR 1,250,000")).toBeInTheDocument();
-    expect(screen.getByText("PKR 325,000")).toBeInTheDocument();
+    expect(screen.getAllByText("PKR 1,250,000").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("PKR 325,000").length).toBeGreaterThan(0);
     expect(screen.getByText("Live signals")).toBeInTheDocument();
+    expect(screen.getByText("Budget Overview")).toBeInTheDocument();
     expect(screen.getByText("Activity mix")).toBeInTheDocument();
     expect(screen.getAllByText("submitted: 3").length).toBeGreaterThan(0);
   });

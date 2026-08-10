@@ -2,18 +2,15 @@
   min-height: 100vh;
   display: grid;
   grid-template-columns: minmax(0, 60%) minmax(0, 40%);
-  background:
-    radial-gradient(circle at top left, rgba(74, 181, 190, 0.12), transparent 24%),
-    radial-gradient(circle at bottom right, rgba(244, 176, 104, 0.12), transparent 24%),
-    linear-gradient(180deg, #f7fbfd 0%, #f4f8fb 100%);
+  background: var(--pbas-sky-100);
 }
 
 .auth-hero-panel {
   position: relative;
   overflow: hidden;
   background:
-    linear-gradient(180deg, rgba(20, 33, 61, 0.12), rgba(20, 33, 61, 0.18)),
-    linear-gradient(135deg, rgba(238, 246, 250, 0.84), rgba(255, 244, 232, 0.7)),
+    linear-gradient(180deg, rgba(6, 43, 97, 0.72), rgba(10, 58, 120, 0.62)),
+    linear-gradient(135deg, rgba(14, 127, 192, 0.74), rgba(91, 44, 160, 0.48)),
     url("/auth-hero.jpg");
   background-size: cover;
   background-position: center;
@@ -51,12 +48,12 @@
   font-size: 28px;
   font-weight: 800;
   letter-spacing: -0.02em;
-  color: #1f2a44;
+  color: var(--pbas-text);
 }
 
 .auth-subtitle {
   margin: 0 0 28px;
-  color: #4c5975;
+  color: var(--pbas-muted);
   font-size: 15px;
 }
 
@@ -72,9 +69,9 @@
 }
 
 .auth-content .ant-btn-primary {
-  border-radius: 14px;
+  border-radius: 8px;
   min-height: 44px;
-  box-shadow: 0 14px 26px rgba(53, 132, 255, 0.18);
+  box-shadow: 0 14px 26px rgba(91, 44, 160, 0.18);
 }
 
 .auth-content .ant-checkbox-wrapper,

@@ -144,7 +144,7 @@ const Settings = () => {
 
       <Row gutter={[16, 16]}>
         <Col xs={24} xl={16}>
-          <Card className="settings-card" loading={loading}>
+          <Card className="settings-card settings-profile-card" loading={loading}>
             <div className="profile-hero">
               <div className="profile-avatar-wrap">
                 <Avatar
@@ -229,7 +229,7 @@ const Settings = () => {
         </Col>
 
         <Col xs={24} xl={8}>
-          <Card className="settings-card" title="Change Password" loading={loading}>
+          <Card className="settings-card settings-password-card" title="Change Password" loading={loading}>
             <Form form={passwordForm} layout="vertical" onFinish={handlePasswordSubmit}>
               <Form.Item
                 label="Current password"

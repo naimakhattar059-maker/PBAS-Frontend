@@ -1,7 +1,7 @@
 .internal-revenue-page {
   padding: 16px;
   min-height: calc(100vh - 90px);
-  background: linear-gradient(180deg, rgba(245, 251, 252, 0.96), rgba(248, 252, 249, 0.96));
+  background: var(--pbas-sky-100);
 }
 
 .internal-revenue-header {
@@ -14,14 +14,14 @@
 
 .internal-revenue-header h3.ant-typography {
   margin: 4px 0 6px;
-  color: #234652;
+  color: var(--pbas-text);
   font-weight: 800;
 }
 
 .internal-revenue-card {
-  border: 1px solid rgba(74, 181, 190, 0.12);
-  box-shadow: 0 16px 38px rgba(74, 181, 190, 0.1);
-  background: rgba(255, 255, 255, 0.96);
+  border: 1px solid var(--pbas-border);
+  box-shadow: var(--pbas-shadow);
+  background: #ffffff;
 }
 
 .internal-revenue-card .ant-card-body {

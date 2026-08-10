@@ -1,19 +1,27 @@
 import { useEffect, useMemo, useState } from "react";
 import {
+  Button,
   Card,
   Col,
   Row,
   Space,
   Table,
   Tag,
+  Tooltip,
   Typography,
   message,
 } from "antd";
+import { EyeInvisibleOutlined, EyeOutlined } from "@ant-design/icons";
 import { useSelector } from "react-redux";
 import { fetchDashboard } from "../api/dashboard";
 import "./Dashboard.css";
 
 const { Title, Text } = Typography;
+
+const BUDGET_CHART_COLORS = {
+  remaining: "#18c4b8",
+  utilized: "#8b5cf6",
+};
 
 const statusTag = (status) => {
   const colors = {
@@ -34,6 +42,7 @@ const Dashboard = () => {
   const { token, user } = useSelector((state) => state.auth);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showAllActivities, setShowAllActivities] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -117,6 +126,55 @@ const Dashboard = () => {
     ].filter(Boolean);
   }, [data]);
 
+  const recentActivities = data?.recent_activities || [];
+  const visibleActivities = showAllActivities ? recentActivities : recentActivities.slice(0, 4);
+  const budgetOverview = data?.charts?.budget_overview || {};
+  const budgetChartItems = [
+    {
+      key: "remaining",
+      label: "Remaining Budget",
+      value: Number(budgetOverview.remaining_budget || 0),
+      formatted: budgetOverview.formatted?.remaining_budget || "PKR 0",
+      color: BUDGET_CHART_COLORS.remaining,
+    },
+    {
+      key: "utilized",
+      label: "Utilized Budget",
+      value: Number(budgetOverview.utilized_budget || 0),
+      formatted: budgetOverview.formatted?.utilized_budget || "PKR 0",
+      color: BUDGET_CHART_COLORS.utilized,
+    },
+  ];
+  const budgetChartTotal = budgetChartItems.reduce((sum, item) => sum + item.value, 0);
+  const budgetFullAmount = budgetOverview.formatted?.full_budget || "PKR 0";
+  const budgetSegments = budgetChartItems.reduce(
+    (segments, item) => {
+      if (budgetChartTotal <= 0 || item.value <= 0) return segments;
+      const percent = (item.value / budgetChartTotal) * 100;
+      const midPercent = segments.runningTotal + percent / 2;
+      const labelAngle = (midPercent / 100) * 360 - 90;
+      const labelRadius = 12.5;
+      const segment = {
+        ...item,
+        percent,
+        offset: 25 - segments.runningTotal,
+        labelX: 21 + labelRadius * Math.cos((labelAngle * Math.PI) / 180),
+        labelY: 21 + labelRadius * Math.sin((labelAngle * Math.PI) / 180),
+      };
+      return {
+        runningTotal: segments.runningTotal + percent,
+        items: [...segments.items, segment],
+      };
+    },
+    { runningTotal: 0, items: [] }
+  ).items;
+  const remainingPercent = budgetChartTotal
+    ? Math.round((Number(budgetOverview.remaining_budget || 0) / budgetChartTotal) * 100)
+    : 0;
+  const utilizedPercent = budgetChartTotal
+    ? Math.round((Number(budgetOverview.utilized_budget || 0) / budgetChartTotal) * 100)
+    : 0;
+
   return (
     <div className="dashboard-page">
       <div className="dashboard-shell">
@@ -155,13 +213,109 @@ const Dashboard = () => {
 
       <Row gutter={[18, 18]}>
         <Col xs={24}>
-          <Card className="panel-card panel-card-wide" title="Recent Activities" loading={loading}>
+          <Card className="panel-card panel-card-budget budget-chart-card" title="Budget Overview" loading={loading}>
+            <div className="budget-chart-layout">
+              <div className="budget-donut-wrap" aria-label="Budget overview chart">
+                <svg className="budget-donut" viewBox="0 0 42 42" role="img">
+                  <circle className="budget-donut-bg" cx="21" cy="21" r="15.915" />
+                  {budgetSegments.length > 0 ? (
+                    budgetSegments.map((segment) => (
+                      <circle
+                        key={segment.key}
+                        className="budget-donut-segment"
+                        cx="21"
+                        cy="21"
+                        r="15.915"
+                        stroke={segment.color}
+                        strokeDasharray={`${segment.percent} ${100 - segment.percent}`}
+                        strokeDashoffset={segment.offset}
+                      />
+                    ))
+                  ) : (
+                    <circle
+                      className="budget-donut-segment"
+                      cx="21"
+                      cy="21"
+                      r="15.915"
+                      stroke="#ffd5d8"
+                      strokeDasharray="100 0"
+                      strokeDashoffset="25"
+                    />
+                  )}
+                  {budgetSegments
+                    .filter((segment) => segment.percent >= 3)
+                    .map((segment) => (
+                      <text
+                        key={`${segment.key}-percent`}
+                        className="budget-donut-percent"
+                        x={segment.labelX}
+                        y={segment.labelY}
+                      >
+                        {Math.round(segment.percent)}%
+                      </text>
+                    ))}
+                </svg>
+              </div>
+
+              <div className="budget-chart-legend">
+                <div className="budget-legend-heading">
+                  <span>Budget</span>
+                  <span>Amount</span>
+                  <span>Share</span>
+                </div>
+                <div className="budget-legend-row budget-legend-total">
+                  <span className="budget-legend-label">
+                    <span className="budget-legend-dot budget-legend-dot-total" />
+                    Full Budget
+                  </span>
+                  <strong>{budgetFullAmount}</strong>
+                  <small>100%</small>
+                </div>
+                <div className="budget-legend-row">
+                  <span className="budget-legend-label">
+                    <span className="budget-legend-dot" style={{ backgroundColor: BUDGET_CHART_COLORS.remaining }} />
+                    Remaining Budget
+                  </span>
+                  <strong>{budgetOverview.formatted?.remaining_budget || "PKR 0"}</strong>
+                  <small>{remainingPercent}%</small>
+                </div>
+                <div className="budget-legend-row">
+                  <span className="budget-legend-label">
+                    <span className="budget-legend-dot" style={{ backgroundColor: BUDGET_CHART_COLORS.utilized }} />
+                    Utilized Budget
+                  </span>
+                  <strong>{budgetOverview.formatted?.utilized_budget || "PKR 0"}</strong>
+                  <small>{utilizedPercent}%</small>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </Col>
+
+        <Col xs={24}>
+          <Card
+            className="panel-card panel-card-wide panel-card-activities"
+            title="Recent Activities"
+            loading={loading}
+            extra={
+              <Tooltip title={showAllActivities ? "Show latest activities only" : "View all activities"}>
+                <Button
+                  type="text"
+                  icon={showAllActivities ? <EyeInvisibleOutlined /> : <EyeOutlined />}
+                  onClick={() => setShowAllActivities((current) => !current)}
+                  aria-label={showAllActivities ? "Show latest activities only" : "View all activities"}
+                >
+                  {showAllActivities ? "Show less" : "View all"}
+                </Button>
+              </Tooltip>
+            }
+          >
             <Table
               size="small"
               columns={activityColumns}
-              dataSource={data?.recent_activities || []}
+              dataSource={visibleActivities}
               rowKey={(row, idx) => `${row.title}-${idx}`}
-              pagination={false}
+              pagination={showAllActivities && recentActivities.length > 8 ? { pageSize: 8, showSizeChanger: false } : false}
             />
           </Card>
         </Col>
@@ -169,7 +323,7 @@ const Dashboard = () => {
 
       <Row gutter={[18, 18]}>
         <Col xs={24} xl={12}>
-          <Card className="panel-card panel-card-tight" title="Live signals" loading={loading}>
+          <Card className="panel-card panel-card-tight panel-card-signals" title="Live signals" loading={loading}>
             <div className="signals-list">
               {liveSignals.map((signal) => (
                 <div className={`signal-card signal-${signal.tone}`} key={signal.label}>
@@ -187,7 +341,7 @@ const Dashboard = () => {
         </Col>
 
         <Col xs={24} xl={12}>
-          <Card className="panel-card panel-card-stretch" title="Activity mix" loading={loading}>
+          <Card className="panel-card panel-card-stretch panel-card-mix" title="Activity mix" loading={loading}>
             <Space direction="vertical" size={16} style={{ width: "100%" }}>
               <div>
                 <Text type="secondary">Request statuses</Text>

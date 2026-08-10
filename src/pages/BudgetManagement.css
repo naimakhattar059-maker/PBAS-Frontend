@@ -1,9 +1,6 @@
 .budget-page {
   padding: 16px;
-  background:
-    radial-gradient(circle at top left, rgba(74, 181, 190, 0.09), transparent 20%),
-    radial-gradient(circle at top right, rgba(244, 176, 104, 0.08), transparent 18%);
-  /* border-radius: 22px; */
+  background: var(--pbas-sky-100);
 }
 
 .budget-header {
@@ -16,7 +13,7 @@
 
 .budget-header h3.ant-typography {
   margin: 4px 0 6px;
-  color: #234652;
+  color: var(--pbas-text);
   font-weight: 800;
 }
 
@@ -33,21 +30,21 @@
 
 .budget-total-card {
   margin-bottom: 16px;
-  border: 1px solid rgba(74, 181, 190, 0.12);
-  box-shadow: 0 12px 30px rgba(74, 181, 190, 0.08);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(241, 251, 250, 0.98));
+  border: 1px solid var(--pbas-border);
+  box-shadow: var(--pbas-shadow);
+  background: #ffffff;
 }
 
 .budget-total-label {
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: #338b98;
+  color: var(--pbas-blue-700);
   font-size: 12px;
 }
 
 .budget-total-card h3.ant-typography {
   margin: 8px 0 0;
-  color: #234652;
+  color: var(--pbas-text);
   font-weight: 800;
 }
 
@@ -59,9 +56,9 @@
 
 .budget-filter-card {
   margin-bottom: 16px;
-  border: 1px solid rgba(74, 181, 190, 0.12);
-  box-shadow: 0 12px 28px rgba(74, 181, 190, 0.08);
-  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid var(--pbas-border);
+  box-shadow: var(--pbas-shadow);
+  background: #ffffff;
 }
 
 .budget-filter-row {
@@ -94,9 +91,9 @@
 
 .budget-card,
 .budget-empty-card {
-  border: 1px solid rgba(74, 181, 190, 0.12);
-  box-shadow: 0 16px 38px rgba(74, 181, 190, 0.1);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(241, 251, 250, 0.98));
+  border: 1px solid var(--pbas-border);
+  box-shadow: var(--pbas-shadow);
+  background: #ffffff;
 }
 
 .budget-page .ant-modal .ant-form-item {
@@ -132,13 +129,13 @@
 }
 
 .budget-year-card {
-  border: 1px solid rgba(74, 181, 190, 0.12);
-  box-shadow: 0 16px 38px rgba(74, 181, 190, 0.1);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.98), rgba(241, 251, 250, 0.98));
+  border: 1px solid var(--pbas-border);
+  box-shadow: var(--pbas-shadow);
+  background: #ffffff;
 }
 
 .budget-year-card .ant-card-head {
-  border-bottom: 1px solid rgba(74, 181, 190, 0.12);
+  border-bottom: 1px solid var(--pbas-border);
   padding: 14px 18px;
 }
 
@@ -156,7 +153,7 @@
 
 .budget-year-title h4.ant-typography {
   margin: 0 0 4px;
-  color: #234652;
+  color: var(--pbas-text);
   font-weight: 800;
 }
 
@@ -182,14 +179,14 @@
 }
 
 .budget-year-table .ant-table-thead > tr > th {
-  color: #4a5f69;
+  color: var(--pbas-text);
   font-size: 13px;
   font-weight: 700;
-  background: rgba(244, 249, 249, 0.96);
+  background: #f8fbff;
 }
 
 .budget-year-table .ant-table-tbody > tr > td {
-  color: #41575f;
+  color: var(--pbas-text);
   font-size: 13px;
   vertical-align: top;
 }
@@ -225,13 +222,13 @@
 .budget-card-label {
   text-transform: uppercase;
   letter-spacing: 0.12em;
-  color: #338b98;
+  color: var(--pbas-blue-700);
   font-size: 11px;
 }
 
 .budget-card h4.ant-typography {
   margin: 6px 0 0;
-  color: #234652;
+  color: var(--pbas-text);
   font-weight: 800;
 }
 
@@ -241,7 +238,7 @@
 }
 
 .budget-more-button {
-  color: #1e7681;
+  color: var(--pbas-blue-700);
   width: 30px !important;
   min-width: 30px;
   height: 30px;
@@ -257,7 +254,7 @@
   align-items: center;
   gap: 10px;
   margin: 18px 0 14px;
-  color: #234652;
+  color: var(--pbas-text);
   font-size: 24px;
   font-weight: 800;
 }
