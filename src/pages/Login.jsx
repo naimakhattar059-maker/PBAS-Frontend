@@ -53,7 +53,12 @@ const Login = () => {
   };
 
   return (
-    <AuthLayout title="Log in" subtitle="Access the Budget Automation System.">
+    <AuthLayout
+      title="Budget Automation System"
+      subtitle="Postgraduate College for Women, Wah Cantt"
+      logoSrc="/pbas-logo.png"
+      formOnly
+    >
       <Form layout="vertical" onFinish={onFinish} requiredMark="optional" form={form}>
         <Form.Item
           label="Email"

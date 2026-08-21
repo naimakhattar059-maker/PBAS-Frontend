@@ -4,7 +4,6 @@ import {
   Card,
   Col,
   Row,
-  Space,
   Table,
   Tag,
   Tooltip,
@@ -74,11 +73,10 @@ const Dashboard = () => {
     []
   );
 
-  const formatValue = (key, value) => {
+  const getFirstValue = (...values) => values.find((value) => value !== undefined && value !== null && value !== "");
+
+  const formatValue = (value) => {
     if (value == null) return "—";
-    if (key === "budget_available" || key === "expense_this_month") {
-      return value;
-    }
     return value;
   };
 
@@ -113,7 +111,7 @@ const Dashboard = () => {
         : null,
       topBudgetType
         ? {
-            label: "Budget mix",
+            label: "Budget Head",
             value: `${topBudgetType.name}: ${topBudgetType.value}`,
             tone: "amber",
           }
@@ -174,6 +172,92 @@ const Dashboard = () => {
   const utilizedPercent = budgetChartTotal
     ? Math.round((Number(budgetOverview.utilized_budget || 0) / budgetChartTotal) * 100)
     : 0;
+  const totals = data?.totals || {};
+  const formattedBudget = budgetOverview.formatted || {};
+  const totalBudgetValue = getFirstValue(
+    formattedBudget.full_budget,
+    totals.total_budget,
+    totals.full_budget,
+    totals.budget_total
+  );
+  const remainingBudgetValue = getFirstValue(
+    formattedBudget.remaining_budget,
+    totals.remaining_amount,
+    totals.remaining_budget,
+    totals.budget_available
+  );
+  const utilizedBudgetValue = getFirstValue(
+    formattedBudget.utilized_budget,
+    totals.utilization,
+    totals.utilized_budget,
+    totals.expense_this_month
+  );
+  const totalRevenueValue = getFirstValue(
+    totals.total_internal_revenue,
+    totals.internal_revenue_total,
+    totals.total_revenue,
+    data?.internal_revenue?.total,
+    data?.internal_revenue?.formatted?.total
+  );
+  const remainingRevenueValue = getFirstValue(
+    totals.remaining_internal_revenue,
+    totals.internal_revenue_remaining,
+    totals.remaining_revenue,
+    data?.internal_revenue?.remaining,
+    data?.internal_revenue?.formatted?.remaining
+  );
+  const utilizedRevenueValue = getFirstValue(
+    totals.utilized_internal_revenue,
+    totals.internal_revenue_utilized,
+    totals.utilized_revenue,
+    data?.internal_revenue?.utilized,
+    data?.internal_revenue?.formatted?.utilized
+  );
+  const topStats = [
+    {
+      key: "total-budget",
+      label: "Total Budget",
+      value: totalBudgetValue,
+      accent: "aqua",
+    },
+    {
+      key: "remaining-budget",
+      label: "Remaining Amount",
+      value: remainingBudgetValue,
+      accent: "mint",
+    },
+    {
+      key: "utilization",
+      label: "Utilization",
+      value: utilizedBudgetValue,
+      note: `${utilizedPercent}% utilized`,
+      accent: "violet",
+    },
+    {
+      key: "pending-approvals",
+      label: "Pending Approvals",
+      value: totals.pending_approvals,
+      accent: "amber",
+    },
+    {
+      key: "total-revenue",
+      label: "Total Internal Revenue",
+      value: totalRevenueValue,
+      accent: "blue",
+    },
+    {
+      key: "remaining-revenue",
+      label: "Remaining Revenue",
+      value: remainingRevenueValue,
+      accent: "teal",
+    },
+    {
+      key: "utilized-revenue",
+      label: "Utilized Revenue",
+      value: utilizedRevenueValue,
+      accent: "rose",
+    },
+  ];
 
   return (
     <div className="dashboard-page">
@@ -192,19 +276,14 @@ const Dashboard = () => {
         </div>
 
         <Row gutter={[18, 18]} className="stat-row">
-      {[
-            { key: "users", label: "Users", accent: "aqua" },
-            { key: "pending_approvals", label: "Pending Approvals", accent: "violet" },
-            { key: "budget_available", label: "Budget Available", accent: "amber" },
-            { key: "expense_this_month", label: "Expense This Month", accent: "mint" },
-          ].map(({ key, label, accent }) => (
+          {topStats.map(({ key, label, value, note, accent }) => (
             <Col xs={24} sm={12} lg={6} key={key}>
               <Card className={`stat-card stat-card-${accent}`} loading={loading} bordered={false}>
                 <Text className="stat-label">{label}</Text>
                 <div className="stat-value">
-                  {formatValue(key, data?.totals?.[key] || (loading ? "…" : "—"))}
+                  {formatValue(getFirstValue(value, loading ? "…" : "—"))}
                 </div>
-                <Text type="secondary">Updated just now</Text>
+                <Text type="secondary">{note || "Updated just now"}</Text>
               </Card>
             </Col>
           ))}
@@ -322,7 +401,17 @@ const Dashboard = () => {
       </Row>
 
       <Row gutter={[18, 18]}>
-        <Col xs={24} xl={12}>
+        <Col xs={24} lg={12}>
+          <Card className="panel-card panel-card-tight panel-card-system" title="System Summary" loading={loading}>
+            <div className="system-summary-card">
+              <Text className="stat-label">Users</Text>
+              <div className="stat-value">{formatValue(getFirstValue(totals.users, loading ? "…" : "—"))}</div>
+              <Text type="secondary">Registered system users</Text>
+            </div>
+          </Card>
+        </Col>
+
+        <Col xs={24} lg={12}>
           <Card className="panel-card panel-card-tight panel-card-signals" title="Live signals" loading={loading}>
             <div className="signals-list">
               {liveSignals.map((signal) => (
@@ -337,43 +426,6 @@ const Dashboard = () => {
                 </div>
               ))}
             </div>
-          </Card>
-        </Col>
-
-        <Col xs={24} xl={12}>
-          <Card className="panel-card panel-card-stretch panel-card-mix" title="Activity mix" loading={loading}>
-            <Space direction="vertical" size={16} style={{ width: "100%" }}>
-              <div>
-                <Text type="secondary">Request statuses</Text>
-                <div style={{ marginTop: 8 }}>
-                  {(data?.charts?.request_statuses || []).map((item) => (
-                    <Tag key={item.name} color="blue">
-                      {item.name}: {item.value}
-                    </Tag>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <Text type="secondary">Payroll statuses</Text>
-                <div style={{ marginTop: 8 }}>
-                  {(data?.charts?.payroll_statuses || []).map((item) => (
-                    <Tag key={item.name} color="green">
-                      {item.name}: {item.value}
-                    </Tag>
-                  ))}
-                </div>
-              </div>
-              <div>
-                <Text type="secondary">Budget types</Text>
-                <div style={{ marginTop: 8 }}>
-                  {(data?.charts?.budget_types || []).map((item) => (
-                    <Tag key={item.name} color="purple">
-                      {item.name}: {item.value}
-                    </Tag>
-                  ))}
-                </div>
-              </div>
-            </Space>
           </Card>
         </Col>
       </Row>

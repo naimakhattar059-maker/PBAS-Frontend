@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Button, Card, DatePicker, Space, Tag, Typography, message } from "antd";
-import { PlusOutlined, ReloadOutlined, SaveOutlined } from "@ant-design/icons";
+import { Button, Card, DatePicker, Form, Input, Modal, Space, Tag, Typography, message } from "antd";
+import { DownloadOutlined, PlusOutlined, ReloadOutlined, SaveOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useSelector } from "react-redux";
 import { listInternalRevenueCells, saveInternalRevenueCells } from "../api/internalRevenue";
@@ -36,6 +36,48 @@ const totalInterColumn = 20;
 const grandTotalColumn = 27;
 const formulaColumns = new Set([totalBsColumn, totalInterColumn, grandTotalColumn]);
 
+const recordTypeOptions = [
+  { key: "bs", title: "BS Funds", description: "Admin, BS Student Fund, Academic, TVF, transport and university dues" },
+  { key: "inter", title: "Inter Funds", description: "IDF, IT, exam, transport and refund entries" },
+  { key: "others", title: "Others", description: "Registration funds, government dues, project amount and other revenue" },
+];
+
+const recordFieldGroups = {
+  bs: [
+    { column: 0, label: "Entry No" },
+    { column: 1, label: "Admin - GEN" },
+    { column: 2, label: "Admin - FUR" },
+    { column: 3, label: "Admin - BLDNG" },
+    { column: 4, label: "BS Stdf - SPORTS" },
+    { column: 5, label: "BS Stdf - MAG" },
+    { column: 6, label: "BS Stdf - ID" },
+    { column: 7, label: "Academic - LAB" },
+    { column: 8, label: "Academic - LIB" },
+    { column: 9, label: "Academic - COMP" },
+    { column: 10, label: "Academic - EXAM" },
+    { column: 11, label: "TVF" },
+    { column: 12, label: "Trp Fund" },
+    { column: 13, label: "Uni Dues" },
+  ],
+  inter: [
+    { column: 0, label: "Entry No" },
+    { column: 15, label: "IDF" },
+    { column: 16, label: "IT" },
+    { column: 17, label: "Exam" },
+    { column: 18, label: "Trp Fund" },
+    { column: 19, label: "Sec Refund INTER/BS" },
+  ],
+  others: [
+    { column: 0, label: "Entry No" },
+    { column: 21, label: "Reg Funds - RSF" },
+    { column: 22, label: "Reg Funds - RDF" },
+    { column: 23, label: "Reg Funds - CSF" },
+    { column: 24, label: "Reg Funds - CDF" },
+    { column: 25, label: "Govt Dues" },
+    { column: 26, label: "Proj Amt / Other" },
+  ],
+};
+
 const cloneRows = (rows) => rows.map((row) => Array.from({ length: columnCount }, (_, index) => row[index] ?? ""));
 const blankRow = () => Array.from({ length: columnCount }, () => "");
 const cellKey = (rowIndex, columnIndex) => `${rowIndex}:${columnIndex}`;
@@ -45,6 +87,13 @@ const numberValue = (value) => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 const formatCalculated = (value) => (value ? String(value) : "");
+const formatCurrency = (value) => `PKR ${new Intl.NumberFormat("en-PK").format(numberValue(value))}`;
+const escapeHtml = (value) =>
+  String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 
 const findSummaryIndex = (rows, label) => rows.findIndex((row) => row[0] === label);
 const isDecorativeRow = (rowIndex) => [8, 9, 10].includes(rowIndex);
@@ -144,6 +193,21 @@ const isEditableCell = (rows, rowIndex, columnIndex) => {
   return !formulaColumns.has(columnIndex);
 };
 
+const exportSections = {
+  bs: {
+    title: "BS Funds",
+    columns: Array.from({ length: 15 }, (_, index) => index),
+  },
+  inter: {
+    title: "Inter Funds",
+    columns: [0, 15, 16, 17, 18, 19, 20],
+  },
+  others: {
+    title: "Others Funds",
+    columns: [0, 21, 22, 23, 24, 25, 26, 27],
+  },
+};
+
 const InternalRevenue = () => {
   const { token, user } = useSelector((state) => state.auth);
   const [rows, setRows] = useState(readStoredRows);
@@ -152,12 +216,28 @@ const InternalRevenue = () => {
   const [dirtyCells, setDirtyCells] = useState(new Set());
   const [saveState, setSaveState] = useState("idle");
   const [loadState, setLoadState] = useState("loading");
+  const [recordModalOpen, setRecordModalOpen] = useState(false);
+  const [recordType, setRecordType] = useState(null);
+  const [recordDate, setRecordDate] = useState(() => dayjs(defaultRevenueMonth));
+  const [recordForm] = Form.useForm();
   const inputRefs = useRef(new Map());
   const rowsRef = useRef(rows);
   const pendingSaveCellsRef = useRef(new Map());
   const saveTimerRef = useRef(null);
   const canViewInternalRevenue = hasPermission(user, "view_budgets");
   const period = periodFromMonth(revenueMonth);
+
+  const revenueSummary = useMemo(() => {
+    const calculatedRows = applyFormulas(rows);
+    const totalRow = calculatedRows[findSummaryIndex(calculatedRows, "T. Exp")] || [];
+    const closingRow = calculatedRows[findSummaryIndex(calculatedRows, "Clos")] || [];
+
+    return {
+      totalInternalRevenue: totalRow[grandTotalColumn] || 0,
+      remainingAmount: closingRow[grandTotalColumn] || 0,
+      utilizedAmount: totalRow[grandTotalColumn] || 0,
+    };
+  }, [rows]);
 
   useEffect(() => {
     rowsRef.current = rows;
@@ -336,24 +416,71 @@ const InternalRevenue = () => {
     if (event.key === "ArrowLeft") moveTo(rowIndex, columnIndex - 1);
   };
 
-  const addRecord = () => {
+  const getRecordInsertIndex = () => {
     const totalRowIndex = findSummaryIndex(rowsRef.current, "T. Exp");
     const summaryIndex = totalRowIndex >= 0 ? totalRowIndex : rowsRef.current.length;
     const existingBlankIndex = rowsRef.current.findIndex(
       (row, rowIndex) => rowIndex >= dataStartRow && rowIndex < summaryIndex && !isDecorativeRow(rowIndex) && isBlankDataRow(row)
     );
+    return { existingBlankIndex, summaryIndex };
+  };
+
+  const insertRecordRow = (values = {}) => {
+    const { existingBlankIndex, summaryIndex } = getRecordInsertIndex();
     const insertAt = existingBlankIndex >= 0 ? existingBlankIndex : summaryIndex;
+    const nextRow = blankRow();
+
+    Object.entries(values).forEach(([column, value]) => {
+      nextRow[Number(column)] = value ?? "";
+    });
+
     const nextRows =
       existingBlankIndex >= 0
-        ? rowsRef.current.map((row, rowIndex) => (rowIndex === existingBlankIndex ? blankRow() : row))
-        : [...rowsRef.current.slice(0, insertAt), blankRow(), ...rowsRef.current.slice(insertAt)];
+        ? rowsRef.current.map((row, rowIndex) => (rowIndex === existingBlankIndex ? nextRow : row))
+        : [...rowsRef.current.slice(0, insertAt), nextRow, ...rowsRef.current.slice(insertAt)];
     const calculatedRows = applyFormulas(nextRows);
     setRows(calculatedRows);
     rowsRef.current = calculatedRows;
     setDirtyCells(new Set());
     saveCells(allCellsForRows(calculatedRows), true);
     focusCell(insertAt, 0);
-    message.success("New spreadsheet row added");
+    return insertAt;
+  };
+
+  const openRecordModal = () => {
+    setRecordType(null);
+    setRecordDate(dayjs(revenueMonth));
+    recordForm.resetFields();
+    setRecordModalOpen(true);
+  };
+
+  const closeRecordModal = () => {
+    setRecordModalOpen(false);
+    setRecordType(null);
+    recordForm.resetFields();
+  };
+
+  const selectRecordType = (type) => {
+    setRecordType(type);
+    recordForm.resetFields();
+  };
+
+  const submitRecordForm = (values) => {
+    const fields = recordFieldGroups[recordType] || [];
+    const rowValues = fields.reduce((acc, field) => {
+      acc[field.column] = values[`column_${field.column}`] ?? "";
+      return acc;
+    }, {});
+
+    if (recordType === "others" && recordDate) {
+      const nextMonth = recordDate.startOf("month").format("YYYY-MM-DD");
+      setRevenueMonth(nextMonth);
+      localStorage.setItem(revenueMonthStorageKey, nextMonth);
+    }
+
+    insertRecordRow(rowValues);
+    closeRecordModal();
+    message.success(`${recordTypeOptions.find((option) => option.key === recordType)?.title || "Record"} added`);
   };
 
   const saveAll = () => {
@@ -386,6 +513,67 @@ const InternalRevenue = () => {
     return <Tag>Ready</Tag>;
   }, [loadState, saveState]);
 
+  const exportSectionToPdf = (sectionKey) => {
+    const section = exportSections[sectionKey];
+    if (!section) return;
+
+    const printableRows = applyFormulas(rowsRef.current);
+    const htmlRows = printableRows
+      .map(
+        (row) => `
+          <tr>
+            ${section.columns
+              .map((columnIndex) => `<td>${escapeHtml(row[columnIndex])}</td>`)
+              .join("")}
+          </tr>`
+      )
+      .join("");
+    const htmlHeaders = section.columns
+      .map((columnIndex) => `<th>${columnIndex + 1}</th>`)
+      .join("");
+    const exportWindow = window.open("", "_blank", "noopener,noreferrer");
+
+    if (!exportWindow) {
+      message.error("Please allow popups to export the PDF.");
+      return;
+    }
+
+    exportWindow.document.write(`
+      <!doctype html>
+      <html>
+        <head>
+          <title>${escapeHtml(section.title)} - ${escapeHtml(period)}</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 24px; color: #111827; }
+            h1 { margin: 0 0 4px; font-size: 22px; }
+            p { margin: 0 0 18px; color: #475569; }
+            table { width: 100%; border-collapse: collapse; table-layout: fixed; }
+            th, td { border: 1px solid #cbd5e1; padding: 7px 8px; font-size: 11px; text-align: center; word-break: break-word; }
+            th { background: #e0f2fe; font-weight: 700; }
+            tr:nth-child(2), tr:nth-child(3) { background: #e6b8b7; font-weight: 700; }
+            tr:nth-child(4), tr:nth-child(5) { font-weight: 700; }
+            @page { size: landscape; margin: 12mm; }
+          </style>
+        </head>
+        <body>
+          <h1>${escapeHtml(section.title)}</h1>
+          <p>Internal Revenue - ${escapeHtml(dayjs(revenueMonth).format("MMM-YY"))}</p>
+          <table>
+            <thead><tr>${htmlHeaders}</tr></thead>
+            <tbody>${htmlRows}</tbody>
+          </table>
+          <script>
+            window.onload = () => {
+              window.focus();
+              window.print();
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    exportWindow.document.close();
+  };
+
   if (!canViewInternalRevenue) {
     return <AccessDenied title="Internal Revenue" />;
   }
@@ -408,11 +596,37 @@ const InternalRevenue = () => {
           />
           <Button icon={<ReloadOutlined />} onClick={resetSheet}>Restore File Data</Button>
           <Button icon={<SaveOutlined />} onClick={saveAll}>Save</Button>
-          <Button type="primary" icon={<PlusOutlined />} onClick={addRecord}>Add Record</Button>
+          <Button type="primary" icon={<PlusOutlined />} onClick={openRecordModal}>Add Record</Button>
         </Space>
       </div>
 
+      <div className="internal-revenue-summary-grid">
+        <Card className="internal-revenue-summary-card internal-revenue-summary-total" bordered={false}>
+          <Text className="internal-revenue-summary-label">Total Internal Revenue</Text>
+          <Title level={3}>{formatCurrency(revenueSummary.totalInternalRevenue)}</Title>
+          <Text type="secondary">Calculated from Grand Total</Text>
+        </Card>
+        <Card className="internal-revenue-summary-card internal-revenue-summary-remaining" bordered={false}>
+          <Text className="internal-revenue-summary-label">Remaining Amount</Text>
+          <Title level={3}>{formatCurrency(revenueSummary.remainingAmount)}</Title>
+          <Text type="secondary">From closing row</Text>
+        </Card>
+        <Card className="internal-revenue-summary-card internal-revenue-summary-utilized" bordered={false}>
+          <Text className="internal-revenue-summary-label">Utilized Amount</Text>
+          <Title level={3}>{formatCurrency(revenueSummary.utilizedAmount)}</Title>
+          <Text type="secondary">From total expense row</Text>
+        </Card>
+      </div>
+
       <Card bordered={false} className="internal-revenue-card">
+        <div className="internal-revenue-export-bar">
+          <Text strong>Export PDF</Text>
+          <Space wrap>
+            <Button icon={<DownloadOutlined />} onClick={() => exportSectionToPdf("bs")}>BS Funds</Button>
+            <Button icon={<DownloadOutlined />} onClick={() => exportSectionToPdf("inter")}>Inter Funds</Button>
+            <Button icon={<DownloadOutlined />} onClick={() => exportSectionToPdf("others")}>Others Funds</Button>
+          </Space>
+        </div>
         <div className="internal-revenue-table-shell" role="region" aria-label="Internal revenue spreadsheet">
           <table className="internal-revenue-spreadsheet">
             <thead>
@@ -477,6 +691,65 @@ const InternalRevenue = () => {
           </table>
         </div>
       </Card>
+
+      <Modal
+        open={recordModalOpen}
+        title="Add Internal Revenue Record"
+        onCancel={closeRecordModal}
+        footer={null}
+        width={820}
+        destroyOnHidden
+      >
+        <div className="internal-revenue-record-types">
+          {recordTypeOptions.map((option) => (
+            <button
+              type="button"
+              key={option.key}
+              className={`internal-revenue-record-type${recordType === option.key ? " internal-revenue-record-type-active" : ""}`}
+              onClick={() => selectRecordType(option.key)}
+            >
+              <strong>{option.title}</strong>
+              <span>{option.description}</span>
+            </button>
+          ))}
+        </div>
+
+        {recordType === "others" ? (
+          <div className="internal-revenue-record-date">
+            <Text strong>Select month/date for other revenue</Text>
+            <DatePicker
+              picker="month"
+              allowClear={false}
+              format="MMM-YY"
+              value={recordDate}
+              onChange={(date) => setRecordDate(date || dayjs(defaultRevenueMonth))}
+            />
+          </div>
+        ) : null}
+
+        {recordType ? (
+          <Form
+            className="internal-revenue-record-form"
+            form={recordForm}
+            layout="vertical"
+            onFinish={submitRecordForm}
+          >
+            <div className="internal-revenue-record-grid">
+              {recordFieldGroups[recordType].map((field) => (
+                <Form.Item key={field.column} label={field.label} name={`column_${field.column}`}>
+                  <Input inputMode={field.column === 0 ? "text" : "decimal"} placeholder={field.column === 0 ? "Entry no" : "0"} />
+                </Form.Item>
+              ))}
+            </div>
+            <Space>
+              <Button type="primary" htmlType="submit">
+                Add to Sheet
+              </Button>
+              <Button onClick={closeRecordModal}>Cancel</Button>
+            </Space>
+          </Form>
+        ) : null}
+      </Modal>
     </div>
   );
 };

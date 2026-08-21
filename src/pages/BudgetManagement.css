@@ -30,9 +30,13 @@
 
 .budget-total-card {
   margin-bottom: 16px;
-  border: 1px solid var(--pbas-border);
-  box-shadow: var(--pbas-shadow);
-  background: #ffffff;
+  border: 0;
+  box-shadow: none;
+  background: transparent;
+}
+
+.budget-total-card .ant-card-body {
+  padding: 0 !important;
 }
 
 .budget-total-label {
@@ -52,6 +56,75 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 18px;
+}
+
+.budget-summary-tile {
+  position: relative;
+  min-height: 132px;
+  padding: 20px 22px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.72);
+  border-radius: 8px;
+  box-shadow: 0 16px 34px rgba(24, 57, 99, 0.13);
+}
+
+.budget-summary-tile::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: 5px;
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.budget-summary-tile::after {
+  content: "";
+  position: absolute;
+  width: 132px;
+  height: 132px;
+  right: -52px;
+  bottom: -58px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.26);
+  pointer-events: none;
+}
+
+.budget-summary-tile-total {
+  background: linear-gradient(135deg, #dff9ff 0%, #effdff 46%, #ffffff 100%);
+  border-color: rgba(14, 165, 233, 0.2);
+}
+
+.budget-summary-tile-total::before {
+  background: linear-gradient(90deg, #0ea5e9, #22d3ee);
+}
+
+.budget-summary-tile-view {
+  background: linear-gradient(135deg, #f4ecff 0%, #faf6ff 46%, #ffffff 100%);
+  border-color: rgba(124, 58, 237, 0.2);
+}
+
+.budget-summary-tile-view::before {
+  background: linear-gradient(90deg, #7c3aed, #c084fc);
+}
+
+.budget-summary-tile-years {
+  background: linear-gradient(135deg, #fff3dd 0%, #fffaf0 46%, #ffffff 100%);
+  border-color: rgba(249, 115, 22, 0.2);
+}
+
+.budget-summary-tile-years::before {
+  background: linear-gradient(90deg, #f97316, #facc15);
+}
+
+.budget-summary-tile h3.ant-typography {
+  position: relative;
+  z-index: 1;
+  font-size: 28px;
+}
+
+.budget-summary-tile .ant-typography-secondary,
+.budget-summary-tile .budget-total-label {
+  position: relative;
+  z-index: 1;
 }
 
 .budget-filter-card {
@@ -131,12 +204,15 @@
 .budget-year-card {
   border: 1px solid var(--pbas-border);
   box-shadow: var(--pbas-shadow);
-  background: #ffffff;
+  background:
+    radial-gradient(circle at 96% 8%, rgba(34, 211, 238, 0.08), transparent 18%),
+    #ffffff;
 }
 
 .budget-year-card .ant-card-head {
   border-bottom: 1px solid var(--pbas-border);
   padding: 14px 18px;
+  background: linear-gradient(135deg, #f8fbff, #eef8ff);
 }
 
 .budget-year-card .ant-card-body {
@@ -152,9 +228,25 @@
 }
 
 .budget-year-title h4.ant-typography {
-  margin: 0 0 4px;
-  color: var(--pbas-text);
-  font-weight: 800;
+  margin: 4px 0 4px;
+  color: #071a3a;
+  font-size: 26px;
+  font-weight: 900;
+  letter-spacing: 0;
+}
+
+.budget-year-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #dff9ff, #e9f2ff);
+  color: #145fcb;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
 .budget-year-total {

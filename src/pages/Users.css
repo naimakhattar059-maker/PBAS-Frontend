@@ -23,6 +23,15 @@
   overflow-x: auto;
 }
 
+.user-row-inactive > td {
+  background: #fff7f7 !important;
+  color: rgba(31, 42, 68, 0.68);
+}
+
+.user-row-inactive .ant-tag {
+  opacity: 0.92;
+}
+
 .users-header .ant-btn {
   height: 30px;
   padding-inline: 10px;

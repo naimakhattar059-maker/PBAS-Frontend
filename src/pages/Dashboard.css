@@ -197,6 +197,33 @@
   border-color: rgba(16, 185, 129, 0.18);
 }
 
+.stat-card-blue::before {
+  background: linear-gradient(90deg, #2563eb, #38bdf8);
+}
+
+.stat-card-blue {
+  background: linear-gradient(135deg, #dbeafe 0%, #eff6ff 42%, #ffffff 100%);
+  border-color: rgba(37, 99, 235, 0.18);
+}
+
+.stat-card-teal::before {
+  background: linear-gradient(90deg, #0f766e, #2dd4bf);
+}
+
+.stat-card-teal {
+  background: linear-gradient(135deg, #ccfbf1 0%, #f0fdfa 42%, #ffffff 100%);
+  border-color: rgba(15, 118, 110, 0.18);
+}
+
+.stat-card-rose::before {
+  background: linear-gradient(90deg, #e11d48, #fb7185);
+}
+
+.stat-card-rose {
+  background: linear-gradient(135deg, #ffe4e6 0%, #fff1f2 42%, #ffffff 100%);
+  border-color: rgba(225, 29, 72, 0.18);
+}
+
 .stat-card .ant-card-body,
 .panel-card .ant-card-body {
   padding: 12px !important;
@@ -284,6 +311,26 @@
 
 .panel-card-mix::before {
   background: linear-gradient(90deg, #f97316, #10b981);
+}
+
+.panel-card-system {
+  background:
+    radial-gradient(circle at 88% 18%, rgba(16, 185, 129, 0.09), transparent 24%),
+    linear-gradient(135deg, #f4fffb 0%, #ffffff 48%, #f7fbff 100%);
+  border-color: rgba(16, 185, 129, 0.16);
+  box-shadow: 0 14px 30px rgba(16, 185, 129, 0.08);
+}
+
+.panel-card-system::before {
+  background: linear-gradient(90deg, #10b981, #38bdf8);
+}
+
+.system-summary-card {
+  min-height: 164px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
 }
 
 .panel-card-tight .ant-card-body {

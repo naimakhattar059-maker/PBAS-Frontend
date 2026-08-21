@@ -94,6 +94,13 @@ const handleAmountKeyDown = (event) => {
 };
 
 const getBudgetYear = (budget) => Number(budget.start_year || currentYear);
+const getBudgetEndYear = (budget) => Number(budget.end_year || budget.start_year || currentYear);
+const getBudgetYearRange = (budget) => {
+  const start = getBudgetYear(budget);
+  const end = getBudgetEndYear(budget);
+
+  return `${start} to ${end}`;
+};
 const matchesSelectedYear = (budget, selectedYear) => {
   if (!selectedYear || selectedYear === "all") {
     return true;
@@ -176,21 +183,35 @@ const BudgetManagement = () => {
   }, [budgets, searchText, selectedYear]);
   const groupedBudgets = useMemo(() => {
     const groups = filteredBudgets.reduce((acc, budget) => {
-      const year = getBudgetYear(budget);
-      const existing = acc.get(year) || [];
-      acc.set(year, [...existing, budget]);
+      const startYearValue = getBudgetYear(budget);
+      const endYearValue = getBudgetEndYear(budget);
+      const key = `${startYearValue}-${endYearValue}`;
+      const existing = acc.get(key) || {
+        key,
+        startYear: startYearValue,
+        endYear: endYearValue,
+        label: getBudgetYearRange(budget),
+        budgets: [],
+      };
+      acc.set(key, { ...existing, budgets: [...existing.budgets, budget] });
       return acc;
     }, new Map());
 
-    return Array.from(groups.entries())
-      .sort(([yearA], [yearB]) => yearB - yearA)
-      .map(([year, yearBudgets]) => ({
-        year,
+    return Array.from(groups.values())
+      .sort((groupA, groupB) => groupB.startYear - groupA.startYear || groupB.endYear - groupA.endYear)
+      .map((group) => {
+        const yearBudgets = group.budgets;
+
+        return {
+        key: group.key,
+        year: group.startYear,
+        yearLabel: group.label,
         budgets: [...yearBudgets].sort((a, b) => String(a.name || "").localeCompare(String(b.name || ""))),
         total: yearBudgets.reduce((sum, budget) => sum + Number(budget.amount || 0), 0),
         remaining: yearBudgets.reduce((sum, budget) => sum + Number(budget.remaining_amount ?? budget.amount ?? 0), 0),
         utilized: yearBudgets.reduce((sum, budget) => sum + Number(budget.spent_amount || 0), 0),
-      }));
+      };
+      });
   }, [filteredBudgets]);
   const filteredTotalAmount = useMemo(
     () => filteredBudgets.reduce((sum, budget) => sum + Number(budget.amount || 0), 0),
@@ -515,14 +536,14 @@ const BudgetManagement = () => {
 
       <Card className="budget-total-card" bordered={false}>
         <div className="budget-summary-grid">
-          <div>
+          <div className="budget-summary-tile budget-summary-tile-total">
             <Text className="budget-total-label">Total Budget</Text>
             <Title level={3}>PKR {formatAmount(totalBudgetAmount)}</Title>
             <Text type="secondary">
               Remaining: PKR {formatAmount(totalRemainingAmount)} - Utilized: PKR {formatAmount(totalUtilizedAmount)}
             </Text>
           </div>
-          <div>
+          <div className="budget-summary-tile budget-summary-tile-view">
             <Text className="budget-total-label">Current View</Text>
             <Title level={3}>PKR {formatAmount(filteredTotalAmount)}</Title>
             <Text type="secondary">
@@ -530,7 +551,7 @@ const BudgetManagement = () => {
               {formatAmount(filteredRemainingAmount)} - Utilized: PKR {formatAmount(filteredUtilizedAmount)}
             </Text>
           </div>
-          <div>
+          <div className="budget-summary-tile budget-summary-tile-years">
             <Text className="budget-total-label">Budget Years</Text>
             <Title level={3}>{availableYears.length}</Title>
             <Text type="secondary">Grouped into separate yearly tables</Text>
@@ -569,14 +590,15 @@ const BudgetManagement = () => {
         ) : (
           groupedBudgets.map((group) => (
             <Card
-              key={group.year}
+              key={group.key}
               className="budget-year-card"
               loading={loading}
               bordered={false}
               title={
                 <div className="budget-year-title">
                   <div>
-                    <Title level={4}>{group.year} Budgets</Title>
+                    <Text className="budget-year-badge">Budget Year</Text>
+                    <Title level={4}>{group.yearLabel}</Title>
                     <Text type="secondary">
                       {group.budgets.length} record{group.budgets.length === 1 ? "" : "s"} in this year
                     </Text>

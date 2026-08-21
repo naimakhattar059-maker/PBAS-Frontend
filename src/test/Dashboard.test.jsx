@@ -69,7 +69,7 @@ describe("Dashboard", () => {
     expect(screen.getAllByText("PKR 325,000").length).toBeGreaterThan(0);
     expect(screen.getByText("Live signals")).toBeInTheDocument();
     expect(screen.getByText("Budget Overview")).toBeInTheDocument();
-    expect(screen.getByText("Activity mix")).toBeInTheDocument();
+    expect(screen.getByText("Budget Head")).toBeInTheDocument();
     expect(screen.getAllByText("submitted: 3").length).toBeGreaterThan(0);
   });
 });

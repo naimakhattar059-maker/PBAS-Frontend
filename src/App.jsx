@@ -1,5 +1,6 @@
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
 import Login from "./pages/Login";
+import LoginSplash from "./pages/LoginSplash";
 import ForgotPassword from "./pages/ForgotPassword";
 import ResetPassword from "./pages/ResetPassword";
 import VerifyEmail from "./pages/VerifyEmail";
@@ -23,7 +24,8 @@ const App = () => {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
-        <Route path="/login" element={<Login />} />
+        <Route path="/login" element={<LoginSplash />} />
+        <Route path="/login/form" element={<Login />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/verify-email" element={<VerifyEmail />} />

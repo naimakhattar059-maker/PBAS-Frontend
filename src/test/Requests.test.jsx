@@ -63,7 +63,7 @@ describe("Requests", () => {
     renderRequestsForHoi();
 
     expect(await screen.findByText("Lab equipment")).toBeInTheDocument();
-    fireEvent.click(screen.getByRole("button", { name: "ellipsis" }));
+    fireEvent.click(screen.getByRole("button", { name: "more" }));
 
     const approveButton = await screen.findByRole("button", { name: "Approve" });
     const rejectButton = screen.getByRole("button", { name: "Reject" });

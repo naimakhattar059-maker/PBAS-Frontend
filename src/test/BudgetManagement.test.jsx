@@ -64,8 +64,8 @@ describe("BudgetManagement", () => {
 
     renderBudgetManagement();
 
-    expect(await screen.findByText("2026 Budgets")).toBeInTheDocument();
-    expect(screen.getByText("2025 Budgets")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "2026 to 2026" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "2025 to 2025" })).toBeInTheDocument();
     expect(screen.getByText("Operations Budget")).toBeInTheDocument();
     expect(screen.getByText("Transport Budget")).toBeInTheDocument();
 
@@ -75,7 +75,7 @@ describe("BudgetManagement", () => {
       expect(screen.queryByText("Operations Budget")).not.toBeInTheDocument();
     });
     expect(screen.getByText("Transport Budget")).toBeInTheDocument();
-    expect(screen.queryByText("2026 Budgets")).not.toBeInTheDocument();
-    expect(screen.getByText("2025 Budgets")).toBeInTheDocument();
+    expect(screen.queryByRole("heading", { name: "2026 to 2026" })).not.toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "2025 to 2025" })).toBeInTheDocument();
   });
 });

@@ -39,11 +39,15 @@ const { Title, Text } = Typography;
 const { TextArea } = Input;
 
 const requestTypeOptions = [
-  { value: "budget", label: "Budget" },
-  { value: "resource", label: "Resource" },
+  { value: "budget", label: "Government Grant" },
+  { value: "resource", label: "Internal Revenue" },
   { value: "payroll", label: "Payroll" },
-  { value: "general", label: "General" },
 ];
+
+const requestTypeLabels = requestTypeOptions.reduce(
+  (labels, option) => ({ ...labels, [option.value]: option.label }),
+  {}
+);
 
 const priorityOptions = [
   { value: "low", label: "Low" },
@@ -151,7 +155,7 @@ const Requests = () => {
     setEditingId(null);
     form.resetFields();
     form.setFieldsValue({
-      request_type: "general",
+      request_type: "resource",
       priority: "normal",
       amount: 0,
       attachment: undefined,
@@ -374,7 +378,13 @@ const Requests = () => {
       width: 160,
       ellipsis: true,
     },
-    { title: "Type", dataIndex: "request_type", key: "request_type", width: 100, render: (value) => capFirst(value) },
+    {
+      title: "Type",
+      dataIndex: "request_type",
+      key: "request_type",
+      width: 160,
+      render: (value) => requestTypeLabels[value] || capFirst(value),
+    },
     {
       title: "Department",
       dataIndex: "department",
@@ -408,7 +418,7 @@ const Requests = () => {
       render: (amount) => `PKR ${new Intl.NumberFormat("en-PK").format(Number(amount || 0))}`,
     },
     {
-      title: "Budget",
+      title: "Government Grant",
       dataIndex: "budget",
       key: "budget",
       width: 220,
@@ -587,11 +597,11 @@ const Requests = () => {
             {({ getFieldValue }) =>
               getFieldValue("request_type") === "budget" ? (
                 <Form.Item
-                  label="Select Budget"
+                  label="Select Government Grant"
                   name="budget_id"
-                  rules={[{ required: true, message: "Choose the budget for this request" }]}
+                  rules={[{ required: true, message: "Choose the government grant for this request" }]}
                 >
-                  <Select placeholder="Choose budget" options={budgetOptions} />
+                  <Select placeholder="Choose government grant" options={budgetOptions} />
                 </Form.Item>
               ) : null
             }

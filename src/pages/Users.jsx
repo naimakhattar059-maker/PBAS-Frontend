@@ -15,9 +15,9 @@ import {
   message,
 } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
-import { DeleteOutlined, EditOutlined, MoreOutlined, StopOutlined } from "@ant-design/icons";
+import { CheckCircleOutlined, EditOutlined, MoreOutlined, StopOutlined } from "@ant-design/icons";
 import { useSelector } from "react-redux";
-import { createUser, deleteUser, listUsers, updateUser, updateUserActivation } from "../api/users";
+import { createUser, listUsers, updateUser, updateUserActivation } from "../api/users";
 import AccessDenied from "../components/AccessDenied";
 import { hasAnyPermission, hasPermission } from "../utils/permissions";
 import "./Users.css";
@@ -75,7 +75,6 @@ const Users = () => {
   const canViewUsers = hasAnyPermission(currentUser, ["view_users"]);
   const canCreateUsers = hasPermission(currentUser, "create_users");
   const canUpdateUsers = hasPermission(currentUser, "update_users");
-  const canDeleteUsers = hasPermission(currentUser, "delete_users");
   const canToggleStatus = hasPermission(currentUser, "change_user_status");
 
   const loadUsers = async () => {
@@ -181,35 +180,6 @@ const Users = () => {
     form.resetFields();
   };
 
-  const handleDelete = async (id) => {
-    setSaving(true);
-    try {
-      await deleteUser(token, id);
-      message.success("User deleted");
-      loadUsers();
-    } catch (err) {
-      if (err.message === "Unauthorized") {
-        message.error("Your session is not valid. Please log in again.");
-      } else {
-        message.error(err.message || "Delete failed");
-      }
-    } finally {
-      setSaving(false);
-    }
-  };
-
-  const confirmDelete = (record) => {
-    setPopoverOpenId(null);
-    Modal.confirm({
-      title: "Delete user?",
-      content: `Are you sure you want to delete ${record.username}?`,
-      okText: "Delete",
-      okButtonProps: { danger: true },
-      cancelText: "Cancel",
-      onOk: () => handleDelete(record.id),
-    });
-  };
-
   const handleToggleActivation = async (record) => {
     setSaving(true);
     try {
@@ -228,8 +198,8 @@ const Users = () => {
     Modal.confirm({
       title: record.active ? "Deactivate user?" : "Activate user?",
       content: record.active
-        ? `Are you sure you want to deactivate ${record.username}?`
-        : `Are you sure you want to activate ${record.username}?`,
+        ? `${record.username}'s account data and details will stay saved, but they will not be able to log in or perform any system functionality after deactivation.`
+        : `${record.username} will regain access according to their assigned role and permissions.`,
       okText: record.active ? "Deactivate" : "Activate",
       cancelText: "Cancel",
       okButtonProps: record.active ? { danger: true } : undefined,
@@ -287,7 +257,7 @@ const Users = () => {
       },
     ];
 
-    if (canUpdateUsers || canDeleteUsers || canToggleStatus) {
+    if (canUpdateUsers || canToggleStatus) {
       base.push({
         title: "Actions",
         key: "actions",
@@ -314,20 +284,11 @@ const Users = () => {
                 </Button>
                 <Button
                   type="text"
-                  icon={<StopOutlined />}
+                  icon={record.active ? <StopOutlined /> : <CheckCircleOutlined />}
                   disabled={record.id === currentUser?.id || !canToggleStatus}
                   onClick={() => confirmActivation(record)}
                 >
                   {record.active ? "Deactivate" : "Activate"}
-                </Button>
-                <Button
-                  danger
-                  type="text"
-                  icon={<DeleteOutlined />}
-                  disabled={!canDeleteUsers}
-                  onClick={() => confirmDelete(record)}
-                >
-                  Delete
                 </Button>
               </Space>
             }
@@ -373,6 +334,7 @@ const Users = () => {
           columns={columns}
           dataSource={rows}
           rowKey="id"
+          rowClassName={(record) => (!record.active ? "user-row-inactive" : "")}
           pagination={{ pageSize: 8 }}
           scroll={{ x: 1100 }}
         />
@@ -395,21 +357,21 @@ const Users = () => {
           disabled={saving}
         >
           <Form.Item label="Full name" name="username" rules={[{ required: true, message: "Name is required" }]}>
-            <Input size="small" placeholder="e.g. Jane Doe" />
+            <Input size="small" placeholder="e.g. Ayesha Khan" />
           </Form.Item>
           <Form.Item
             label="Father name"
             name="father_name"
             rules={[{ required: true, message: "Father name is required" }]}
           >
-            <Input size="small" placeholder="e.g. John Doe" />
+            <Input size="small" placeholder="e.g. Muhammad Saleem" />
           </Form.Item>
           <Form.Item
             label="Email"
             name="email"
             rules={[{ required: true, message: "Email is required" }, { type: "email", message: "Invalid email" }]}
           >
-            <Input size="small" placeholder="user@school.edu" />
+            <Input size="small" placeholder="e.g. ayesha.khan@pgcwwah.edu.pk" />
           </Form.Item>
           <Form.Item
             label="CNIC"
@@ -420,10 +382,10 @@ const Users = () => {
             ]}
             normalize={formatCnicInput}
           >
-            <Input size="small" inputMode="numeric" maxLength={15} placeholder="e.g. 35202-1234567-1" />
+            <Input size="small" inputMode="numeric" maxLength={15} placeholder="e.g. 37405-1234567-8" />
           </Form.Item>
           <Form.Item label="Department" name="department" rules={[{ required: true, message: "Department is required" }]}>
-            <Input size="small" placeholder="e.g. Administration" />
+            <Input size="small" placeholder="e.g. Accounts Department" />
           </Form.Item>
           <Form.Item label="Role" name="roleSelection" rules={[{ required: true, message: "Select a role" }]}>
             <Select
@@ -440,7 +402,7 @@ const Users = () => {
             name="designation"
             rules={[{ required: true, message: "Designation is required" }]}
           >
-            <Input size="small" placeholder="e.g. Accounts Officer" />
+            <Input size="small" placeholder="e.g. Assistant Accountant" />
           </Form.Item>
           <Form.Item label="Attachment" name="attachment_image" valuePropName="fileList" getValueFromEvent={(event) => event?.fileList}>
             <Upload

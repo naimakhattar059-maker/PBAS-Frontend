@@ -8,7 +8,6 @@ vi.mock("../api/users", () => ({
   listUsers: vi.fn(),
   createUser: vi.fn(),
   updateUser: vi.fn(),
-  deleteUser: vi.fn(),
   updateUserActivation: vi.fn(),
 }));
 
@@ -61,7 +60,7 @@ describe("Users", () => {
         user: {
           username: "Admin User",
           role: "admin",
-          permissions: ["view_users", "create_users", "update_users", "delete_users", "change_user_status"],
+          permissions: ["view_users", "create_users", "update_users", "change_user_status"],
         },
         token: "token",
       },
@@ -87,7 +86,7 @@ describe("Users", () => {
         user: {
           username: "Admin User",
           role: "admin",
-          permissions: ["view_users", "create_users", "update_users", "delete_users", "change_user_status"],
+          permissions: ["view_users", "create_users", "update_users", "change_user_status"],
         },
         token: "token",
       },
