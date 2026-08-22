@@ -113,12 +113,90 @@ const money = (value) => `PKR ${new Intl.NumberFormat("en-PK").format(Number(val
 
 const sumValues = (values = {}) =>
   Object.values(values).reduce((total, value) => total + Number(value || 0), 0);
+const escapeHtml = (value) =>
+  String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+
+const currentYear = new Date().getFullYear();
+const payrollAllocationStorageKey = "payrollAnnualAllocationsV1";
+const payrollArchiveStorageKey = "payrollArchivedYearsV1";
+const payrollSlipStorageKey = "payrollSavedPayslipsV1";
+
+const readAnnualAllocations = () => {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(payrollAllocationStorageKey) || "{}");
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+};
+
+const readArchivedYears = () => {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(payrollArchiveStorageKey) || "{}");
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+};
+
+const readSavedPayslips = () => {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(payrollSlipStorageKey) || "[]");
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+const getRankDeduction = (bps, basicPay = 0) => {
+  const rank = Number(bps || 0);
+  const basic = Number(basicPay || 0);
+
+  if (rank >= 20) return Math.round(basic * 0.09 + 4500);
+  if (rank >= 17) return Math.round(basic * 0.07 + 3000);
+  if (rank >= 11) return Math.round(basic * 0.045 + 1800);
+  if (rank >= 5) return Math.round(basic * 0.025 + 900);
+  if (rank >= 1) return Math.round(basic * 0.01 + 450);
+  return 0;
+};
+
+const isArchivedYear = (year, archivedYears = {}) => Boolean(archivedYears[Number(year)]);
+
+const runPaidTotal = (run) => {
+  const itemPaidTotal = (run.items || []).reduce((sum, item) => sum + Number(item.paid_amount || 0), 0);
+
+  if (itemPaidTotal > 0) return itemPaidTotal;
+  if (run.paid_amount) return Number(run.paid_amount || 0);
+  return run.status === "paid" ? Number(run.total_amount || 0) : 0;
+};
+
+const payrollBasicPay = (record) => Number(record.basic_pay || record.monthly_basic_pay || 0);
+const payrollAllowanceTotal = (record) =>
+  sumValues({
+    hra: record.hra,
+    conveyance: record.conveyance,
+    medical: record.medical,
+    integrated_allowance: record.integrated_allowance,
+    adhoc_allowance: record.adhoc_allowance,
+    dra_allowance: record.dra_allowance,
+    teaching_allowance: record.teaching_allowance,
+  });
+const payrollDeductionTotal = (record) =>
+  Number(record.deduction_amount || record.deductions || getRankDeduction(record.bps, payrollBasicPay(record)));
+const payrollGrossPay = (record) => Number(record.gross_pay || payrollBasicPay(record) + payrollAllowanceTotal(record));
+const payrollNetPay = (record) =>
+  Number(record.net_pay || Math.max(payrollGrossPay(record) - payrollDeductionTotal(record), 0));
 
 const Payroll = () => {
   const { token, user: currentUser } = useSelector((state) => state.auth);
   const [runForm] = Form.useForm();
   const [staffForm] = Form.useForm();
   const [paymentForm] = Form.useForm();
+  const [slipForm] = Form.useForm();
   const watchedMonthlyBasicPay = Form.useWatch("monthly_basic_pay", staffForm) || 0;
   const watchedHra = Form.useWatch("hra", staffForm) || 0;
   const watchedConveyance = Form.useWatch("conveyance", staffForm) || 0;
@@ -128,12 +206,16 @@ const Payroll = () => {
   const watchedDraAllowance = Form.useWatch("dra_allowance", staffForm) || 0;
   const watchedTeachingAllowance = Form.useWatch("teaching_allowance", staffForm) || 0;
   const watchedDeductionAmount = Form.useWatch("deduction_amount", staffForm) || 0;
+  const watchedBps = Form.useWatch("bps", staffForm) || 0;
+  const watchedSlipStaffId = Form.useWatch("staff_id", slipForm);
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [payrollRuns, setPayrollRuns] = useState([]);
   const [staffMembers, setStaffMembers] = useState([]);
   const [summary, setSummary] = useState({});
+  const [annualAllocations, setAnnualAllocations] = useState(readAnnualAllocations);
+  const [archivedPayrollYears, setArchivedPayrollYears] = useState(readArchivedYears);
   const [payrollMeta, setPayrollMeta] = useState({
     staff_categories: [],
     staff_category_counts: {},
@@ -143,6 +225,8 @@ const Payroll = () => {
   const [runModalOpen, setRunModalOpen] = useState(false);
   const [staffModalOpen, setStaffModalOpen] = useState(false);
   const [paymentModalOpen, setPaymentModalOpen] = useState(false);
+  const [slipModalOpen, setSlipModalOpen] = useState(false);
+  const [slipEditMode, setSlipEditMode] = useState(false);
   const [discardRunModalOpen, setDiscardRunModalOpen] = useState(false);
   const [discardStaffModalOpen, setDiscardStaffModalOpen] = useState(false);
   const [editingRunId, setEditingRunId] = useState(null);
@@ -151,6 +235,7 @@ const Payroll = () => {
   const [selectedRunSnapshot, setSelectedRunSnapshot] = useState(null);
   const [selectedRunRecord, setSelectedRunRecord] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
+  const [savedPayslips, setSavedPayslips] = useState(readSavedPayslips);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const canViewPayroll = hasAnyPermission(currentUser, ["view_payroll"]);
@@ -167,14 +252,81 @@ const Payroll = () => {
       null,
     [payrollRuns, selectedRunId, selectedRunSnapshot, selectedRunRecord]
   );
+  const selectedRunArchived = selectedRun ? isArchivedYear(selectedRun.year, archivedPayrollYears) : false;
 
-  const visibleRunStats = useMemo(() => {
-    const base = { draft: 0, generated: 0, approved: 0, paid: 0, rejected: 0 };
-    payrollRuns.forEach((run) => {
-      base[run.status] = (base[run.status] || 0) + 1;
+  const payrollYears = useMemo(
+    () =>
+      Array.from(new Set([...payrollRuns.map((run) => Number(run.year)).filter(Boolean), currentYear]))
+        .sort((a, b) => b - a),
+    [payrollRuns]
+  );
+
+  const annualPayrollSummaries = useMemo(
+    () =>
+      payrollYears.map((year) => {
+        const runs = payrollRuns.filter((run) => Number(run.year) === Number(year));
+        const allocated = Number(annualAllocations[year] || 0);
+        const utilized = runs.reduce((sum, run) => sum + runPaidTotal(run), 0);
+        const committed = runs.reduce((sum, run) => sum + Number(run.total_amount || 0), 0);
+        const remaining = Math.max(allocated - utilized, 0);
+        const archived = isArchivedYear(year, archivedPayrollYears);
+        const surrendered = Number(archivedPayrollYears[year]?.surrendered ?? remaining);
+
+        return {
+          year,
+          allocated,
+          utilized,
+          committed,
+          remaining,
+          surrendered: archived ? surrendered : 0,
+          archived,
+          runs: runs.length,
+        };
+      }),
+    [annualAllocations, archivedPayrollYears, payrollRuns, payrollYears]
+  );
+
+  const activeAnnualSummary =
+    annualPayrollSummaries.find((item) => item.year === currentYear) || {
+      allocated: 0,
+      utilized: 0,
+      remaining: 0,
+      surrendered: 0,
+      archived: false,
+    };
+
+  const saveAnnualAllocation = (year, value) => {
+    if (isArchivedYear(year, archivedPayrollYears)) {
+      message.error("Archived payroll years cannot be changed.");
+      return;
+    }
+
+    const next = { ...annualAllocations, [year]: Number(value || 0) };
+    setAnnualAllocations(next);
+    localStorage.setItem(payrollAllocationStorageKey, JSON.stringify(next));
+  };
+
+  const archivePayrollYear = (record) => {
+    Modal.confirm({
+      title: `Archive payroll year ${record.year}?`,
+      content: `This will lock all payroll data for ${record.year}. The remaining amount ${money(record.remaining)} will be surrendered and no further deductions or edits will be allowed.`,
+      okText: "Archive year",
+      okButtonProps: { danger: true },
+      centered: true,
+      onOk: () => {
+        const next = {
+          ...archivedPayrollYears,
+          [record.year]: {
+            surrendered: Number(record.remaining || 0),
+            archived_at: new Date().toISOString(),
+          },
+        };
+        setArchivedPayrollYears(next);
+        localStorage.setItem(payrollArchiveStorageKey, JSON.stringify(next));
+        message.success(`${record.year} payroll archived`);
+      },
     });
-    return base;
-  }, [payrollRuns]);
+  };
 
   const loadPayrollData = async () => {
     setLoading(true);
@@ -238,6 +390,36 @@ const Payroll = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    if (!slipModalOpen || !watchedSlipStaffId) return;
+
+    const staff = staffMembers.find((item) => String(item.id) === String(watchedSlipStaffId));
+    if (!staff) return;
+
+    slipForm.setFieldsValue({
+      full_name: staff.full_name,
+      personnel_no: staff.personnel_no,
+      department: staff.department,
+      post_description: staff.post_description,
+      staff_category: staff.staff_category,
+      employment_type: staff.employment_type,
+      bps: staff.bps,
+      bank_name: staff.bank_name,
+      account_number: staff.account_number,
+      monthly_basic_pay: staff.monthly_basic_pay || 0,
+      hra: staff.hra || 0,
+      conveyance: staff.conveyance || 0,
+      medical: staff.medical || 0,
+      integrated_allowance: staff.integrated_allowance || 0,
+      adhoc_allowance: staff.adhoc_allowance || 0,
+      dra_allowance: staff.dra_allowance || 0,
+      teaching_allowance: staff.teaching_allowance || 0,
+      deduction_amount: staff.deduction_amount || getRankDeduction(staff.bps, staff.monthly_basic_pay),
+      payment_status: "pending",
+      paid_amount: 0,
+    });
+  }, [slipForm, slipModalOpen, staffMembers, watchedSlipStaffId]);
+
   const closeRunModal = () => {
     if (runForm.isFieldsTouched()) {
       setDiscardRunModalOpen(true);
@@ -259,12 +441,14 @@ const Payroll = () => {
   };
 
   const resetRunForm = () => {
+    const defaultYear = new Date().getFullYear();
     setEditingRunId(null);
     runForm.resetFields();
     runForm.setFieldsValue({
       month: monthOptions[new Date().getMonth()].value,
-      year: new Date().getFullYear(),
+      year: defaultYear,
       notes: "",
+      government_allocation: annualAllocations[defaultYear] || 0,
     });
   };
 
@@ -293,7 +477,24 @@ const Payroll = () => {
     setRunModalOpen(true);
   };
 
+  const openPayslipModal = () => {
+    setSlipEditMode(false);
+    slipForm.resetFields();
+    slipForm.setFieldsValue({
+      month: monthOptions[new Date().getMonth()].value,
+      year: currentYear,
+      payment_status: "pending",
+      paid_amount: 0,
+    });
+    setSlipModalOpen(true);
+  };
+
   const openEditRun = (record) => {
+    if (isArchivedYear(record.year, archivedPayrollYears)) {
+      message.info("This payroll year is archived and cannot be changed.");
+      return;
+    }
+
     setEditingRunId(record.id);
     setSelectedRunId(record.id);
     setSelectedRunSnapshot(record);
@@ -302,6 +503,7 @@ const Payroll = () => {
       month: record.month,
       year: record.year,
       notes: record.notes,
+      government_allocation: annualAllocations[record.year] || 0,
     });
     setRunModalOpen(true);
   };
@@ -329,6 +531,11 @@ const Payroll = () => {
   };
 
   const submitRun = async (values) => {
+    if (isArchivedYear(values.year, archivedPayrollYears)) {
+      message.error("Archived payroll years cannot be changed.");
+      return;
+    }
+
     setSaving(true);
     try {
       const payload = {
@@ -343,6 +550,10 @@ const Payroll = () => {
       } else {
         await createPayrollRun(token, payload);
         message.success("Payroll cycle created");
+      }
+
+      if (values.government_allocation != null) {
+        saveAnnualAllocation(values.year, values.government_allocation);
       }
 
       setRunModalOpen(false);
@@ -412,6 +623,11 @@ const Payroll = () => {
       return;
     }
 
+    if (selectedRunArchived) {
+      message.error("Archived payroll years cannot be changed.");
+      return;
+    }
+
     setSaving(true);
     try {
       await updatePayrollRunItem(token, selectedItem.id, {
@@ -433,6 +649,109 @@ const Payroll = () => {
     }
   };
 
+  const applyRankDeductions = () => {
+    const nextDeduction = getRankDeduction(watchedBps, watchedMonthlyBasicPay);
+    staffForm.setFieldValue("deduction_amount", nextDeduction);
+    message.success("Rank-based deduction applied");
+  };
+
+  const submitPayslip = (values) => {
+    if (isArchivedYear(values.year, archivedPayrollYears)) {
+      message.error("Archived payroll years cannot be changed.");
+      return;
+    }
+
+    const slip = {
+      ...values,
+      id: `${Date.now()}-${values.staff_id}`,
+      saved_at: new Date().toISOString(),
+      payment_status: values.payment_status || "pending",
+      paid_amount: values.paid_amount || 0,
+    };
+    const nextSlips = [slip, ...savedPayslips].slice(0, 100);
+    setSavedPayslips(nextSlips);
+    localStorage.setItem(payrollSlipStorageKey, JSON.stringify(nextSlips));
+    setSlipModalOpen(false);
+    setSlipEditMode(false);
+    message.success("Payslip saved");
+    printPayrollSlip(slip, { month: values.month, year: values.year });
+  };
+
+  const printPayrollSlip = (item, runOverride = null) => {
+    const activeRun = runOverride || selectedRun;
+    if (!activeRun) return;
+
+    const allowances = sumValues({
+      hra: item.hra,
+      conveyance: item.conveyance,
+      medical: item.medical,
+      integrated_allowance: item.integrated_allowance,
+      adhoc_allowance: item.adhoc_allowance,
+      dra_allowance: item.dra_allowance,
+      teaching_allowance: item.teaching_allowance,
+    });
+    const basic = Number(item.basic_pay || item.monthly_basic_pay || 0);
+    const deductionsValue = Number(item.deduction_amount || item.deductions || 0);
+    const gross = Number(item.gross_pay || basic + allowances);
+    const net = Number(item.net_pay || Math.max(gross - deductionsValue, 0));
+    const slipWindow = window.open("", "_blank", "noopener,noreferrer");
+
+    if (!slipWindow) {
+      message.error("Please allow popups to print the payroll slip.");
+      return;
+    }
+
+    slipWindow.document.write(`
+      <!doctype html>
+      <html>
+        <head>
+          <title>Payroll Slip - ${escapeHtml(item.full_name || "Staff")}</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 24px; color: #111827; }
+            .slip { max-width: 760px; margin: 0 auto; border: 1px solid #94a3b8; padding: 22px; }
+            h1 { text-align: center; margin: 0 0 4px; font-size: 22px; }
+            h2 { text-align: center; margin: 0 0 20px; font-size: 16px; color: #475569; }
+            .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 18px; margin-bottom: 18px; }
+            .row { display: flex; justify-content: space-between; border-bottom: 1px dotted #cbd5e1; padding: 7px 0; gap: 18px; }
+            .label { color: #475569; }
+            .value { font-weight: 700; text-align: right; }
+            .total { margin-top: 12px; padding-top: 12px; border-top: 2px solid #0f172a; font-size: 18px; }
+            @page { size: A4; margin: 14mm; }
+          </style>
+        </head>
+        <body>
+          <div class="slip">
+            <h1>Payroll Slip</h1>
+            <h2>${escapeHtml(activeRun.month)} ${escapeHtml(activeRun.year)}</h2>
+            <div class="grid">
+              <div class="row"><span class="label">Staff Name</span><span class="value">${escapeHtml(item.full_name)}</span></div>
+              <div class="row"><span class="label">Department</span><span class="value">${escapeHtml(item.department)}</span></div>
+              <div class="row"><span class="label">Rank/BPS</span><span class="value">${escapeHtml(item.bps || "—")}</span></div>
+              <div class="row"><span class="label">Bank</span><span class="value">${escapeHtml(item.bank_name || "—")}</span></div>
+              <div class="row"><span class="label">Account</span><span class="value">${escapeHtml(item.account_number || "—")}</span></div>
+              <div class="row"><span class="label">Category</span><span class="value">${escapeHtml(toTitle(item.staff_category))}</span></div>
+              <div class="row"><span class="label">Payment Status</span><span class="value">${escapeHtml(toTitle(item.payment_status || "pending"))}</span></div>
+              <div class="row"><span class="label">Payment Reference</span><span class="value">${escapeHtml(item.payment_reference || "—")}</span></div>
+            </div>
+            <div class="row"><span class="label">Basic Pay</span><span class="value">${money(basic)}</span></div>
+            <div class="row"><span class="label">Allowances</span><span class="value">${money(allowances)}</span></div>
+            <div class="row"><span class="label">Gross Pay</span><span class="value">${money(gross)}</span></div>
+            <div class="row"><span class="label">Deductions</span><span class="value">${money(deductionsValue)}</span></div>
+            <div class="row total"><span class="label">Net Salary</span><span class="value">${money(net)}</span></div>
+            <div class="row"><span class="label">Paid Amount</span><span class="value">${money(item.paid_amount || 0)}</span></div>
+          </div>
+          <script>
+            window.onload = () => {
+              window.focus();
+              window.print();
+            };
+          </script>
+        </body>
+      </html>
+    `);
+    slipWindow.document.close();
+  };
+
   if (!canViewPayroll) {
     return <AccessDenied title="Payroll Management" />;
   }
@@ -448,21 +767,21 @@ const Payroll = () => {
       key: "edit",
       label: "Edit cycle",
       icon: <EditOutlined />,
-      disabled: record.status !== "draft" || !canManagePayroll,
+      disabled: isArchivedYear(record.year, archivedPayrollYears) || record.status !== "draft" || !canManagePayroll,
       onClick: () => openEditRun(record),
     },
     {
       key: "generate",
       label: "Generate cycle",
       icon: <DollarOutlined />,
-      disabled: record.status !== "draft" || !canManagePayroll,
+      disabled: isArchivedYear(record.year, archivedPayrollYears) || record.status !== "draft" || !canManagePayroll,
       onClick: () => runPayrollAction(generatePayrollRun, record.id),
     },
     {
       key: "approve",
       label: "Approve cycle",
       icon: <CheckOutlined />,
-      disabled: record.status !== "generated" || !canApprovePayroll,
+      disabled: isArchivedYear(record.year, archivedPayrollYears) || record.status !== "generated" || !canApprovePayroll,
       onClick: () =>
         Modal.confirm({
           title: "Approve payroll cycle?",
@@ -475,7 +794,7 @@ const Payroll = () => {
       key: "reject",
       label: "Reject cycle",
       danger: true,
-      disabled: !canApprovePayroll || !["draft", "generated"].includes(record.status),
+      disabled: isArchivedYear(record.year, archivedPayrollYears) || !canApprovePayroll || !["draft", "generated"].includes(record.status),
       onClick: () =>
         Modal.confirm({
           title: "Reject payroll cycle?",
@@ -490,7 +809,7 @@ const Payroll = () => {
       label: "Delete cycle",
       danger: true,
       icon: <DeleteOutlined />,
-      disabled: record.status !== "draft" || !canManagePayroll,
+      disabled: isArchivedYear(record.year, archivedPayrollYears) || record.status !== "draft" || !canManagePayroll,
       onClick: () =>
         Modal.confirm({
           title: "Delete payroll cycle?",
@@ -529,7 +848,17 @@ const Payroll = () => {
 
   const payrollColumns = [
     { title: "Month", dataIndex: "month", key: "month" },
-    { title: "Year", dataIndex: "year", key: "year" },
+    {
+      title: "Year",
+      dataIndex: "year",
+      key: "year",
+      render: (year) => (
+        <Space size={6}>
+          <span>{year}</span>
+          {isArchivedYear(year, archivedPayrollYears) ? <Tag color="default">Archived</Tag> : null}
+        </Space>
+      ),
+    },
     { title: "Employees", dataIndex: "employee_count", key: "employee_count" },
     {
       title: "Total Amount",
@@ -583,37 +912,45 @@ const Payroll = () => {
       ),
     },
     {
-      title: "Department",
-      dataIndex: "department",
-      key: "department",
-      render: (value) => <span className="payroll-cell-compact">{value}</span>,
+      title: "Rank / BPS",
+      dataIndex: "bps",
+      key: "bps",
+      render: (value) => value || "—",
     },
     {
-      title: "Post",
-      dataIndex: "post_description",
-      key: "post_description",
+      title: "Basic Pay",
+      key: "basic_pay",
+      render: (_, record) => money(payrollBasicPay(record)),
     },
     {
-      title: "Type",
-      dataIndex: "employment_type",
-      key: "employment_type",
-      render: (value) => <Tag color="blue">{toTitle(value)}</Tag>,
+      title: "Allowances",
+      key: "allowances",
+      render: (_, record) => (
+        <div className="payroll-cell-stack">
+          <Text>{money(payrollAllowanceTotal(record))}</Text>
+          <Text type="secondary">{toTitle(record.staff_category)}</Text>
+        </div>
+      ),
     },
     {
-      title: "Category",
-      dataIndex: "staff_category",
-      key: "staff_category",
-      render: (value) => <Tag color="cyan">{toTitle(value)}</Tag>,
+      title: "Gross Pay",
+      key: "gross_pay",
+      render: (_, record) => money(payrollGrossPay(record)),
     },
     {
-      title: "Monthly Pay",
-      key: "monthly",
-      render: (_, record) => money(record.monthly_basic_pay),
+      title: "Deductions",
+      key: "deductions",
+      render: (_, record) => (
+        <div className="payroll-cell-stack">
+          <Text>{money(payrollDeductionTotal(record))}</Text>
+          <Text type="secondary">Rank based</Text>
+        </div>
+      ),
     },
     {
       title: "Net Pay",
       key: "net_pay",
-      render: (_, record) => money(record.net_pay),
+      render: (_, record) => money(payrollNetPay(record)),
     },
     {
       title: "Active",
@@ -649,15 +986,30 @@ const Payroll = () => {
       ),
     },
     {
-      title: "Category",
-      dataIndex: "staff_category",
-      key: "staff_category",
-      render: (value) => <Tag color="cyan">{toTitle(value)}</Tag>,
+      title: "Rank / BPS",
+      dataIndex: "bps",
+      key: "bps",
+      render: (value) => value || "—",
+    },
+    {
+      title: "Basic Pay",
+      key: "basic_pay",
+      render: (_, record) => money(payrollBasicPay(record)),
+    },
+    {
+      title: "Allowances",
+      key: "allowances",
+      render: (_, record) => money(payrollAllowanceTotal(record)),
+    },
+    {
+      title: "Deductions",
+      key: "deductions",
+      render: (_, record) => money(payrollDeductionTotal(record)),
     },
     {
       title: "Net Pay",
       key: "net_pay",
-      render: (_, record) => money(record.net_pay),
+      render: (_, record) => money(payrollNetPay(record)),
     },
     {
       title: "Paid Amount",
@@ -689,7 +1041,7 @@ const Payroll = () => {
         <Space>
           <Button
             size="small"
-            disabled={!canManagePayroll || !["approved", "paid"].includes(selectedRun?.status)}
+            disabled={selectedRunArchived || !canManagePayroll || !["approved", "paid"].includes(selectedRun?.status)}
             onClick={() => {
               setSelectedItem(record);
               paymentForm.setFieldsValue({
@@ -704,7 +1056,42 @@ const Payroll = () => {
           >
             Record payment
           </Button>
+          <Button size="small" onClick={() => printPayrollSlip(record)}>
+            Slip
+          </Button>
         </Space>
+      ),
+    },
+  ];
+
+  const savedPayslipColumns = [
+    {
+      title: "Staff",
+      key: "staff",
+      render: (_, record) => (
+        <div className="payroll-cell-stack">
+          <Text className="payroll-strong">{record.full_name}</Text>
+          <Text type="secondary">{record.personnel_no || record.department}</Text>
+        </div>
+      ),
+    },
+    { title: "Month", dataIndex: "month", key: "month" },
+    { title: "Year", dataIndex: "year", key: "year" },
+    { title: "Rank / BPS", dataIndex: "bps", key: "bps", render: (value) => value || "—" },
+    { title: "Net Pay", key: "net_pay", render: (_, record) => money(payrollNetPay(record)) },
+    {
+      title: "Payment",
+      dataIndex: "payment_status",
+      key: "payment_status",
+      render: (value) => <Tag color={paymentStatusColors[value] || "default"}>{toTitle(value)}</Tag>,
+    },
+    {
+      title: "Actions",
+      key: "actions",
+      render: (_, record) => (
+        <Button size="small" onClick={() => printPayrollSlip(record, { month: record.month, year: record.year })}>
+          Print slip
+        </Button>
       ),
     },
   ];
@@ -712,15 +1099,76 @@ const Payroll = () => {
   const overviewCards = [
     { label: "Staff Members", value: summary.staff_count ?? staffMembers.length, color: "cyan" },
     { label: "Active Staff", value: summary.active_staff_count ?? staffMembers.filter((item) => item.active).length, color: "green" },
-    { label: "Draft Cycles", value: visibleRunStats.draft, color: "default" },
-    { label: "Approved Cycles", value: visibleRunStats.approved, color: "blue" },
-    { label: "Paid Cycles", value: visibleRunStats.paid, color: "gold" },
-    { label: "Total Paid", value: money(summary.total_paid_amount || 0), color: "purple" },
+    { label: "Government Allocation", value: money(activeAnnualSummary.allocated), color: "blue" },
+    { label: "Payroll Utilized", value: money(activeAnnualSummary.utilized || summary.total_paid_amount || 0), color: "gold" },
+    { label: "Remaining Payroll", value: money(activeAnnualSummary.remaining), color: "default" },
+    { label: "Surrendered", value: money(activeAnnualSummary.surrendered), color: "purple" },
   ];
 
   const staffCategoryOptions =
     payrollMeta.staff_categories?.length > 0 ? payrollMeta.staff_categories : fallbackStaffCategoryOptions;
   const staffCategoryBreakdown = Object.entries(payrollMeta.staff_category_counts || {}).filter(([, count]) => Number(count) > 0);
+  const annualPayrollColumns = [
+    {
+      title: "Year",
+      dataIndex: "year",
+      key: "year",
+      render: (year, record) => (
+        <Space>
+          <Text strong>{year}</Text>
+          {record.archived ? <Tag color="default">Archived</Tag> : <Tag color="green">Active</Tag>}
+        </Space>
+      ),
+    },
+    {
+      title: "Govt Allocation",
+      dataIndex: "allocated",
+      key: "allocated",
+      render: (value, record) =>
+        record.archived ? (
+          money(value)
+        ) : (
+          <InputNumber
+            min={0}
+            precision={2}
+            value={value}
+            onChange={(nextValue) => saveAnnualAllocation(record.year, nextValue)}
+            style={{ width: 180 }}
+          />
+        ),
+    },
+    { title: "Committed Payroll", dataIndex: "committed", key: "committed", render: money },
+    { title: "Utilized/Paid", dataIndex: "utilized", key: "utilized", render: money },
+    { title: "Remaining", dataIndex: "remaining", key: "remaining", render: money },
+    {
+      title: "Year-end Surrender",
+      dataIndex: "surrendered",
+      key: "surrendered",
+      render: (value, record) => (
+        <div className="payroll-cell-stack">
+          <Text strong>{money(value)}</Text>
+          {record.archived ? <Text type="secondary">Locked, no deductions allowed</Text> : <Text type="secondary">Calculated at year end</Text>}
+        </div>
+      ),
+    },
+    {
+      title: "Actions",
+      key: "actions",
+      render: (_, record) =>
+        record.archived ? (
+          <Tag color="default">Locked</Tag>
+        ) : (
+          <Button
+            size="small"
+            danger
+            disabled={!canManagePayroll}
+            onClick={() => archivePayrollYear(record)}
+          >
+            Archive year
+          </Button>
+        ),
+    },
+  ];
 
   const allowanceTotal = sumValues({
     hra: watchedHra,
@@ -733,6 +1181,7 @@ const Payroll = () => {
   });
   const basicPay = Number(watchedMonthlyBasicPay || 0);
   const deductions = Number(watchedDeductionAmount || 0);
+  const suggestedRankDeduction = getRankDeduction(watchedBps, basicPay);
   const grossPay = basicPay + allowanceTotal;
   const netPay = Math.max(grossPay - deductions, 0);
 
@@ -753,6 +1202,18 @@ const Payroll = () => {
         ))}
       </Row>
 
+      <Card bordered={false} className="payroll-panel payroll-panel-annual" title="Annual payroll allocation and archive">
+        <Table
+          className="payroll-table"
+          columns={annualPayrollColumns}
+          dataSource={annualPayrollSummaries}
+          rowKey="year"
+          pagination={false}
+          size="small"
+          scroll={{ x: 980 }}
+        />
+      </Card>
+
       <Card bordered={false} className="payroll-panel payroll-panel-cycles" title="Recent payroll cycles">
         <Table
           loading={loading}
@@ -766,7 +1227,24 @@ const Payroll = () => {
       </Card>
 
       {canManagePayroll ? (
-      <Card bordered={false} className="payroll-panel payroll-panel-staff" title="Recent staff records">
+        <Card bordered={false} className="payroll-panel payroll-panel-cycles" title="Recent generated payslips">
+          <Table
+            loading={loading}
+            columns={savedPayslipColumns}
+            dataSource={savedPayslips.slice(0, 6)}
+            rowKey="id"
+            pagination={false}
+            size="small"
+            scroll={{ x: 900 }}
+            locale={{
+              emptyText: <Empty description="No saved payslips yet" />,
+            }}
+          />
+        </Card>
+      ) : null}
+
+      {canManagePayroll ? (
+        <Card bordered={false} className="payroll-panel payroll-panel-staff" title="Recent staff records">
           <Table
             loading={loading}
             columns={staffColumns}
@@ -882,6 +1360,11 @@ const Payroll = () => {
             </Button>
           ) : null}
           {canManagePayroll ? (
+            <Button type="primary" size="small" className="payroll-action-button" icon={<DollarOutlined />} onClick={openPayslipModal}>
+              Generate payslip
+            </Button>
+          ) : null}
+          {canManagePayroll ? (
             <Button type="primary" size="small" className="payroll-action-button" icon={<DollarOutlined />} onClick={openNewRun}>
               New payroll cycle
             </Button>
@@ -913,6 +1396,10 @@ const Payroll = () => {
               <Descriptions.Item label="Approved by">{selectedRun.approved_by?.username || "—"}</Descriptions.Item>
               <Descriptions.Item label="Generated by">{selectedRun.generated_by?.username || "—"}</Descriptions.Item>
               <Descriptions.Item label="Rejected by">{selectedRun.rejected_by?.username || "—"}</Descriptions.Item>
+              <Descriptions.Item label="Year allocation">{money(annualAllocations[selectedRun.year] || 0)}</Descriptions.Item>
+              <Descriptions.Item label="Archive lock">
+                {selectedRunArchived ? <Tag color="default">Archived year, read only</Tag> : <Tag color="green">Editable year</Tag>}
+              </Descriptions.Item>
               <Descriptions.Item label="Notes">{selectedRun.notes || "—"}</Descriptions.Item>
             </Descriptions>
 
@@ -965,10 +1452,17 @@ const Payroll = () => {
             </Col>
             <Col xs={24} md={12}>
               <Form.Item label="Year" name="year" rules={[{ required: true, message: "Enter year" }]}>
-                <InputNumber style={{ width: "100%" }} />
+                <InputNumber min={2000} style={{ width: "100%" }} />
               </Form.Item>
             </Col>
           </Row>
+          <Form.Item
+            label="Government allocated payroll amount for this year"
+            name="government_allocation"
+            tooltip="This amount is tracked by year. Paid payroll is deducted from it; archived year-end balance is surrendered."
+          >
+            <InputNumber min={0} precision={2} style={{ width: "100%" }} />
+          </Form.Item>
           <Form.Item label="Internal notes" name="notes">
             <TextArea rows={4} placeholder="Internal remarks for this payroll cycle" />
           </Form.Item>
@@ -1117,11 +1611,18 @@ const Payroll = () => {
               </Form.Item>
             </Col>
             <Col xs={24} md={8}>
-              <Form.Item label="Deduction amount" name="deduction_amount">
+              <Form.Item
+                label="Deduction amount"
+                name="deduction_amount"
+                extra={`Suggested for BPS ${watchedBps || "—"}: ${money(suggestedRankDeduction)}`}
+              >
                 <InputNumber min={0} precision={2} style={{ width: "100%" }} />
               </Form.Item>
             </Col>
           </Row>
+          <Button size="small" onClick={applyRankDeductions}>
+            Apply rank-based deductions
+          </Button>
 
           <Row gutter={16}>
             <Col xs={24} md={12}>
@@ -1154,6 +1655,7 @@ const Payroll = () => {
                 <div className="payroll-preview-tile">
                   <Text type="secondary">Deductions</Text>
                   <div className="payroll-preview-value">{money(deductions)}</div>
+                  <Text type="secondary">Rank suggestion: {money(suggestedRankDeduction)}</Text>
                 </div>
               </Col>
               <Col xs={24} md={6}>
@@ -1211,6 +1713,196 @@ const Payroll = () => {
               Save payment
             </Button>
             <Button onClick={() => setPaymentModalOpen(false)} disabled={saving}>
+              Cancel
+            </Button>
+          </Space>
+        </Form>
+      </Modal>
+
+      <Modal
+        open={slipModalOpen}
+        title="Generate payslip from staff master"
+        onCancel={() => {
+          setSlipModalOpen(false);
+          setSlipEditMode(false);
+        }}
+        footer={null}
+        width={1040}
+        destroyOnClose
+      >
+        <Form form={slipForm} layout="vertical" onFinish={submitPayslip}>
+          <Row gutter={16}>
+            <Col xs={24} md={12}>
+              <Form.Item label="Search staff by name, rank, or post" name="staff_id" rules={[{ required: true, message: "Select staff member" }]}>
+                <Select
+                  showSearch
+                  placeholder="Type staff name, BPS/rank, or post"
+                  optionFilterProp="searchText"
+                  options={staffMembers
+                    .filter((staff) => staff.active)
+                    .map((staff) => ({
+                      value: staff.id,
+                      label: `${staff.full_name} - BPS ${staff.bps || "N/A"} - ${staff.post_description || "Staff"}`,
+                      searchText: `${staff.full_name} ${staff.bps || ""} ${staff.post_description || ""} ${staff.department || ""}`,
+                    }))}
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={12} md={6}>
+              <Form.Item label="Month" name="month" rules={[{ required: true, message: "Select month" }]}>
+                <Select options={monthOptions} />
+              </Form.Item>
+            </Col>
+            <Col xs={12} md={6}>
+              <Form.Item label="Year" name="year" rules={[{ required: true, message: "Enter year" }]}>
+                <InputNumber min={2000} style={{ width: "100%" }} />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <div className="payroll-slip-edit-bar">
+            <div>
+              <Text strong>{slipEditMode ? "Slip details unlocked" : "Slip details locked"}</Text>
+              <Text type="secondary">
+                Staff master data is reused automatically. Use edit only for small monthly changes like bank account or payment amount.
+              </Text>
+            </div>
+            <Button icon={<EditOutlined />} onClick={() => setSlipEditMode((value) => !value)}>
+              {slipEditMode ? "Lock details" : "Edit slip details"}
+            </Button>
+          </div>
+
+          <Divider orientation="left">Staff details</Divider>
+          <Row gutter={16}>
+            <Col xs={24} md={8}>
+              <Form.Item label="Full name" name="full_name" rules={[{ required: true }]}>
+                <Input disabled={!slipEditMode} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item label="Personnel no." name="personnel_no">
+                <Input disabled={!slipEditMode} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item label="Rank / BPS" name="bps">
+                <InputNumber min={0} style={{ width: "100%" }} disabled={!slipEditMode} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item label="Department" name="department">
+                <Input disabled={!slipEditMode} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item label="Post description" name="post_description">
+                <Input disabled={!slipEditMode} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item label="Bank name" name="bank_name">
+                <Input disabled={!slipEditMode} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item label="Account number" name="account_number">
+                <Input disabled={!slipEditMode} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item label="Employment type" name="employment_type">
+                <Select options={employmentTypeOptions} disabled={!slipEditMode} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item label="Staff category" name="staff_category">
+                <Select options={staffCategoryOptions} disabled={!slipEditMode} />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Divider orientation="left">Pay and deductions</Divider>
+          <Row gutter={16}>
+            <Col xs={24} md={8}>
+              <Form.Item label="Monthly basic pay" name="monthly_basic_pay" rules={[{ required: true }]}>
+                <InputNumber min={0} precision={2} style={{ width: "100%" }} disabled={!slipEditMode} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item label="HRA" name="hra">
+                <InputNumber min={0} precision={2} style={{ width: "100%" }} disabled={!slipEditMode} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item label="Conveyance" name="conveyance">
+                <InputNumber min={0} precision={2} style={{ width: "100%" }} disabled={!slipEditMode} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item label="Medical" name="medical">
+                <InputNumber min={0} precision={2} style={{ width: "100%" }} disabled={!slipEditMode} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item label="Integrated allowance" name="integrated_allowance">
+                <InputNumber min={0} precision={2} style={{ width: "100%" }} disabled={!slipEditMode} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item label="Adhoc allowance" name="adhoc_allowance">
+                <InputNumber min={0} precision={2} style={{ width: "100%" }} disabled={!slipEditMode} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item label="DRA allowance" name="dra_allowance">
+                <InputNumber min={0} precision={2} style={{ width: "100%" }} disabled={!slipEditMode} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item label="Teaching allowance" name="teaching_allowance">
+                <InputNumber min={0} precision={2} style={{ width: "100%" }} disabled={!slipEditMode} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item label="Deduction amount" name="deduction_amount">
+                <InputNumber min={0} precision={2} style={{ width: "100%" }} disabled={!slipEditMode} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item label="Payment status" name="payment_status" rules={[{ required: true }]}>
+                <Select
+                  disabled={!slipEditMode}
+                  options={[
+                    { value: "pending", label: "Pending" },
+                    { value: "partial", label: "Partial" },
+                    { value: "paid", label: "Paid" },
+                    { value: "hold", label: "Hold" },
+                  ]}
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item label="Paid amount" name="paid_amount">
+                <InputNumber min={0} precision={2} style={{ width: "100%" }} disabled={!slipEditMode} />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Form.Item label="Monthly note" name="payment_note">
+            <TextArea rows={3} placeholder="Optional monthly change note" disabled={!slipEditMode} />
+          </Form.Item>
+
+          <Space className="payroll-modal-actions">
+            <Button type="primary" htmlType="submit" loading={saving}>
+              Save payslip
+            </Button>
+            <Button
+              onClick={() => {
+                setSlipModalOpen(false);
+                setSlipEditMode(false);
+              }}
+              disabled={saving}
+            >
               Cancel
             </Button>
           </Space>
