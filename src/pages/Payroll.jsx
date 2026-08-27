@@ -89,6 +89,38 @@ const fallbackStaffCategoryOptions = [
   { value: "temporary", label: "Temporary" },
 ];
 
+const payrollSheetStaffRecords = [
+  { full_name: "Kousar Jabeen", post_description: "Principal", bps: 20, monthly_basic_pay: 229580, increment_rate: 6690 },
+  { full_name: "Sweeta Siddique", post_description: "Associate Prof", bps: 20, monthly_basic_pay: 149300, increment_rate: 6690 },
+  { full_name: "Faryal Mansoor", post_description: "Associate Prof", bps: 20, monthly_basic_pay: 149300, increment_rate: 6690 },
+  { full_name: "Rabia Siddiqui", post_description: "Associate Prof", bps: 20, monthly_basic_pay: 162680, increment_rate: 6690 },
+  { full_name: "Zohra Siddiqui", post_description: "Associate Prof", bps: 20, monthly_basic_pay: 149300, increment_rate: 6690 },
+  { full_name: "Afshan Shoukat", post_description: "Associate Prof", bps: 20, monthly_basic_pay: 149300, increment_rate: 6690 },
+  { full_name: "Dr Rabia Kamal", post_description: "Associate Prof", bps: 19, monthly_basic_pay: 92370, increment_rate: 4530 },
+  { full_name: "Riffat Zia Mains", post_description: "Associate Prof", bps: 20, monthly_basic_pay: 149300, increment_rate: 6690 },
+  { full_name: "Samina Khalid", post_description: "Associate Prof", bps: 20, monthly_basic_pay: 149300, increment_rate: 6690 },
+  { full_name: "Wajiha Fatima", post_description: "Associate Prof", bps: 20, monthly_basic_pay: 196130, increment_rate: 6690 },
+  { full_name: "Munazza Majeed", post_description: "Associate Prof", bps: 19, monthly_basic_pay: 137670, increment_rate: 4530 },
+  { full_name: "Farah Imran", post_description: "Asstt Prof", bps: 18, monthly_basic_pay: 108000, increment_rate: 4260 },
+  { full_name: "Shahida Aslam", post_description: "Asstt Prof", bps: 18, monthly_basic_pay: 108000, increment_rate: 4260 },
+  { full_name: "Sabreen Ahmed", post_description: "Asstt Prof", bps: 18, monthly_basic_pay: 108000, increment_rate: 4260 },
+  { full_name: "Amina Talat", post_description: "Asstt Prof", bps: 18, monthly_basic_pay: 56880, increment_rate: 4260 },
+  { full_name: "Humera Farooq", post_description: "Asstt Prof", bps: 18, monthly_basic_pay: 112260, increment_rate: 4260 },
+  { full_name: "Nark Panwar", post_description: "Asstt Prof", bps: 18, monthly_basic_pay: 116520, increment_rate: 4260 },
+  { full_name: "Hina Mustafa", post_description: "Asstt Prof", bps: 18, monthly_basic_pay: 56880, increment_rate: 4260 },
+  { full_name: "Tasneer Ahmed", post_description: "Asstt Prof", bps: 18, monthly_basic_pay: 69650, increment_rate: 4260 },
+  { full_name: "Asma Batool", post_description: "Asstt Prof", bps: 18, monthly_basic_pay: 103740, increment_rate: 4260 },
+  { full_name: "Zahida Shah Zamer", post_description: "Asstt Prof", bps: 18, monthly_basic_pay: 82440, increment_rate: 4260 },
+  { full_name: "Salma Rubab", post_description: "Asstt Prof", bps: 18, monthly_basic_pay: 120780, increment_rate: 4260 },
+  { full_name: "Samina", post_description: "Asstt Prof", bps: 18, monthly_basic_pay: 120780, increment_rate: 4260 },
+  { full_name: "Bushra Yasmin", post_description: "Asstt Prof", bps: 18, monthly_basic_pay: 99480, increment_rate: 4260 },
+  { full_name: "Shamma Naureen", post_description: "Asstt Prof", bps: 18, monthly_basic_pay: 51910, increment_rate: 4260 },
+  { full_name: "Naureen Akhtar", post_description: "Asstt Prof", bps: 18, monthly_basic_pay: 112260, increment_rate: 4260 },
+  { full_name: "Nigeena Touqeer", post_description: "Asstt Prof", bps: 18, monthly_basic_pay: 0, increment_rate: 4260 },
+  { full_name: "Mrs Tahira Jabeen", post_description: "Asstt Prof", bps: 18, monthly_basic_pay: 90960, increment_rate: 4260 },
+  { full_name: "Shehzad Amir Afridi", post_description: "Asstt Prof", bps: 18, monthly_basic_pay: 90960, increment_rate: 4260 },
+];
+
 const paymentStatusColors = {
   pending: "default",
   partial: "gold",
@@ -124,6 +156,7 @@ const currentYear = new Date().getFullYear();
 const payrollAllocationStorageKey = "payrollAnnualAllocationsV1";
 const payrollArchiveStorageKey = "payrollArchivedYearsV1";
 const payrollSlipStorageKey = "payrollSavedPayslipsV1";
+const payrollEstimateStorageKey = "payrollEstimatedBudgetsV1";
 
 const readAnnualAllocations = () => {
   try {
@@ -152,6 +185,15 @@ const readSavedPayslips = () => {
   }
 };
 
+const readSavedPayrollEstimates = () => {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(payrollEstimateStorageKey) || "[]");
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
 const getRankDeduction = (bps, basicPay = 0) => {
   const rank = Number(bps || 0);
   const basic = Number(basicPay || 0);
@@ -174,22 +216,41 @@ const runPaidTotal = (run) => {
   return run.status === "paid" ? Number(run.total_amount || 0) : 0;
 };
 
-const payrollBasicPay = (record) => Number(record.basic_pay || record.monthly_basic_pay || 0);
+const payrollBasicPay = (record) => Number(record?.basic_pay || record?.monthly_basic_pay || 0);
 const payrollAllowanceTotal = (record) =>
   sumValues({
-    hra: record.hra,
-    conveyance: record.conveyance,
-    medical: record.medical,
-    integrated_allowance: record.integrated_allowance,
-    adhoc_allowance: record.adhoc_allowance,
-    dra_allowance: record.dra_allowance,
-    teaching_allowance: record.teaching_allowance,
+    hra: record?.hra,
+    conveyance: record?.conveyance,
+    medical: record?.medical,
+    integrated_allowance: record?.integrated_allowance,
+    adhoc_allowance: record?.adhoc_allowance,
+    dra_allowance: record?.dra_allowance,
+    teaching_allowance: record?.teaching_allowance,
   });
 const payrollDeductionTotal = (record) =>
-  Number(record.deduction_amount || record.deductions || getRankDeduction(record.bps, payrollBasicPay(record)));
-const payrollGrossPay = (record) => Number(record.gross_pay || payrollBasicPay(record) + payrollAllowanceTotal(record));
+  Number(record?.deduction_amount || record?.deductions || getRankDeduction(record?.bps, payrollBasicPay(record)));
+const payrollGrossPay = (record) => Number(record?.gross_pay || payrollBasicPay(record) + payrollAllowanceTotal(record));
 const payrollNetPay = (record) =>
-  Number(record.net_pay || Math.max(payrollGrossPay(record) - payrollDeductionTotal(record), 0));
+  Number(record?.net_pay || Math.max(payrollGrossPay(record) - payrollDeductionTotal(record), 0));
+
+const calculatePayrollEstimate = (staff, year = currentYear) => {
+  const basic = payrollBasicPay(staff);
+  const incrementRate = Number(staff?.increment_rate || 0);
+  const firstFourMonths = basic * 4;
+  const nextEightMonths = basic * 8;
+  const incrementSixMonths = incrementRate * 6;
+
+  return {
+    year: Number(year || currentYear),
+    basicPay: basic,
+    incrementRate,
+    incrementDate: staff?.next_increment_date || "",
+    firstFourMonths,
+    nextEightMonths,
+    incrementSixMonths,
+    totalEstimatedSalary: firstFourMonths + nextEightMonths + incrementSixMonths,
+  };
+};
 
 const Payroll = () => {
   const { token, user: currentUser } = useSelector((state) => state.auth);
@@ -197,6 +258,7 @@ const Payroll = () => {
   const [staffForm] = Form.useForm();
   const [paymentForm] = Form.useForm();
   const [slipForm] = Form.useForm();
+  const [estimateForm] = Form.useForm();
   const watchedMonthlyBasicPay = Form.useWatch("monthly_basic_pay", staffForm) || 0;
   const watchedHra = Form.useWatch("hra", staffForm) || 0;
   const watchedConveyance = Form.useWatch("conveyance", staffForm) || 0;
@@ -208,6 +270,8 @@ const Payroll = () => {
   const watchedDeductionAmount = Form.useWatch("deduction_amount", staffForm) || 0;
   const watchedBps = Form.useWatch("bps", staffForm) || 0;
   const watchedSlipStaffId = Form.useWatch("staff_id", slipForm);
+  const watchedEstimateStaffId = Form.useWatch("staff_id", estimateForm);
+  const watchedEstimateYear = Form.useWatch("year", estimateForm) || currentYear;
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -236,6 +300,7 @@ const Payroll = () => {
   const [selectedRunRecord, setSelectedRunRecord] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
   const [savedPayslips, setSavedPayslips] = useState(readSavedPayslips);
+  const [savedPayrollEstimates, setSavedPayrollEstimates] = useState(readSavedPayrollEstimates);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
   const canViewPayroll = hasAnyPermission(currentUser, ["view_payroll"]);
@@ -253,6 +318,14 @@ const Payroll = () => {
     [payrollRuns, selectedRunId, selectedRunSnapshot, selectedRunRecord]
   );
   const selectedRunArchived = selectedRun ? isArchivedYear(selectedRun.year, archivedPayrollYears) : false;
+  const selectedEstimateStaff = useMemo(
+    () => staffMembers.find((staff) => String(staff.id) === String(watchedEstimateStaffId)) || null,
+    [staffMembers, watchedEstimateStaffId]
+  );
+  const payrollEstimatePreview = useMemo(
+    () => calculatePayrollEstimate(selectedEstimateStaff, watchedEstimateYear),
+    [selectedEstimateStaff, watchedEstimateYear]
+  );
 
   const payrollYears = useMemo(
     () =>
@@ -268,7 +341,10 @@ const Payroll = () => {
         const allocated = Number(annualAllocations[year] || 0);
         const utilized = runs.reduce((sum, run) => sum + runPaidTotal(run), 0);
         const committed = runs.reduce((sum, run) => sum + Number(run.total_amount || 0), 0);
-        const remaining = Math.max(allocated - utilized, 0);
+        const estimated = savedPayrollEstimates
+          .filter((estimate) => Number(estimate.year) === Number(year))
+          .reduce((sum, estimate) => sum + Number(estimate.totalEstimatedSalary || 0), 0);
+        const remaining = Math.max(allocated - utilized - estimated, 0);
         const archived = isArchivedYear(year, archivedPayrollYears);
         const surrendered = Number(archivedPayrollYears[year]?.surrendered ?? remaining);
 
@@ -277,13 +353,14 @@ const Payroll = () => {
           allocated,
           utilized,
           committed,
+          estimated,
           remaining,
           surrendered: archived ? surrendered : 0,
           archived,
           runs: runs.length,
         };
       }),
-    [annualAllocations, archivedPayrollYears, payrollRuns, payrollYears]
+    [annualAllocations, archivedPayrollYears, payrollRuns, payrollYears, savedPayrollEstimates]
   );
 
   const activeAnnualSummary =
@@ -372,6 +449,9 @@ const Payroll = () => {
   }, []);
 
   useEffect(() => {
+    estimateForm.setFieldsValue({
+      year: currentYear,
+    });
     staffForm.setFieldsValue({
       active: true,
       monthly_basic_pay: 0,
@@ -603,6 +683,94 @@ const Payroll = () => {
     } finally {
       setSaving(false);
     }
+  };
+
+  const importPayrollSheetStaff = async () => {
+    const existingKeys = new Set(
+      staffMembers.map((staff) => String(staff.full_name || "").trim().toLowerCase() + "-" + String(staff.bps || ""))
+    );
+    const recordsToCreate = payrollSheetStaffRecords.filter(
+      (record) => !existingKeys.has(String(record.full_name || "").trim().toLowerCase() + "-" + String(record.bps || ""))
+    );
+
+    if (recordsToCreate.length === 0) {
+      message.info("Payroll sheet staff already exists in Staff Master");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      for (const [index, record] of recordsToCreate.entries()) {
+        const sequence = String(index + 1).padStart(3, "0");
+        await createPayrollStaff(token, {
+          ...record,
+          personnel_no: "PAY-2025-" + sequence,
+          cnic: "61101-2025" + sequence + "-1",
+          department: "Teaching",
+          staff_category: "teaching",
+          employment_type: "regular",
+          next_increment_date: "2025-12-01",
+          active: true,
+          hra: 0,
+          conveyance: 0,
+          medical: 0,
+          integrated_allowance: 0,
+          adhoc_allowance: 0,
+          dra_allowance: 0,
+          teaching_allowance: 0,
+          deduction_amount: 0,
+          notes: "Imported from revised estimates sheet 2025-2026",
+        });
+      }
+      await loadPayrollData();
+      message.success(String(recordsToCreate.length) + " payroll sheet staff imported");
+    } catch (err) {
+      message.error(err.message || "Could not import payroll sheet staff");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const savePayrollEstimate = () => {
+    if (!selectedEstimateStaff) {
+      message.error("Select a staff member first");
+      return;
+    }
+
+    if (isArchivedYear(watchedEstimateYear, archivedPayrollYears)) {
+      message.error("Archived payroll years cannot be changed.");
+      return;
+    }
+
+    const estimate = {
+      id: String(watchedEstimateYear) + "-" + String(selectedEstimateStaff.id),
+      staff_id: selectedEstimateStaff.id,
+      full_name: selectedEstimateStaff.full_name,
+      post_description: selectedEstimateStaff.post_description,
+      bps: selectedEstimateStaff.bps,
+      staff_category: selectedEstimateStaff.staff_category,
+      saved_at: new Date().toISOString(),
+      ...payrollEstimatePreview,
+    };
+    const nextEstimates = [
+      estimate,
+      ...savedPayrollEstimates.filter((item) => item.id !== estimate.id),
+    ];
+    setSavedPayrollEstimates(nextEstimates);
+    localStorage.setItem(payrollEstimateStorageKey, JSON.stringify(nextEstimates));
+    message.success("Estimated payroll budget saved");
+  };
+
+  const deletePayrollEstimate = (record) => {
+    if (isArchivedYear(record.year, archivedPayrollYears)) {
+      message.error("Archived payroll years cannot be changed.");
+      return;
+    }
+
+    const nextEstimates = savedPayrollEstimates.filter((item) => item.id !== record.id);
+    setSavedPayrollEstimates(nextEstimates);
+    localStorage.setItem(payrollEstimateStorageKey, JSON.stringify(nextEstimates));
+    message.success("Payroll estimate removed");
   };
 
   const runPayrollAction = async (action, id, note, successMessage = "Payroll updated") => {
@@ -1101,12 +1269,20 @@ const Payroll = () => {
     { label: "Active Staff", value: summary.active_staff_count ?? staffMembers.filter((item) => item.active).length, color: "green" },
     { label: "Government Allocation", value: money(activeAnnualSummary.allocated), color: "blue" },
     { label: "Payroll Utilized", value: money(activeAnnualSummary.utilized || summary.total_paid_amount || 0), color: "gold" },
+    { label: "Estimated Payroll", value: money(activeAnnualSummary.estimated || 0), color: "purple" },
     { label: "Remaining Payroll", value: money(activeAnnualSummary.remaining), color: "default" },
     { label: "Surrendered", value: money(activeAnnualSummary.surrendered), color: "purple" },
   ];
 
   const staffCategoryOptions =
     payrollMeta.staff_categories?.length > 0 ? payrollMeta.staff_categories : fallbackStaffCategoryOptions;
+  const estimateStaffOptions = staffMembers
+    .filter((staff) => staff.active)
+    .map((staff) => ({
+      value: staff.id,
+      label: String(staff.full_name || "Staff") + " - BPS " + String(staff.bps || "N/A") + " - " + String(staff.post_description || "Staff"),
+      searchText: [staff.full_name, staff.bps, staff.post_description, staff.department].filter(Boolean).join(" "),
+    }));
   const staffCategoryBreakdown = Object.entries(payrollMeta.staff_category_counts || {}).filter(([, count]) => Number(count) > 0);
   const annualPayrollColumns = [
     {
@@ -1138,6 +1314,7 @@ const Payroll = () => {
         ),
     },
     { title: "Committed Payroll", dataIndex: "committed", key: "committed", render: money },
+    { title: "Estimated Reserved", dataIndex: "estimated", key: "estimated", render: money },
     { title: "Utilized/Paid", dataIndex: "utilized", key: "utilized", render: money },
     { title: "Remaining", dataIndex: "remaining", key: "remaining", render: money },
     {
@@ -1167,6 +1344,43 @@ const Payroll = () => {
             Archive year
           </Button>
         ),
+    },
+  ];
+
+  const payrollEstimateColumns = [
+    {
+      title: "Staff",
+      key: "staff",
+      render: (_, record) => (
+        <div className="payroll-cell-stack">
+          <Text className="payroll-strong">{record.full_name}</Text>
+          <Text type="secondary">BPS {record.bps || "N/A"} - {record.post_description || "Staff"}</Text>
+        </div>
+      ),
+    },
+    { title: "Year", dataIndex: "year", key: "year" },
+    { title: "Basic Pay", dataIndex: "basicPay", key: "basicPay", render: money },
+    { title: "First 4 Months", dataIndex: "firstFourMonths", key: "firstFourMonths", render: money },
+    { title: "Next 8 Months", dataIndex: "nextEightMonths", key: "nextEightMonths", render: money },
+    {
+      title: "Increment",
+      key: "increment",
+      render: (_, record) => (
+        <div className="payroll-cell-stack">
+          <Text>{money(record.incrementSixMonths)}</Text>
+          <Text type="secondary">{money(record.incrementRate)} x 6 from {record.incrementDate || "date not set"}</Text>
+        </div>
+      ),
+    },
+    { title: "Total Estimate", dataIndex: "totalEstimatedSalary", key: "totalEstimatedSalary", render: money },
+    {
+      title: "Actions",
+      key: "actions",
+      render: (_, record) => (
+        <Button size="small" danger disabled={isArchivedYear(record.year, archivedPayrollYears)} onClick={() => deletePayrollEstimate(record)}>
+          Remove
+        </Button>
+      ),
     },
   ];
 
@@ -1296,9 +1510,14 @@ const Payroll = () => {
           <Text type="secondary">Maintain employee records, allowances, deductions, and bank details.</Text>
         </div>
         {canManagePayroll ? (
-          <Button type="primary" size="small" icon={<PlusOutlined />} onClick={openNewStaff}>
-            Add staff
-          </Button>
+          <Space wrap>
+            <Button size="small" onClick={importPayrollSheetStaff} loading={saving}>
+              Import payroll sheet staff
+            </Button>
+            <Button type="primary" size="small" icon={<PlusOutlined />} onClick={openNewStaff}>
+              Add staff
+            </Button>
+          </Space>
         ) : null}
       </div>
 
@@ -1328,9 +1547,90 @@ const Payroll = () => {
     </Card>
   );
 
+  const estimatesTab = (
+    <div className="payroll-stack">
+      <Card bordered={false} className="payroll-panel payroll-panel-estimates">
+        <div className="payroll-toolbar">
+          <div>
+            <Title level={4} style={{ marginBottom: 4 }}>Estimates management</Title>
+            <Text type="secondary">Select staff once to calculate annual estimated payroll from basic pay and rank increment.</Text>
+          </div>
+          <Button type="primary" size="small" onClick={savePayrollEstimate} disabled={!selectedEstimateStaff}>
+            Save estimate
+          </Button>
+        </div>
+
+        <Form form={estimateForm} layout="vertical">
+          <Row gutter={16}>
+            <Col xs={24} md={16}>
+              <Form.Item label="Search staff by name, rank, or post" name="staff_id" rules={[{ required: true, message: "Select staff member" }]}>
+                <Select
+                  showSearch
+                  allowClear
+                  placeholder="Type staff name, BPS/rank, or post"
+                  optionFilterProp="searchText"
+                  options={estimateStaffOptions}
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item label="Estimate year" name="year" rules={[{ required: true, message: "Enter estimate year" }]}>
+                <InputNumber min={2000} style={{ width: "100%" }} />
+              </Form.Item>
+            </Col>
+          </Row>
+        </Form>
+
+        <Row gutter={[12, 12]}>
+          <Col xs={24} md={6}>
+            <div className="payroll-preview-tile">
+              <Text type="secondary">Basic pay x 4 months</Text>
+              <div className="payroll-preview-value">{money(payrollEstimatePreview.firstFourMonths)}</div>
+            </div>
+          </Col>
+          <Col xs={24} md={6}>
+            <div className="payroll-preview-tile">
+              <Text type="secondary">Basic pay x next 8 months</Text>
+              <div className="payroll-preview-value">{money(payrollEstimatePreview.nextEightMonths)}</div>
+            </div>
+          </Col>
+          <Col xs={24} md={6}>
+            <div className="payroll-preview-tile">
+              <Text type="secondary">Increment x 6 months</Text>
+              <div className="payroll-preview-value">{money(payrollEstimatePreview.incrementSixMonths)}</div>
+              <Text type="secondary">{payrollEstimatePreview.incrementDate || "Increment date not set"}</Text>
+            </div>
+          </Col>
+          <Col xs={24} md={6}>
+            <div className="payroll-preview-tile">
+              <Text type="secondary">Total estimated salary</Text>
+              <div className="payroll-preview-value">{money(payrollEstimatePreview.totalEstimatedSalary)}</div>
+            </div>
+          </Col>
+        </Row>
+      </Card>
+
+      <Card bordered={false} className="payroll-panel payroll-panel-estimates" title="Saved estimated payroll budgets">
+        <Table
+          className="payroll-table"
+          columns={payrollEstimateColumns}
+          dataSource={savedPayrollEstimates}
+          rowKey="id"
+          size="small"
+          scroll={{ x: 1200 }}
+          pagination={{ pageSize: 8, size: "small" }}
+          locale={{
+            emptyText: <Empty description="No payroll estimates saved yet" />,
+          }}
+        />
+      </Card>
+    </div>
+  );
+
   const payrollTabs = [
     { key: "overview", label: "Overview", children: overviewTab },
     { key: "runs", label: "Payroll Cycles", children: runsTab },
+    ...(canManagePayroll ? [{ key: "estimates", label: "Estimates Management", children: estimatesTab }] : []),
     ...(canManagePayroll ? [{ key: "staff", label: "Staff Master", children: staffTab }] : []),
   ];
 
