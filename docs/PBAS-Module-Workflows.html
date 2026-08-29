@@ -1,0 +1,243 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>PBAS Module Workflows</title>
+  <style>
+    @page { size: A4; margin: 16mm 14mm; }
+    body { font-family: Arial, Helvetica, sans-serif; color: #172033; font-size: 13px; line-height: 1.5; }
+    h1 { color: #073c8c; font-size: 28px; margin: 0 0 8px; }
+    h2 { color: #064ca5; font-size: 19px; margin: 22px 0 8px; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px; }
+    h3 { color: #0f355f; font-size: 15px; margin: 14px 0 6px; }
+    p { margin: 5px 0; }
+    ol, ul { margin: 6px 0 12px 22px; padding: 0; }
+    li { margin: 4px 0; }
+    table { width: 100%; border-collapse: collapse; margin: 8px 0 14px; }
+    th, td { border: 1px solid #cbd5e1; padding: 6px 7px; vertical-align: top; }
+    th { background: #eaf4ff; color: #0f355f; text-align: left; }
+    .cover { text-align: center; padding-top: 85px; page-break-after: always; }
+    .cover .subtitle { color: #475569; font-size: 17px; margin-top: 10px; }
+    .flow { background: #f8fbff; border-left: 4px solid #0ea5e9; padding: 8px 10px; margin: 8px 0 12px; font-weight: 700; }
+    .code { font-family: Consolas, Monaco, monospace; background: #f1f5f9; padding: 1px 4px; border-radius: 3px; }
+    .note { background: #fff8dc; border-left: 4px solid #eab308; padding: 8px 10px; margin: 8px 0 12px; }
+  </style>
+</head>
+<body>
+  <section class="cover">
+    <h1>PBAS Module Workflows</h1>
+    <div class="subtitle">Budget Automation System<br/>Step-by-step workflow guide for final year viva</div>
+    <p style="margin-top: 34px;"><strong>Generated:</strong> 29 August 2026</p>
+    <p><strong>Project:</strong> PBAS-Frontend</p>
+  </section>
+
+  <h2>1. Overall System Flow</h2>
+  <ol>
+    <li>User opens the system from the browser.</li>
+    <li>Splash screen appears first.</li>
+    <li>User clicks Login and enters email/password.</li>
+    <li>Backend verifies credentials and sends user details with token.</li>
+    <li>System checks user permissions.</li>
+    <li>Only allowed modules are shown in the sidebar.</li>
+    <li>User performs module actions according to role and permission.</li>
+    <li>Data is saved through REST APIs or local storage where frontend-only persistence is used.</li>
+    <li>Dashboard, reports, notifications, and audit logs show the result of system activity.</li>
+  </ol>
+  <div class="flow">Login → Permission Check → Allowed Modules → User Action → API/Storage Save → Dashboard/Reports/Audit Update</div>
+
+  <h2>2. Login and Authentication Flow</h2>
+  <ol>
+    <li>User visits <span class="code">/login</span>.</li>
+    <li>Splash screen shows system branding and login button.</li>
+    <li>User opens login form at <span class="code">/login/form</span>.</li>
+    <li>User enters email and password.</li>
+    <li>Frontend sends login request to backend.</li>
+    <li>If email is not verified, system shows verification warning and resend option.</li>
+    <li>If login succeeds, token and user object are stored in Redux and localStorage.</li>
+    <li>User is redirected to Dashboard.</li>
+    <li>Protected routes validate token before showing private pages.</li>
+    <li>Logout clears auth state and sends user back to login.</li>
+  </ol>
+  <div class="flow">Splash → Login Form → Credential Check → Token Save → Dashboard → Logout</div>
+
+  <h2>3. Dashboard Workflow</h2>
+  <ol>
+    <li>User opens Dashboard after login.</li>
+    <li>Frontend calls dashboard API.</li>
+    <li>System receives totals, charts, system health, and recent activities.</li>
+    <li>Cards show total budget, remaining amount, utilized amount, internal revenue, and pending approvals.</li>
+    <li>Budget chart shows remaining vs utilized budget.</li>
+    <li>Recent activities table shows request, payroll, budget, and notification statuses.</li>
+    <li>User can expand activity view to see more records.</li>
+  </ol>
+  <div class="flow">Open Dashboard → Fetch Summary → Calculate Cards/Charts → Show Recent Activity</div>
+
+  <h2>4. User Management Workflow</h2>
+  <ol>
+    <li>Authorized user opens User Management.</li>
+    <li>System loads users from backend.</li>
+    <li>Admin/authorized user clicks Add User.</li>
+    <li>User details are entered: username, email, CNIC, father name, department, designation, role, and optional image.</li>
+    <li>Image is converted to Base64 if uploaded.</li>
+    <li>System sends create-user request to backend.</li>
+    <li>Backend creates user and emails credentials.</li>
+    <li>Existing user can be edited through edit action.</li>
+    <li>User account can be activated or deactivated with confirmation.</li>
+  </ol>
+  <div class="flow">Load Users → Add/Edit User → Assign Role → Save → Activate/Deactivate</div>
+
+  <h2>5. Resource Request Management Workflow</h2>
+  <ol>
+    <li>Office Assistant or permitted user opens Resource Request Management.</li>
+    <li>User clicks New Request.</li>
+    <li>User selects request type: Government Grant, Internal Revenue, or Payroll.</li>
+    <li>User enters title, department, requester name, priority, amount, details, and attachment.</li>
+    <li>If request type is Government Grant, user can link a budget.</li>
+    <li>Request is created as draft.</li>
+    <li>Creator submits the request.</li>
+    <li>Admin Officer verifies submitted request.</li>
+    <li>Head of Institute approves or rejects verified request.</li>
+    <li>Audit trail can be viewed for request actions.</li>
+  </ol>
+  <div class="flow">Create Draft → Submit → Admin Verification → HOI Approval/Rejection → Audit</div>
+
+  <h2>6. Budget Management Workflow</h2>
+  <ol>
+    <li>Authorized user opens Budget Management.</li>
+    <li>System loads all budget records.</li>
+    <li>User clicks Add Budget.</li>
+    <li>User enters budget name, start year, end year, amount, budget type, budget head, and budget category.</li>
+    <li>System checks duplicate category and overlapping year range.</li>
+    <li>If validation passes, budget is saved.</li>
+    <li>Budget can be edited if it is not archived.</li>
+    <li>Budget can be deleted if user has delete permission and year is not archived.</li>
+    <li>Search and year filter help find budget records.</li>
+    <li>Summary cards show total, remaining, utilized, and year-wise amounts.</li>
+  </ol>
+  <div class="flow">Create Budget → Validate Year/Category → Save → Track Remaining/Utilized → Archive Lock</div>
+
+  <h2>7. Payroll Management Workflow</h2>
+  <ol>
+    <li>Accountant or authorized user opens Payroll Management.</li>
+    <li>Payroll data, staff master, cycles, and summary are loaded.</li>
+    <li>Staff Master stores employee details such as name, CNIC, post, BPS, basic pay, allowances, deductions, increment date, and increment rate.</li>
+    <li>Payroll sheet staff can be imported into Staff Master.</li>
+    <li>Annual payroll allocation is entered year-wise.</li>
+    <li>Payroll Estimates Management calculates estimated salary for staff.</li>
+    <li>Monthly payroll cycle is created by selecting month and year.</li>
+    <li>Payroll cycle is generated from active staff records.</li>
+    <li>HOI approves or rejects generated payroll.</li>
+    <li>After approval, payment status is recorded for staff items.</li>
+    <li>Payslip can be generated and printed.</li>
+    <li>At year end, payroll year can be archived and remaining balance is surrendered.</li>
+  </ol>
+  <div class="flow">Staff Master → Estimates → Annual Allocation → Payroll Cycle → Generate → Approve → Payment → Payslip → Archive</div>
+
+  <h3>Payroll Estimate Calculation</h3>
+  <table>
+    <tr><th>Part</th><th>Formula</th></tr>
+    <tr><td>First 4 months</td><td><span class="code">monthly_basic_pay × 4</span></td></tr>
+    <tr><td>Next 8 months</td><td><span class="code">monthly_basic_pay × 8</span></td></tr>
+    <tr><td>Increment impact</td><td><span class="code">increment_rate × 6</span></td></tr>
+    <tr><td>Total estimated salary</td><td><span class="code">first 4 months + next 8 months + increment impact</span></td></tr>
+  </table>
+
+  <h2>8. Internal Revenue Workflow</h2>
+  <ol>
+    <li>Authorized user opens Internal Revenue.</li>
+    <li>User selects revenue month.</li>
+    <li>System loads saved revenue cells for selected period.</li>
+    <li>Spreadsheet shows BS Funds, Inter Funds, Registration Funds, Government Dues, Project Amount, and Grand Total columns.</li>
+    <li>User edits allowed cells only.</li>
+    <li>Formula columns are locked and calculated automatically.</li>
+    <li>BS total, Inter total, Grand Total, Total Expense, and Closing rows are calculated in frontend.</li>
+    <li>Changes are saved to backend through bulk upsert.</li>
+    <li>Rows are also stored locally for browser persistence.</li>
+    <li>User can export or print revenue reports.</li>
+  </ol>
+  <div class="flow">Select Month → Edit Revenue Cells → Auto Totals → Save Cells → Export/Print</div>
+
+  <h2>9. Reports Workflow</h2>
+  <ol>
+    <li>User opens Reports module.</li>
+    <li>System loads report data from backend.</li>
+    <li>User selects period view: Weekly, Monthly, or Yearly.</li>
+    <li>User selects report type: All, Requests, Payroll, Budgets, or Notifications.</li>
+    <li>System creates generated report rows from backend status series.</li>
+    <li>Chart bars are calculated from each module count relative to maximum value.</li>
+    <li>Tables show recent requests, payroll records, notifications, and status breakdowns.</li>
+    <li>User can refresh reports.</li>
+    <li>User can export CSV report.</li>
+  </ol>
+  <div class="flow">Fetch Reports → Select Period/Type → Generate Tables/Charts → Export CSV</div>
+
+  <h2>10. Audit Logs Workflow</h2>
+  <ol>
+    <li>Authorized user opens Audit Logs.</li>
+    <li>System loads audit records from backend.</li>
+    <li>User can filter by module, action, user, role, and date range.</li>
+    <li>User can search audit logs by text.</li>
+    <li>System formats raw audit actions into readable labels.</li>
+    <li>Internal revenue spreadsheet edits are summarized with changed cell count and preview.</li>
+    <li>Audit logs help examiner/user verify who performed which action and when.</li>
+  </ol>
+  <div class="flow">Load Logs → Filter/Search → Review Actor/Action/Module/Time</div>
+
+  <h2>11. Notifications Workflow</h2>
+  <ol>
+    <li>User with notification permission sees notification icon in header.</li>
+    <li>System loads unread notification count.</li>
+    <li>User opens Notifications page.</li>
+    <li>Notifications show title, body, category, status, and optional link path.</li>
+    <li>User can mark one notification as read.</li>
+    <li>User can mark all notifications as read.</li>
+    <li>Unread count updates after read actions.</li>
+  </ol>
+  <div class="flow">Load Notifications → Show Unread Count → Mark Read/All Read → Update Count</div>
+
+  <h2>12. Settings/Profile Workflow</h2>
+  <ol>
+    <li>User opens Settings from avatar/header.</li>
+    <li>System loads current profile from backend.</li>
+    <li>User edits name, email, father name, CNIC, department, and designation.</li>
+    <li>User can upload avatar image.</li>
+    <li>Avatar is cropped using cropper and canvas utility.</li>
+    <li>Profile update is saved to backend.</li>
+    <li>User can change password by entering current and new password.</li>
+    <li>After password change, backend may return updated token and user.</li>
+  </ol>
+  <div class="flow">Load Profile → Edit Details/Avatar → Save Profile → Change Password</div>
+
+  <h2>13. Expense Management Workflow</h2>
+  <p>Expense Management route currently exists as a placeholder module. The expected future workflow is:</p>
+  <ol>
+    <li>Approved request becomes eligible for expense entry.</li>
+    <li>Accountant records actual expense amount and details.</li>
+    <li>System deducts expense from linked budget.</li>
+    <li>Expense appears in dashboard, reports, and audit logs.</li>
+  </ol>
+  <div class="flow">Approved Request → Expense Entry → Budget Deduction → Report/Audit</div>
+
+  <h2>14. Role-wise Workflow Summary</h2>
+  <table>
+    <tr><th>User Role</th><th>Main Workflow</th></tr>
+    <tr><td>Head of Institute</td><td>Views dashboard/reports, approves or rejects requests, approves or rejects payroll cycles, checks audit logs and final system activity.</td></tr>
+    <tr><td>Admin Officer</td><td>Verifies submitted resource requests, may manage users and review operational records depending on permissions.</td></tr>
+    <tr><td>Accountant</td><td>Manages budgets, payroll staff, payroll estimates, payroll cycles, payments, payslips, annual allocation, and internal revenue.</td></tr>
+    <tr><td>Office Assistant</td><td>Creates and submits requests with amount, department, details, and attachments.</td></tr>
+  </table>
+
+  <h2>15. Final Viva Explanation Flow</h2>
+  <ol>
+    <li>Start by explaining that PBAS centralizes budget, payroll, request, revenue, reports, audit, and notification workflows.</li>
+    <li>Show login and explain token-based authentication.</li>
+    <li>Show role-based sidebar and explain that permissions decide visible modules.</li>
+    <li>Open Dashboard and explain live summary data.</li>
+    <li>Open Requests and explain draft to approval workflow.</li>
+    <li>Open Budget Management and explain budget creation, year/category validation, and remaining balance.</li>
+    <li>Open Payroll and explain Staff Master, Estimates, Payroll Cycle, Approval, Payment, Payslip, and Archive.</li>
+    <li>Open Internal Revenue and explain spreadsheet formulas and save workflow.</li>
+    <li>Open Reports and explain custom chart/table generation and CSV export.</li>
+    <li>Open Audit Logs and Notifications to explain traceability and alerts.</li>
+  </ol>
+</body>
+</html>

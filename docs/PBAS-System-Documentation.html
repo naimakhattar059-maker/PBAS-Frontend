@@ -1,0 +1,479 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>PBAS Frontend System Documentation</title>
+  <style>
+    @page { size: A4; margin: 16mm 14mm; }
+    body { font-family: Arial, Helvetica, sans-serif; color: #172033; line-height: 1.48; font-size: 12.5px; }
+    h1 { font-size: 26px; color: #073c8c; margin: 0 0 8px; }
+    h2 { font-size: 19px; color: #064ca5; margin: 24px 0 8px; border-bottom: 1px solid #c8d8ef; padding-bottom: 4px; }
+    h3 { font-size: 15px; color: #0f355f; margin: 16px 0 6px; }
+    h4 { font-size: 13px; margin: 10px 0 5px; color: #334155; }
+    p { margin: 6px 0; }
+    ul, ol { margin: 6px 0 10px 20px; padding: 0; }
+    li { margin: 3px 0; }
+    table { width: 100%; border-collapse: collapse; margin: 8px 0 14px; page-break-inside: auto; }
+    th, td { border: 1px solid #cbd5e1; padding: 6px 7px; vertical-align: top; }
+    th { background: #eaf4ff; color: #0f355f; text-align: left; }
+    .cover { text-align: center; padding-top: 70px; page-break-after: always; }
+    .cover h1 { font-size: 30px; }
+    .cover .subtitle { font-size: 17px; color: #475569; margin-top: 10px; }
+    .meta { margin-top: 36px; color: #475569; }
+    .note { background: #fff8dc; border-left: 4px solid #eab308; padding: 8px 10px; margin: 10px 0; }
+    .ok { background: #ecfdf5; border-left: 4px solid #10b981; padding: 8px 10px; margin: 10px 0; }
+    .code { font-family: Consolas, Monaco, monospace; background: #f1f5f9; padding: 1px 4px; border-radius: 3px; }
+    .page-break { page-break-before: always; }
+  </style>
+</head>
+<body>
+  <section class="cover">
+    <h1>PBAS Frontend System Documentation</h1>
+    <div class="subtitle">Budget Automation System<br/>Postgraduate College for Women, Wah Cantt</div>
+    <div class="meta">
+      <p><strong>Document Type:</strong> Functional, workflow, role, and technical documentation</p>
+      <p><strong>Generated:</strong> 28 August 2026</p>
+      <p><strong>Project:</strong> PBAS-Frontend</p>
+    </div>
+  </section>
+
+  <h2>1. System Overview</h2>
+  <p>PBAS Frontend is a browser-based Budget Automation System built for college budget, payroll, resource request, internal revenue, reporting, user management, notification, audit, and profile workflows. The frontend communicates with a backend REST API using JSON requests and bearer-token authentication.</p>
+  <p>The system is organized as protected modules. A user logs in, the session token is stored in browser local storage, and the protected area shows only those navigation modules for which the logged-in user has matching permissions.</p>
+
+  <h3>Main Modules Included</h3>
+  <ul>
+    <li>Login splash screen and authentication screens</li>
+    <li>Dashboard</li>
+    <li>User Management</li>
+    <li>Resource Request Management / Requests & Approvals</li>
+    <li>Budget Management</li>
+    <li>Payroll Management</li>
+    <li>Payroll Estimates Management inside Payroll</li>
+    <li>Internal Revenue</li>
+    <li>Reports</li>
+    <li>Audit Logs</li>
+    <li>Notifications</li>
+    <li>Settings / Profile Management</li>
+  </ul>
+
+
+  <h2>1A. Problem Statement</h2>
+  <p>Manual budget and payroll handling in an educational institute creates delays, calculation mistakes, missing records, weak tracking, and difficulty in preparing reports for approval authorities. Requests for resources, government grants, internal revenue records, staff payroll, and annual estimates are usually handled through separate papers, spreadsheets, or informal communication. This makes it hard for the Head of Institute, Admin Officer, Accountant, and Office Assistant to know the current status of approvals, remaining budget, utilized amount, payroll commitments, and audit history.</p>
+  <p>The Budget Automation System solves this problem by providing a centralized web-based platform where users can perform their assigned financial and administrative tasks according to role-based permissions. The system improves transparency, reduces repeated manual calculation, keeps workflow status visible, and supports decision-making through dashboard analytics and reports.</p>
+
+  <h2>1B. Project Objectives</h2>
+  <ul>
+    <li>To automate budget creation, categorization, year-wise tracking, and remaining-balance visibility.</li>
+    <li>To provide a structured request workflow where requests can be created, submitted, verified, approved, or rejected.</li>
+    <li>To support role-based access so each user sees and performs only authorized actions.</li>
+    <li>To maintain payroll staff records including BPS/rank, basic pay, allowances, deductions, increment date, and increment rate.</li>
+    <li>To calculate payroll estimates automatically using first 4 months salary, next 8 months salary, and increment impact.</li>
+    <li>To deduct saved payroll estimates and paid payroll amounts from annual payroll allocation for better financial planning.</li>
+    <li>To manage internal revenue in a spreadsheet-like format with automatic totals and closing balances.</li>
+    <li>To provide dashboard summaries, charts, status indicators, reports, CSV export, notifications, and audit log visibility.</li>
+    <li>To reduce paper-based work and improve traceability of financial decisions.</li>
+  </ul>
+
+  <h2>2. Technology Stack</h2>
+  <table>
+    <tr><th>Area</th><th>Technology / Language</th><th>Purpose</th></tr>
+    <tr><td>Frontend language</td><td>JavaScript with JSX</td><td>Application logic and React component structure.</td></tr>
+    <tr><td>UI framework</td><td>React 19.2</td><td>Component-driven frontend rendering.</td></tr>
+    <tr><td>Build tool</td><td>Vite 7.2</td><td>Development server, bundling, and production build.</td></tr>
+    <tr><td>UI component library</td><td>Ant Design 6</td><td>Forms, tables, cards, modals, drawers, tags, tabs, buttons, date pickers, inputs, upload controls.</td></tr>
+    <tr><td>Icons</td><td>@ant-design/icons</td><td>Navigation icons, action icons, splash/login icons, payroll/report icons.</td></tr>
+    <tr><td>Routing</td><td>react-router-dom 7</td><td>Browser routes, redirects, protected route wrapper.</td></tr>
+    <tr><td>State management</td><td>Redux Toolkit and React Redux</td><td>Authentication state, token/user persistence, login/register/reset actions.</td></tr>
+    <tr><td>Date handling</td><td>dayjs</td><td>Budget years, report period labels, internal revenue period keys.</td></tr>
+    <tr><td>Image crop</td><td>react-easy-crop + canvas utility</td><td>Profile image cropping and avatar preview.</td></tr>
+    <tr><td>Styling</td><td>CSS</td><td>Responsive layouts, dashboards, splash screen, panels, charts, cards.</td></tr>
+    <tr><td>Testing</td><td>Vitest, Testing Library, jsdom</td><td>Component and route tests.</td></tr>
+  </table>
+
+  <h2>3. Authentication and Session Flow</h2>
+  <ol>
+    <li>User opens <span class="code">/login</span>, which displays the responsive splash screen.</li>
+    <li>Clicking the login button opens <span class="code">/login/form</span>.</li>
+    <li>User submits email and password. The frontend posts to <span class="code">POST /api/v1/sessions</span>.</li>
+    <li>On success, backend returns <span class="code">user</span> and <span class="code">token</span>. Redux stores both and persists them in <span class="code">localStorage.authState</span>.</li>
+    <li>Protected routes validate existing token by calling <span class="code">GET /api/v1/session</span>.</li>
+    <li>If validation fails or any API returns 401, the frontend removes local auth state and redirects to login.</li>
+    <li>Logout writes an audit-log request if possible, clears Redux/localStorage auth state, and returns the user to login.</li>
+  </ol>
+
+  <h2>4. User Roles and Permissions</h2>
+  <p>The frontend does not hard-code every role's complete permission list. It checks permissions sent by backend in <span class="code">user.permissions</span>. Role names are still visible in user creation and some role-specific workflow rules.</p>
+  <table>
+    <tr><th>Role</th><th>Expected Responsibility in This Frontend</th><th>Typical Permissions/Actions</th></tr>
+    <tr><td>Head of Institute</td><td>Final authority for approval workflows and high-level review.</td><td>Dashboard, reports/audit visibility depending on backend permissions, approve/reject requests, approve/reject payroll cycles, view budget and payroll summaries.</td></tr>
+    <tr><td>Admin Officer</td><td>Administrative verification and operational control.</td><td>Verify submitted requests, manage or view users where permitted, view budgets, requests, reports, audit logs depending on permission set.</td></tr>
+    <tr><td>Accountant</td><td>Budget, payroll, revenue, estimates, and financial record maintenance.</td><td>Create/update budgets, manage payroll staff and cycles, generate payroll, manage payroll estimates, maintain internal revenue, create financial requests.</td></tr>
+    <tr><td>Office Assistant</td><td>Initial request entry and supporting data submission.</td><td>Create and submit requests, attach supporting documents, view allowed request states.</td></tr>
+  </table>
+
+  <h3>Permission Mapping Used by Navigation</h3>
+  <table>
+    <tr><th>Module</th><th>Permission Required</th></tr>
+    <tr><td>Dashboard</td><td><span class="code">view_dashboard</span></td></tr>
+    <tr><td>User Management</td><td><span class="code">view_users</span></td></tr>
+    <tr><td>Resource Request Management</td><td><span class="code">view_requests</span></td></tr>
+    <tr><td>Budget Management</td><td><span class="code">view_budgets</span></td></tr>
+    <tr><td>Payroll Management</td><td><span class="code">view_payroll</span></td></tr>
+    <tr><td>Internal Revenue</td><td><span class="code">view_budgets</span></td></tr>
+    <tr><td>Reports</td><td><span class="code">view_reports</span></td></tr>
+    <tr><td>Audit Logs</td><td><span class="code">view_audit_logs</span> or <span class="code">view_reports</span></td></tr>
+    <tr><td>Settings</td><td><span class="code">manage_profile</span></td></tr>
+    <tr><td>Notifications</td><td><span class="code">view_notifications</span></td></tr>
+  </table>
+
+  <h2>5. Dashboard Workflow</h2>
+  <p>The Dashboard loads live summary data from <span class="code">GET /api/v1/dashboard</span>. It shows top-level budget, revenue, request, payroll, and notification indicators.</p>
+  <ul>
+    <li>Budget totals show total, remaining, and utilized amounts.</li>
+    <li>Internal revenue totals show total, remaining, and utilized revenue values.</li>
+    <li>Pending approvals and recent activities are shown as operational signals.</li>
+    <li>Recent activity records are shown in a table with colored status tags.</li>
+    <li>The budget chart is calculated client-side by converting remaining and utilized values into percentages and SVG circle stroke offsets.</li>
+  </ul>
+
+  <h2>6. User Management Workflow</h2>
+  <p>User Management is used to create, edit, activate, and deactivate system users.</p>
+  <table>
+    <tr><th>Action</th><th>Permission</th><th>How It Works</th></tr>
+    <tr><td>View users</td><td><span class="code">view_users</span></td><td>Calls <span class="code">GET /api/v1/users</span> and lists all users except the current logged-in user.</td></tr>
+    <tr><td>Create user</td><td><span class="code">create_users</span></td><td>Admin fills username, email, CNIC, father name, designation, department, role, and optional image. Frontend sends <span class="code">POST /api/v1/users</span>. Backend sends credentials by email.</td></tr>
+    <tr><td>Edit user</td><td><span class="code">update_users</span></td><td>Existing record is loaded into modal. Submit sends <span class="code">PUT /api/v1/users/:id</span>.</td></tr>
+    <tr><td>Activate/deactivate</td><td><span class="code">change_user_status</span></td><td>Confirmation modal appears. Submit sends <span class="code">PATCH /api/v1/users/:id/activation</span>.</td></tr>
+  </table>
+  <p>CNIC input is formatted on the frontend. User images are converted to Base64 data URLs before sending to the backend.</p>
+
+  <h2>7. Resource Request Management Workflow</h2>
+  <p>Requests use a status workflow: draft, submitted, verified, approved, rejected.</p>
+  <table>
+    <tr><th>Step</th><th>Actor</th><th>Frontend Action</th><th>Backend Endpoint</th></tr>
+    <tr><td>Create draft request</td><td>Office Assistant / permitted user</td><td>Fill title, type, department, requested by, priority, amount, details, attachment, and optional budget link.</td><td><span class="code">POST /api/v1/requests</span></td></tr>
+    <tr><td>Edit request</td><td>Creator/permitted user</td><td>Allowed only when backend returns <span class="code">record.actions.can_edit</span> and user has <span class="code">update_requests</span>.</td><td><span class="code">PATCH /api/v1/requests/:id</span></td></tr>
+    <tr><td>Submit request</td><td>Creator/permitted user</td><td>Moves request from draft to submitted.</td><td><span class="code">PATCH /api/v1/requests/:id/submit</span></td></tr>
+    <tr><td>Verify request</td><td>Admin Officer</td><td>Requires <span class="code">verify_requests</span> and backend action flag.</td><td><span class="code">PATCH /api/v1/requests/:id/verify</span></td></tr>
+    <tr><td>Approve/reject</td><td>Head of Institute</td><td>Requires <span class="code">approve_requests</span> or HOI role. Resource requests verified by Admin Officer are actionable by HOI.</td><td><span class="code">PATCH /api/v1/requests/:id/approve</span> or <span class="code">reject</span></td></tr>
+    <tr><td>Delete</td><td>Permitted user</td><td>Allowed while request is editable.</td><td><span class="code">DELETE /api/v1/requests/:id</span></td></tr>
+  </table>
+  <p>Request types include Government Grant, Internal Revenue, and Payroll. Government Grant requests can link to an existing budget option loaded from <span class="code">GET /api/v1/budgets/options</span>.</p>
+
+  <h2>8. Budget Management Workflow</h2>
+  <p>Budget Management handles budget setup, year ranges, amount tracking, and audit preview.</p>
+  <ul>
+    <li>Budgets load from <span class="code">GET /api/v1/budgets</span>.</li>
+    <li>Budget creation uses <span class="code">POST /api/v1/budgets</span>.</li>
+    <li>Budget updates use <span class="code">PATCH /api/v1/budgets/:id</span>.</li>
+    <li>Budget deletion uses <span class="code">DELETE /api/v1/budgets/:id</span>.</li>
+    <li>Each budget has name, start year, end year, amount, type, head, and category.</li>
+    <li>Duplicate category/range overlap is checked in frontend before save.</li>
+    <li>Previous-year archived budgets cannot be edited or deleted.</li>
+    <li>Summary cards calculate total budget, remaining amount, utilized amount, year totals, and filtered totals using <span class="code">useMemo</span>.</li>
+  </ul>
+
+  <h2>9. Payroll Management Workflow</h2>
+  <p>Payroll Management covers staff master data, payroll cycles, payment tracking, payslips, annual allocation, archive lock, and estimated payroll budgets.</p>
+  <h3>Staff Master</h3>
+  <ul>
+    <li>Staff records include full name, father name, CNIC, personnel number, post, department, employment type, staff category, BPS, gender, contact, email, bank, increment date, increment rate, active status, pay fields, deductions, and notes.</li>
+    <li>Staff save uses <span class="code">POST /api/v1/payroll_staffs</span> or <span class="code">PATCH /api/v1/payroll_staffs/:id</span>.</li>
+    <li>Staff deletion uses <span class="code">DELETE /api/v1/payroll_staffs/:id</span>.</li>
+    <li>Rank-based deduction is suggested by BPS and basic pay: BPS 20 and above, BPS 17-19, BPS 11-16, BPS 5-10, and BPS 1-4 use different formulas.</li>
+    <li>A bulk import button imports visible payroll-sheet staff into Staff Master using the existing create-staff API.</li>
+  </ul>
+
+  <h3>Payroll Cycles</h3>
+  <ul>
+    <li>Payroll cycles load from <span class="code">GET /api/v1/payrolls</span>.</li>
+    <li>New cycle stores month, year, notes, and annual government allocation.</li>
+    <li>Generate cycle calls <span class="code">PATCH /api/v1/payrolls/:id/generate</span>.</li>
+    <li>Approve and reject cycle use <span class="code">PATCH /api/v1/payrolls/:id/approve</span> and <span class="code">reject</span>.</li>
+    <li>Payment status for each payroll item is updated through <span class="code">PATCH /api/v1/payroll_run_items/:id</span>.</li>
+    <li>Paid amount is deducted from annual payroll allocation in local annual summary calculations.</li>
+    <li>Archived years lock future changes and record surrendered remaining balance.</li>
+  </ul>
+
+  <h3>Payroll Estimates Management</h3>
+  <p>The Estimates Management tab calculates estimated payroll budget from staff master data.</p>
+  <table>
+    <tr><th>Calculation</th><th>Formula</th></tr>
+    <tr><td>First 4 months salary</td><td><span class="code">monthly_basic_pay x 4</span></td></tr>
+    <tr><td>Next 8 months salary</td><td><span class="code">monthly_basic_pay x 8</span></td></tr>
+    <tr><td>Increment impact</td><td><span class="code">increment_rate x 6</span></td></tr>
+    <tr><td>Total estimated salary</td><td><span class="code">first 4 months + next 8 months + increment impact</span></td></tr>
+  </table>
+  <p>Saved estimates are stored in browser localStorage under <span class="code">payrollEstimatedBudgetsV1</span>. The annual payroll summary subtracts estimated reserved payroll from the remaining annual allocation. This is currently frontend-persistent storage; a backend estimates endpoint would be needed for shared multi-user persistence.</p>
+
+  <h2>10. Internal Revenue Workflow</h2>
+  <p>Internal Revenue is a spreadsheet-like module for BS, Inter, registration, government dues, project, and other revenue heads.</p>
+  <ul>
+    <li>Revenue period is stored by month, converted to a <span class="code">YYYY-MM</span> period key.</li>
+    <li>Cells load from <span class="code">GET /api/v1/internal_revenue_cells?period=YYYY-MM</span>.</li>
+    <li>Cells save through <span class="code">POST /api/v1/internal_revenue_cells/bulk_upsert</span>.</li>
+    <li>Formula columns are not directly editable.</li>
+    <li>Formula logic calculates BS total, Inter total, Grand Total, Total Expense row, and Closing row on the frontend.</li>
+    <li>Edits are buffered in a pending-save map and flushed to backend; localStorage also stores rows for immediate browser persistence.</li>
+    <li>Export creates a printable/exportable report layout from selected sections.</li>
+  </ul>
+
+  <h2>11. Reports Module</h2>
+  <p>Reports load summarized backend data from <span class="code">GET /api/v1/reports</span>. The user can switch Weekly, Monthly, or Yearly period display using Ant Design segmented control and date picker.</p>
+  <h3>Report Techniques Used</h3>
+  <ul>
+    <li>No external chart library is used.</li>
+    <li>Report chart bars are custom HTML/CSS progress bars.</li>
+    <li>The width of each chart bar is calculated as <span class="code">value / maxValue * 100</span>.</li>
+    <li>Tables are Ant Design Table components.</li>
+    <li>CSV export is generated in the browser using <span class="code">Blob</span>, <span class="code">URL.createObjectURL</span>, and a temporary download link.</li>
+    <li>Report rows are normalized from backend series arrays using helper functions such as <span class="code">sumSeries</span> and <span class="code">makeRows</span>.</li>
+    <li>Status breakdowns use Ant Design Tag and Progress components.</li>
+  </ul>
+
+  <h2>12. Charts and Analytics Technique</h2>
+  <table>
+    <tr><th>Chart</th><th>Technique</th><th>Data Source</th></tr>
+    <tr><td>Dashboard budget donut</td><td>Custom SVG circle segments using percentage calculations, stroke offsets, and label coordinates from trigonometry.</td><td><span class="code">data.charts.budget_overview</span> from Dashboard API.</td></tr>
+    <tr><td>Reports bar chart</td><td>Custom CSS bar fills. Width is calculated from each module count relative to the largest value.</td><td><span class="code">request_statuses</span>, <span class="code">payroll_statuses</span>, <span class="code">budget_types</span>, notifications summary.</td></tr>
+    <tr><td>Status breakdown</td><td>Tags and progress bars from Ant Design.</td><td>Reports API and dashboard API summaries.</td></tr>
+    <tr><td>Budget/payroll summary cards</td><td>Client-side <span class="code">reduce</span> calculations and formatted PKR currency display.</td><td>Loaded budget/payroll arrays plus local allocation/estimate data.</td></tr>
+  </table>
+
+  <h2>13. Audit Logs</h2>
+  <p>Audit Logs list system activity from <span class="code">GET /api/v1/audit_logs</span>. The UI supports module, action, user, role, date-range, and text filters.</p>
+  <ul>
+    <li>HOI/admin/superadmin can view all logs when backend allows.</li>
+    <li>Other permitted users see logs according to backend response.</li>
+    <li>Frontend formats raw actions into readable labels: create, update, delete, approve, reject, submit, verify, generate, login, logout, activation, password, and bulk_upsert.</li>
+    <li>Internal revenue spreadsheet changes are summarized by period, changed cell count, and preview values.</li>
+  </ul>
+
+  <h2>14. Notifications</h2>
+  <p>Notifications load from <span class="code">GET /api/v1/notifications</span>. Header unread count is loaded inside AppLayout when the user has <span class="code">view_notifications</span>.</p>
+  <ul>
+    <li>Single notification read state uses <span class="code">PATCH /api/v1/notifications/:id</span>.</li>
+    <li>Mark all read uses <span class="code">PATCH /api/v1/notifications/mark_all_read</span>.</li>
+    <li>Notifications show title, body, category, read/new tag, and optional link path.</li>
+  </ul>
+
+  <h2>15. Settings and Profile Workflow</h2>
+  <p>Settings lets each user maintain profile details, avatar, and password.</p>
+  <ul>
+    <li>Profile loads from <span class="code">GET /api/v1/profile</span>.</li>
+    <li>Profile update uses <span class="code">PATCH /api/v1/profile</span>.</li>
+    <li>Password change uses <span class="code">PATCH /api/v1/profile/password</span>.</li>
+    <li>Avatar upload uses a hidden file input, object URL preview, react-easy-crop cropper, canvas crop utility, and Base64 image data sent to backend.</li>
+  </ul>
+
+  <h2>16. API Client and Data Handling</h2>
+  <ul>
+    <li>Default API base URL is <span class="code">http://localhost:3002</span>.</li>
+    <li>It can be overridden with <span class="code">VITE_API_BASE_URL</span>.</li>
+    <li>All API requests are JSON and include <span class="code">Content-Type: application/json</span>.</li>
+    <li>Authenticated calls include <span class="code">Authorization: Bearer &lt;token&gt;</span>.</li>
+    <li>Response parsing handles JSON and plain text.</li>
+    <li>HTML backend error pages are converted into a safer message: “Server error. Please try again.”</li>
+    <li>On 401, local auth state is removed and user is redirected to login.</li>
+    <li>There is an audit-writing helper in the API client, but <span class="code">shouldWriteAuditLog()</span> currently returns false, so automatic client-side audit writing is disabled. Explicit logout audit call still exists.</li>
+  </ul>
+
+  <h2>17. Local Storage Used</h2>
+  <table>
+    <tr><th>Key</th><th>Purpose</th></tr>
+    <tr><td><span class="code">authState</span></td><td>Persists logged-in user and token.</td></tr>
+    <tr><td><span class="code">internalRevenueRowsV4</span></td><td>Browser copy of internal revenue spreadsheet rows.</td></tr>
+    <tr><td><span class="code">internalRevenueMonth</span></td><td>Selected internal revenue month.</td></tr>
+    <tr><td><span class="code">payrollAnnualAllocationsV1</span></td><td>Annual payroll allocation values.</td></tr>
+    <tr><td><span class="code">payrollArchivedYearsV1</span></td><td>Archived payroll years and surrendered balances.</td></tr>
+    <tr><td><span class="code">payrollSavedPayslipsV1</span></td><td>Recently generated payroll slips stored in browser.</td></tr>
+    <tr><td><span class="code">payrollEstimatedBudgetsV1</span></td><td>Saved payroll estimate records.</td></tr>
+  </table>
+
+  <h2>18. Frontend Validation and UI Patterns</h2>
+  <ul>
+    <li>Ant Design Form rules enforce required fields, email format, and required selections.</li>
+    <li>Budget amount input sanitizes digits and decimals.</li>
+    <li>Budget duplicate checks prevent overlapping category budgets in the selected year range.</li>
+    <li>Modal discard confirmations protect unsaved user, budget, request, payroll, and staff edits.</li>
+    <li>Archived payroll years and previous-year budgets are locked from mutation.</li>
+    <li>File uploads are converted to data URLs for request attachments and user images.</li>
+    <li>Responsive design uses CSS flex, grid, media queries, Ant Design breakpoints, and horizontal table scroll.</li>
+  </ul>
+
+  <h2>19. Module-by-Module Action Summary</h2>
+  <table>
+    <tr><th>Module</th><th>Main Actions</th><th>Primary Actor</th></tr>
+    <tr><td>Auth</td><td>Login, logout, register by invitation, email verification, forgot/reset password.</td><td>All users</td></tr>
+    <tr><td>Dashboard</td><td>View live KPIs, activities, budget chart, revenue and request/payroll signals.</td><td>Permitted users</td></tr>
+    <tr><td>Users</td><td>Create user, edit user, activate/deactivate user, preview user image.</td><td>Admin/HOI as permitted</td></tr>
+    <tr><td>Requests</td><td>Create, edit, submit, verify, approve, reject, delete, view audit.</td><td>Office Assistant, Admin Officer, HOI</td></tr>
+    <tr><td>Budgets</td><td>Create, update, delete, search/filter, audit preview, view totals.</td><td>Accountant/Admin as permitted</td></tr>
+    <tr><td>Payroll</td><td>Manage staff, import payroll sheet data, create cycles, generate payroll, approve/reject, record payment, print slip, archive year.</td><td>Accountant, HOI</td></tr>
+    <tr><td>Estimates</td><td>Select staff, calculate estimated annual salary, save/remove estimate, deduct from allocation.</td><td>Accountant</td></tr>
+    <tr><td>Internal Revenue</td><td>Edit spreadsheet cells, add structured revenue records, calculate totals, save, export/print.</td><td>Accountant</td></tr>
+    <tr><td>Reports</td><td>Load reports, filter type, switch period, export CSV, view charts/tables.</td><td>HOI/Admin/Accountant as permitted</td></tr>
+    <tr><td>Audit Logs</td><td>Filter and inspect audit trail.</td><td>HOI/Admin/report viewers</td></tr>
+    <tr><td>Notifications</td><td>View feed, mark one/all read.</td><td>Permitted users</td></tr>
+    <tr><td>Settings</td><td>Edit profile, crop avatar, change password.</td><td>Logged-in user</td></tr>
+  </table>
+
+  <h2>20. Current Limitations / Notes</h2>
+  <ul>
+    <li>The complete authoritative role-permission matrix is controlled by the backend and is not fully visible in this frontend repository.</li>
+    <li>Payroll annual allocations, archived payroll years, saved payslips, and payroll estimates are currently stored in browser localStorage in the frontend. For multi-user production use, backend persistence endpoints should be added.</li>
+    <li>The newly imported payroll sheet data is based on the readable rows in the supplied image. Some blurred names may require manual correction in Staff Master.</li>
+    <li>Reports period controls currently change the displayed period label and export filename; the frontend calls a single reports endpoint without sending period filters.</li>
+    <li>Expense Management route currently points to a placeholder page.</li>
+  </ul>
+
+  <h2>21. High-Level Data Flow</h2>
+  <ol>
+    <li>User authenticates and receives token.</li>
+    <li>Protected route validates token and refreshes user permissions.</li>
+    <li>AppLayout filters navigation using permissions.</li>
+    <li>Module page loads data from its API wrapper.</li>
+    <li>User performs an action through forms, tables, modals, drawers, or popovers.</li>
+    <li>API wrapper sends JSON request to backend with bearer token.</li>
+    <li>On success, page reloads affected data and shows success message.</li>
+    <li>On failure, page shows backend or generic error message.</li>
+    <li>Reports and dashboard transform loaded arrays into cards, tables, progress bars, and custom charts.</li>
+  </ol>
+
+  <h2>22. Future Enhancements</h2>
+  <ul>
+    <li>Add backend database tables and APIs for payroll estimates, annual payroll allocations, saved payslips, and archived payroll years so this data is shared across all users and devices.</li>
+    <li>Complete the Expense Management module and connect approved requests with actual expense entry and budget deduction.</li>
+    <li>Add full PDF export for reports, payroll estimates, internal revenue sheets, and approval summaries.</li>
+    <li>Add advanced charts using a charting library if future requirements need interactive graphs, drill-down analytics, or printable dashboards.</li>
+    <li>Add a backend-driven role-permission management screen so administrators can edit permissions without code changes.</li>
+    <li>Add Excel/CSV import for payroll staff and internal revenue data to reduce manual data entry.</li>
+    <li>Add stronger validation for CNIC, bank account/IBAN, payroll year ranges, increment dates, and duplicate staff records.</li>
+    <li>Add notification delivery through email or SMS for request approvals, payroll cycle approval, rejected requests, and password/security events.</li>
+    <li>Add backup/restore and audit export features for administrative record keeping.</li>
+    <li>Add multi-step approval configuration for departments if the college later needs more approval levels.</li>
+  </ul>
+
+
+  <h2>23. Important Commands for Development, Usage, and Viva Demonstration</h2>
+  <p>This section lists the main command-line commands a developer or system presenter should know while running, testing, building, version-controlling, and demonstrating the PBAS system. The exact backend/database commands may depend on the backend project configuration, but these are the standard commands normally used for a React/Vite frontend with a REST API backend.</p>
+
+  <h3>Frontend Project Commands</h3>
+  <table>
+    <tr><th>Command</th><th>Purpose</th><th>When to Use</th></tr>
+    <tr><td><span class="code">npm install</span></td><td>Installs frontend dependencies from <span class="code">package.json</span>.</td><td>Run once after cloning the project or when dependencies change.</td></tr>
+    <tr><td><span class="code">npm run dev</span></td><td>Starts the Vite development server.</td><td>Use during development to open the frontend, usually at <span class="code">http://localhost:5173</span>.</td></tr>
+    <tr><td><span class="code">npm run build</span></td><td>Creates a production build in the <span class="code">dist</span> folder.</td><td>Use before final submission/deployment to verify the frontend compiles.</td></tr>
+    <tr><td><span class="code">npm run preview</span></td><td>Runs a local preview of the production build.</td><td>Use after build to check the final production version locally.</td></tr>
+    <tr><td><span class="code">npm run lint</span></td><td>Runs ESLint checks.</td><td>Use to find code-quality and syntax-style issues.</td></tr>
+    <tr><td><span class="code">npm test</span></td><td>Runs the Vitest test suite.</td><td>Use to verify existing component and route behavior.</td></tr>
+  </table>
+
+  <h3>Environment and Configuration Commands</h3>
+  <table>
+    <tr><th>Command</th><th>Purpose</th></tr>
+    <tr><td><span class="code">cp .env.example .env</span></td><td>Creates a local environment file from the example file if needed.</td></tr>
+    <tr><td><span class="code">cat .env.example</span></td><td>Shows available environment variables.</td></tr>
+    <tr><td><span class="code">VITE_API_BASE_URL=http://localhost:3002 npm run dev</span></td><td>Starts frontend with a specific backend API URL for local testing.</td></tr>
+  </table>
+  <p>The frontend API base URL defaults to <span class="code">http://localhost:3002</span>. If the backend runs on another port, set <span class="code">VITE_API_BASE_URL</span>.</p>
+
+  <h3>Git Commands</h3>
+  <table>
+    <tr><th>Command</th><th>Purpose</th></tr>
+    <tr><td><span class="code">git status</span></td><td>Shows modified, staged, and untracked files.</td></tr>
+    <tr><td><span class="code">git diff</span></td><td>Shows unstaged code changes.</td></tr>
+    <tr><td><span class="code">git add .</span></td><td>Stages all changed files for commit.</td></tr>
+    <tr><td><span class="code">git commit -m "message"</span></td><td>Creates a commit with a meaningful message.</td></tr>
+    <tr><td><span class="code">git push</span></td><td>Uploads committed changes to the remote repository.</td></tr>
+    <tr><td><span class="code">git pull</span></td><td>Downloads latest changes from the remote repository.</td></tr>
+    <tr><td><span class="code">git log --oneline --decorate -5</span></td><td>Shows recent commits in short form.</td></tr>
+    <tr><td><span class="code">git branch</span></td><td>Shows local branches and current branch.</td></tr>
+  </table>
+
+  <h3>Useful Codebase Search Commands</h3>
+  <table>
+    <tr><th>Command</th><th>Purpose</th></tr>
+    <tr><td><span class="code">rg "view_payroll" src</span></td><td>Finds where a permission is used.</td></tr>
+    <tr><td><span class="code">rg "api/v1" src/api</span></td><td>Shows API endpoints used by the frontend.</td></tr>
+    <tr><td><span class="code">rg "Route path" src/App.jsx</span></td><td>Shows application routes.</td></tr>
+    <tr><td><span class="code">rg "useState|useMemo|useEffect" src/pages</span></td><td>Finds React state, calculations, and loading flows.</td></tr>
+    <tr><td><span class="code">ls src/pages</span></td><td>Lists main page modules.</td></tr>
+    <tr><td><span class="code">ls src/api</span></td><td>Lists API wrapper files.</td></tr>
+  </table>
+
+  <h3>Backend and API Demonstration Commands</h3>
+  <p>The backend is not inside this frontend folder, but during viva the examiner may ask how the frontend communicates with backend. These commands can be used when the backend server is running.</p>
+  <table>
+    <tr><th>Command</th><th>Purpose</th></tr>
+    <tr><td><span class="code">curl http://localhost:3002/api/v1/dashboard</span></td><td>Shows that backend routes are reachable. Protected routes may require token.</td></tr>
+    <tr><td><span class="code">curl -H "Authorization: Bearer TOKEN" http://localhost:3002/api/v1/reports</span></td><td>Shows authenticated API response for reports.</td></tr>
+    <tr><td><span class="code">curl -H "Authorization: Bearer TOKEN" http://localhost:3002/api/v1/budgets</span></td><td>Shows budget records returned from backend.</td></tr>
+    <tr><td><span class="code">curl -H "Authorization: Bearer TOKEN" http://localhost:3002/api/v1/payrolls</span></td><td>Shows payroll cycles and staff data returned from backend.</td></tr>
+  </table>
+  <p>In these examples, replace <span class="code">TOKEN</span> with the login token. The token is stored in browser localStorage under <span class="code">authState</span>.</p>
+
+  <h3>How to Show the Database to Examiner</h3>
+  <p>There are three practical ways to demonstrate database data during viva:</p>
+  <ol>
+    <li><strong>Through the application UI:</strong> Open modules such as User Management, Budget Management, Payroll Management, Internal Revenue, Reports, Audit Logs, and Notifications. This is the best user-facing demonstration because it proves the database is connected to the system workflow.</li>
+    <li><strong>Through API responses:</strong> Use browser developer tools or <span class="code">curl</span> commands to show backend JSON responses. This proves the frontend is not static and is receiving database-backed data from REST APIs.</li>
+    <li><strong>Through database console/tool:</strong> Open the backend database using the relevant database client and run queries against the main tables.</li>
+  </ol>
+
+  <h3>Common Database Commands for Viva</h3>
+  <p>If the backend uses PostgreSQL, the following commands are commonly used:</p>
+  <table>
+    <tr><th>Command</th><th>Purpose</th></tr>
+    <tr><td><span class="code">psql -U postgres -d DATABASE_NAME</span></td><td>Open PostgreSQL database console.</td></tr>
+    <tr><td><span class="code">\dt</span></td><td>List database tables.</td></tr>
+    <tr><td><span class="code">\d users</span></td><td>Show structure of the users table.</td></tr>
+    <tr><td><span class="code">SELECT * FROM users LIMIT 5;</span></td><td>Show sample user records.</td></tr>
+    <tr><td><span class="code">SELECT * FROM budgets LIMIT 5;</span></td><td>Show sample budget records.</td></tr>
+    <tr><td><span class="code">SELECT * FROM requests LIMIT 5;</span></td><td>Show request workflow records.</td></tr>
+    <tr><td><span class="code">SELECT * FROM payroll_staffs LIMIT 5;</span></td><td>Show payroll staff master records.</td></tr>
+    <tr><td><span class="code">SELECT * FROM payrolls LIMIT 5;</span></td><td>Show payroll cycle records.</td></tr>
+    <tr><td><span class="code">SELECT * FROM payroll_run_items LIMIT 5;</span></td><td>Show generated payroll line items.</td></tr>
+    <tr><td><span class="code">SELECT * FROM internal_revenue_cells LIMIT 10;</span></td><td>Show saved internal revenue spreadsheet cells.</td></tr>
+    <tr><td><span class="code">SELECT * FROM audit_logs ORDER BY created_at DESC LIMIT 10;</span></td><td>Show recent audit events.</td></tr>
+    <tr><td><span class="code">SELECT * FROM notifications ORDER BY created_at DESC LIMIT 10;</span></td><td>Show recent notifications.</td></tr>
+    <tr><td><span class="code">\q</span></td><td>Exit PostgreSQL console.</td></tr>
+  </table>
+
+  <p>If the backend uses MySQL, similar commands are:</p>
+  <table>
+    <tr><th>Command</th><th>Purpose</th></tr>
+    <tr><td><span class="code">mysql -u root -p DATABASE_NAME</span></td><td>Open MySQL database console.</td></tr>
+    <tr><td><span class="code">SHOW TABLES;</span></td><td>List database tables.</td></tr>
+    <tr><td><span class="code">DESCRIBE users;</span></td><td>Show table structure.</td></tr>
+    <tr><td><span class="code">SELECT * FROM users LIMIT 5;</span></td><td>Show sample data.</td></tr>
+  </table>
+
+  <h3>Browser Developer Tools Commands and Checks</h3>
+  <table>
+    <tr><th>Action</th><th>Purpose</th></tr>
+    <tr><td>Open DevTools: <span class="code">F12</span> or <span class="code">Ctrl + Shift + I</span></td><td>Inspect frontend errors, network calls, and localStorage.</td></tr>
+    <tr><td>Network tab</td><td>Show API calls such as dashboard, budgets, requests, payrolls, and reports.</td></tr>
+    <tr><td>Application tab → Local Storage → <span class="code">authState</span></td><td>Show saved login user/token state.</td></tr>
+    <tr><td>Console: <span class="code">JSON.parse(localStorage.getItem("authState"))</span></td><td>Display logged-in user and permissions in browser console.</td></tr>
+    <tr><td>Console: <span class="code">localStorage.keys</span> equivalent via <span class="code">Object.keys(localStorage)</span></td><td>Show local storage keys used by the frontend.</td></tr>
+  </table>
+
+  <h3>Recommended Viva Demonstration Flow Using Commands</h3>
+  <ol>
+    <li>Start backend server in one terminal.</li>
+    <li>Start frontend using <span class="code">npm run dev</span>.</li>
+    <li>Open <span class="code">http://localhost:5173/login</span> and log in.</li>
+    <li>Use browser DevTools Network tab to show API calls.</li>
+    <li>Open Dashboard and explain live API-backed summary cards/charts.</li>
+    <li>Open Budget Management and show budget records.</li>
+    <li>Open Requests and show draft → submit → verify → approve workflow.</li>
+    <li>Open Payroll and show Staff Master, Payroll Cycles, and Estimates Management calculations.</li>
+    <li>Open Reports and export CSV to demonstrate report generation.</li>
+    <li>Open database console and run <span class="code">SELECT</span> queries for users, budgets, requests, payroll, audit logs, and notifications.</li>
+    <li>Run <span class="code">npm run build</span> to show the frontend compiles successfully.</li>
+  </ol>
+
+</body>
+</html>

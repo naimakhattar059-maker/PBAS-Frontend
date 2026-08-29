@@ -8,6 +8,7 @@ import Dashboard from "./pages/Dashboard";
 import Users from "./pages/Users";
 import Requests from "./pages/Requests";
 import Payroll from "./pages/Payroll";
+import EstimatesManagement from "./pages/EstimatesManagement";
 import BudgetManagement from "./pages/BudgetManagement";
 import InternalRevenue from "./pages/InternalRevenue";
 import Reports from "./pages/Reports";
@@ -37,6 +38,7 @@ const App = () => {
           <Route path="/budget" element={<BudgetManagement />} />
           <Route path="/expenses" element={<Placeholder title="Expense Management" />} />
           <Route path="/payroll" element={<Payroll />} />
+          <Route path="/estimates" element={<EstimatesManagement />} />
           <Route path="/internal-revenue" element={<InternalRevenue />} />
           <Route path="/reports" element={<Reports />} />
           <Route path="/audit-logs" element={<AuditLogs />} />
