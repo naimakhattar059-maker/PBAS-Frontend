@@ -1,0 +1,181 @@
+.reports-page {
+  background:
+    radial-gradient(circle at 90% 6%, rgba(34, 211, 238, 0.34), transparent 18%),
+    radial-gradient(circle at 8% 26%, rgba(139, 92, 246, 0.22), transparent 22%),
+    var(--pbas-sky-100);
+}
+
+.reports-shell {
+  background: transparent;
+  box-shadow: none;
+  padding: 0;
+}
+
+.reports-shell::before {
+  display: none;
+}
+
+.reports-hero {
+  padding: 16px 18px;
+  border: 1px solid rgba(98, 177, 226, 0.18);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 88% 18%, rgba(45, 212, 191, 0.42), transparent 24%),
+    radial-gradient(circle at 68% 100%, rgba(124, 58, 237, 0.24), transparent 24%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(218, 244, 255, 0.98));
+  box-shadow: 0 18px 38px rgba(20, 79, 130, 0.18);
+  overflow: hidden;
+  position: relative;
+}
+
+.reports-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 7px;
+  background: linear-gradient(180deg, #075cff, #06b6d4, #8b5cf6, #ec4899);
+}
+
+.reports-hero > * {
+  position: relative;
+  z-index: 1;
+}
+
+.reports-page .title-row .ant-typography {
+  color: #071a3a;
+  font-weight: 850;
+}
+
+.reports-page .eyebrow {
+  color: #667085;
+  font-weight: 800;
+  letter-spacing: 0.16em;
+}
+
+.reports-page .subtitle {
+  color: var(--pbas-muted);
+}
+
+.reports-page .report-controls .ant-segmented {
+  border: 1px solid rgba(98, 177, 226, 0.18);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.reports-page .report-controls .ant-picker,
+.reports-page .report-controls .ant-select-selector,
+.reports-page .reports-soft-button {
+  border-color: rgba(98, 177, 226, 0.32) !important;
+  border-radius: 999px !important;
+  background: rgba(255, 255, 255, 0.94) !important;
+  box-shadow: 0 10px 22px rgba(20, 79, 130, 0.14);
+}
+
+.reports-action-button {
+  border: 0 !important;
+  border-radius: 999px !important;
+  color: #ffffff !important;
+  background: linear-gradient(135deg, #6336d8, #8b5cf6, #ec4899) !important;
+  box-shadow: 0 10px 20px rgba(99, 54, 216, 0.34);
+}
+
+.reports-action-button:hover {
+  background: linear-gradient(135deg, #4c1d95, #7c3aed, #db2777) !important;
+  color: #ffffff !important;
+}
+
+.reports-stat-card {
+  min-height: 116px;
+  border: 1px solid rgba(255, 255, 255, 0.62) !important;
+  border-radius: 18px !important;
+  overflow: hidden;
+  box-shadow: 0 16px 34px rgba(20, 79, 130, 0.18);
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.reports-stat-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 24px 42px rgba(20, 79, 130, 0.24);
+}
+
+.reports-stat-0 {
+  background:
+    radial-gradient(circle at 94% 18%, rgba(14, 165, 233, 0.34), transparent 24%),
+    linear-gradient(135deg, #9ee8ff 0%, #dff9ff 48%, #ffffff 100%) !important;
+  border-color: rgba(14, 165, 233, 0.48) !important;
+}
+
+.reports-stat-0::before {
+  background: linear-gradient(90deg, #0ea5e9, #22d3ee) !important;
+}
+
+.reports-stat-1 {
+  background:
+    radial-gradient(circle at 94% 18%, rgba(16, 185, 129, 0.34), transparent 24%),
+    linear-gradient(135deg, #a7f3d0 0%, #dcfce7 48%, #ffffff 100%) !important;
+  border-color: rgba(16, 185, 129, 0.48) !important;
+}
+
+.reports-stat-1::before {
+  background: linear-gradient(90deg, #10b981, #2dd4bf) !important;
+}
+
+.reports-stat-2 {
+  background:
+    radial-gradient(circle at 94% 18%, rgba(249, 115, 22, 0.34), transparent 24%),
+    linear-gradient(135deg, #fed7aa 0%, #fff3c4 48%, #ffffff 100%) !important;
+  border-color: rgba(249, 115, 22, 0.48) !important;
+}
+
+.reports-stat-2::before {
+  background: linear-gradient(90deg, #f97316, #fbbf24) !important;
+}
+
+.reports-stat-3 {
+  background:
+    radial-gradient(circle at 94% 18%, rgba(139, 92, 246, 0.34), transparent 24%),
+    linear-gradient(135deg, #ddd6fe 0%, #f3e8ff 48%, #ffffff 100%) !important;
+  border-color: rgba(139, 92, 246, 0.48) !important;
+}
+
+.reports-stat-3::before {
+  background: linear-gradient(90deg, #7c3aed, #a855f7) !important;
+}
+
+.reports-page > .ant-row .panel-card {
+  border: 1px solid rgba(98, 177, 226, 0.18);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 96% 6%, rgba(20, 99, 255, 0.13), transparent 18%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(238, 247, 255, 0.98));
+  box-shadow: 0 14px 30px rgba(24, 57, 99, 0.09);
+  overflow: hidden;
+}
+
+.reports-page > .ant-row .panel-card::before {
+  background: linear-gradient(90deg, #075cff, #06b6d4, #22c55e);
+}
+
+.reports-page > .ant-row .panel-card .ant-card-head {
+  background: linear-gradient(90deg, rgba(20, 99, 255, 0.14), rgba(24, 196, 184, 0.12));
+  border-bottom-color: rgba(98, 177, 226, 0.28);
+}
+
+.reports-page .report-chart-track {
+  background: rgba(226, 240, 250, 0.96);
+}
+
+.reports-page .ant-table-thead > tr > th {
+  background: #dff5ff !important;
+  color: #071a3a !important;
+  font-weight: 800 !important;
+}
+
+.reports-page .ant-table-tbody > tr:hover > td {
+  background: #dcfaff !important;
+}
+
+@media (max-width: 768px) {
+  .reports-page {
+    padding: 10px;
+  }
+}

@@ -3,9 +3,11 @@ import { Button, Col, Form, Input, Row, Space, Typography, message, Tag, Modal }
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import AuthLayout from "../components/AuthLayout";
+import PasswordRequirements from "../components/PasswordRequirements";
 import { register } from "../store/authSlice";
 import { useEffect, useState } from "react";
 import { fetchInvitation } from "../api/auth";
+import { emailRules, strongPasswordRules } from "../utils/authValidation";
 
 const { Text } = Typography;
 
@@ -17,6 +19,7 @@ const Register = () => {
   const [searchParams] = useSearchParams();
   const [invitation, setInvitation] = useState(null);
   const invitationToken = searchParams.get("invitation_token");
+  const watchedPassword = Form.useWatch("password", form);
 
   useEffect(() => {
     const loadInvitation = async () => {
@@ -24,16 +27,17 @@ const Register = () => {
       try {
         const data = await fetchInvitation(invitationToken);
         setInvitation(data.invitation);
+        form.setFieldsValue({ email: data.invitation.email });
       } catch {
         message.warning("Invitation is invalid or expired");
       }
     };
     loadInvitation();
-  }, [invitationToken]);
+  }, [form, invitationToken]);
 
   const onFinish = async (values) => {
     try {
-      const email = values.email;
+      const email = values.email.trim().toLowerCase();
       const payload = await dispatch(
         register({
           user: {
@@ -81,10 +85,7 @@ const Register = () => {
               label="Email"
               name="email"
               initialValue={invitation?.email}
-              rules={[
-                { required: true, message: "Please enter your email" },
-                { type: "email", message: "Enter a valid email" },
-              ]}
+              rules={emailRules}
             >
               <Input
                 size="middle"
@@ -109,7 +110,7 @@ const Register = () => {
             <Form.Item
               label="Password"
               name="password"
-              rules={[{ required: true, message: "Please enter a password" }]}
+              rules={strongPasswordRules}
             >
               <Input.Password
                 size="middle"
@@ -117,6 +118,7 @@ const Register = () => {
                 placeholder="Enter your password"
               />
             </Form.Item>
+            <PasswordRequirements value={watchedPassword} />
           </Col>
           <Col xs={24} md={12}>
             <Form.Item

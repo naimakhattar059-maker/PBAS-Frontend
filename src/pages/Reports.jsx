@@ -7,6 +7,7 @@ import AccessDenied from "../components/AccessDenied";
 import { hasPermission } from "../utils/permissions";
 import { fetchReports } from "../api/reports";
 import "./Dashboard.css";
+import "./Reports.css";
 
 const { Title, Text } = Typography;
 
@@ -164,9 +165,9 @@ const Reports = () => {
   const notificationSummary = data?.notification_summary || {};
 
   return (
-    <div className="dashboard-page">
-      <div className="dashboard-shell">
-        <div className="dashboard-hero">
+    <div className="dashboard-page reports-page">
+      <div className="dashboard-shell reports-shell">
+        <div className="dashboard-hero reports-hero">
           <div>
             <Text className="eyebrow">Reports</Text>
             <div className="title-row">
@@ -184,10 +185,10 @@ const Reports = () => {
               allowClear={false}
             />
             <Select value={reportType} onChange={setReportType} options={reportTypeOptions} style={{ width: 150 }} />
-            <Button icon={<ReloadOutlined />} onClick={loadReports} loading={loading}>
+            <Button className="reports-soft-button" icon={<ReloadOutlined />} onClick={loadReports} loading={loading}>
               Refresh
             </Button>
-            <Button icon={<DownloadOutlined />} onClick={() => downloadCsv(`reports-${period}-${selectedDate.format("YYYY-MM-DD")}.csv`, reportRows)}>
+            <Button className="reports-action-button" icon={<DownloadOutlined />} onClick={() => downloadCsv(`reports-${period}-${selectedDate.format("YYYY-MM-DD")}.csv`, reportRows)}>
               Export
             </Button>
           </Space>
@@ -201,9 +202,9 @@ const Reports = () => {
             ["Payrolls", overview.payrolls],
             ["Unread notifications", notificationSummary.unread],
             ["Budget heads", budgetStructure.budget_heads],
-          ].map(([label, value]) => (
+          ].map(([label, value], index) => (
             <Col xs={24} sm={12} lg={8} key={label}>
-              <Card className="stat-card" loading={loading} bordered={false}>
+              <Card className={`stat-card reports-stat-card reports-stat-${index % 4}`} loading={loading} bordered={false}>
                 <Text className="stat-label">{label}</Text>
                 <div className="stat-value">{value ?? (loading ? "…" : "—")}</div>
               </Card>

@@ -20,6 +20,7 @@ import { useSelector } from "react-redux";
 import { createUser, listUsers, updateUser, updateUserActivation } from "../api/users";
 import AccessDenied from "../components/AccessDenied";
 import { hasAnyPermission, hasPermission } from "../utils/permissions";
+import { emailRules } from "../utils/authValidation";
 import "./Users.css";
 
 const { Title, Text } = Typography;
@@ -101,7 +102,7 @@ const Users = () => {
       const payload = {
         username: values.username,
         father_name: values.father_name,
-        email: values.email,
+      email: values.email.trim().toLowerCase(),
         cnic: formatCnicInput(values.cnic),
         department: values.department,
         designation: values.designation,
@@ -369,7 +370,7 @@ const Users = () => {
           <Form.Item
             label="Email"
             name="email"
-            rules={[{ required: true, message: "Email is required" }, { type: "email", message: "Invalid email" }]}
+            rules={emailRules}
           >
             <Input size="small" placeholder="e.g. ayesha.khan@pgcwwah.edu.pk" />
           </Form.Item>

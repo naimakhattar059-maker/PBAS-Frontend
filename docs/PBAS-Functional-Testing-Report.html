@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>PBAS Functional Testing Report</title>
+<style>
+  @page { size: A4; margin: 16mm; }
+  * { box-sizing: border-box; }
+  body { font-family: Arial, Helvetica, sans-serif; color: #172033; line-height: 1.45; margin: 0; background: #fff; }
+  h1 { font-size: 28px; margin: 0 0 6px; color: #0f3f8f; }
+  h2 { font-size: 19px; margin: 24px 0 8px; color: #0f3f8f; border-bottom: 2px solid #dbeafe; padding-bottom: 4px; }
+  h3 { font-size: 15px; margin: 16px 0 6px; color: #133b73; }
+  p { margin: 6px 0; }
+  .cover { border: 1px solid #bfdbfe; border-radius: 8px; padding: 22px; background: linear-gradient(135deg, #eff6ff, #fff); margin-bottom: 18px; }
+  .meta { display: grid; grid-template-columns: 160px 1fr; gap: 5px 12px; margin-top: 12px; font-size: 13px; }
+  .badge { display: inline-block; padding: 3px 8px; border-radius: 12px; font-size: 12px; font-weight: 700; }
+  .pass { background: #dcfce7; color: #166534; }
+  .warn { background: #fef3c7; color: #92400e; }
+  .fail { background: #fee2e2; color: #991b1b; }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0 14px; font-size: 12px; page-break-inside: avoid; }
+  th, td { border: 1px solid #d7deea; padding: 7px; vertical-align: top; }
+  th { background: #eff6ff; color: #0f3f8f; text-align: left; }
+  ul { margin: 6px 0 10px 18px; padding: 0; }
+  li { margin: 3px 0; }
+  code { background: #f1f5f9; padding: 1px 4px; border-radius: 4px; font-size: 12px; }
+  .summary-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 14px 0; }
+  .card { border: 1px solid #d7deea; border-radius: 8px; padding: 10px; background: #f8fafc; }
+  .card strong { display: block; color: #0f3f8f; font-size: 18px; }
+  .page-break { page-break-before: always; }
+</style>
+</head>
+<body>
+  <section class="cover">
+    <h1>Budget Automation System - Functional Testing Report</h1>
+    <p><strong>FG Postgraduate College for Women, Wah Cantt</strong></p>
+    <p>This document records functional testing performed on the PBAS frontend and backend. It explains how each main function works, what was verified, and what issues were observed during testing.</p>
+    <div class="meta">
+      <div><strong>Report Date</strong></div><div>2026-08-29 17:45 PKT</div>
+      <div><strong>Frontend Repo</strong></div><div>PBAS-Frontend, branch <code>main</code></div>
+      <div><strong>Backend Repo</strong></div><div>PBAS-Backend, branch <code>main</code></div>
+      <div><strong>Frontend Commit Tested</strong></div><div><code>4b7727f Add separate estimates management module</code></div>
+      <div><strong>Backend Commit Tested</strong></div><div><code>b1d7857 Add payroll estimates API</code></div>
+      <div><strong>Frontend URL</strong></div><div><code>http://localhost:5173</code></div>
+      <div><strong>Backend API URL</strong></div><div><code>http://localhost:3002/api/v1</code></div>
+    </div>
+  </section>
+
+  <h2>Executive Summary</h2>
+  <div class="summary-grid">
+    <div class="card"><strong>Backend</strong><span class="badge pass">PASS</span><p>57 tests, 280 assertions, 0 failures.</p></div>
+    <div class="card"><strong>Frontend</strong><span class="badge pass">PASS WITH 15s TIMEOUT</span><p>11 test files, 18 tests passed.</p></div>
+    <div class="card"><strong>Build/Lint</strong><span class="badge pass">PASS</span><p>Production build and ESLint completed.</p></div>
+  </div>
+  <p>Core backend workflows passed. Frontend tests passed when timeout was increased to 15 seconds. With the default 5 second timeout, three frontend tests timed out, which is listed as an issue because the suite is slow and can give false failure during viva/demo preparation.</p>
+
+  <h2>Commands Executed</h2>
+  <table>
+    <thead><tr><th>Command</th><th>Purpose</th><th>Result</th></tr></thead>
+    <tbody>
+      <tr><td><code>npm run lint</code></td><td>Frontend static code validation.</td><td><span class="badge pass">PASS</span> No lint errors. Warning: baseline browser mapping data is old.</td></tr>
+      <tr><td><code>npm run build</code></td><td>Production build validation.</td><td><span class="badge pass">PASS</span> Build completed. Warning: JS chunk above 500 kB.</td></tr>
+      <tr><td><code>npm test</code></td><td>Frontend automated tests with default timeout.</td><td><span class="badge warn">TIMEOUT</span> 15 passed, 3 timed out at 5000 ms.</td></tr>
+      <tr><td><code>npm test -- --testTimeout=15000</code></td><td>Frontend automated tests with practical timeout.</td><td><span class="badge pass">PASS</span> 11 files, 18 tests passed.</td></tr>
+      <tr><td><code>bin/rails test</code></td><td>Backend full automated test suite.</td><td><span class="badge pass">PASS</span> 57 runs, 280 assertions, 0 failures, 0 errors.</td></tr>
+      <tr><td><code>bin/rails test test/integration/payroll_estimates_flow_test.rb</code></td><td>Focused Estimates Management backend testing.</td><td><span class="badge pass">PASS</span> 2 runs, 16 assertions.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Module Functional Testing</h2>
+  <table>
+    <thead><tr><th>Module</th><th>Main Functions</th><th>How It Works</th><th>Testing Status</th><th>Observed Issue</th></tr></thead>
+    <tbody>
+      <tr><td>Authentication</td><td>Login, splash login, forgot password, reset password, email verification, protected routes.</td><td>User opens splash screen, clicks Login, enters credentials, frontend stores JWT auth state, protected route checks token and redirects unauthenticated users to login.</td><td><span class="badge pass">PASS</span> ProtectedRoute test confirms redirect without token. Backend sessions/registrations routes available.</td><td>No functional failure observed in automated testing.</td></tr>
+      <tr><td>Dashboard</td><td>Display live totals, charts/cards, recent system data.</td><td>Dashboard calls backend dashboard endpoint and renders returned metrics for quick management overview.</td><td><span class="badge pass">PASS</span> Frontend Dashboard test renders live dashboard data.</td><td>No functional failure observed.</td></tr>
+      <tr><td>User Management</td><td>List users, create user modal, update/delete user, lock/unlock user, role-based access.</td><td>Only users with user permissions see the module. Data is fetched from <code>/api/v1/users</code>. Create/update/delete actions go through backend API and role permissions.</td><td><span class="badge pass">PASS</span> Passed with 15s frontend timeout. Backend user tests and access matrix passed.</td><td><span class="badge warn">SLOW TEST</span> Default 5s frontend test timed out. AntD warning: <code>destroyOnClose</code> deprecated.</td></tr>
+      <tr><td>Resource Request Management</td><td>Create request, verify, approve, reject, department request tracking.</td><td>Request is submitted by permitted user, verified by admin/account staff, then approved/rejected by Head of Institute according to workflow permissions.</td><td><span class="badge pass">PASS</span> Backend request flow tests passed. Frontend request test passed with 15s timeout.</td><td><span class="badge warn">SLOW TEST</span> Default 5s frontend test timed out. AntD warnings for Card/Table/Modal/Space deprecated props.</td></tr>
+      <tr><td>Budget Management</td><td>Budget heads, categories, yearly budget records, allocation search/grouping.</td><td>Budgets are grouped by year and searchable across loaded records. Backend provides budget CRUD plus structure endpoints for heads/categories.</td><td><span class="badge pass">PASS</span> Backend budget tests passed. Frontend budget test passed with 15s timeout.</td><td><span class="badge warn">SLOW TEST</span> Default 5s frontend test timed out. AntD Card <code>bordered</code> warning appears.</td></tr>
+      <tr><td>Payroll Management</td><td>Staff Master, import payroll sheet staff, payroll cycle generation, approval/rejection, payment marking, payslip view/print, annual allocation/archive.</td><td>Staff records keep BPS, basic pay, allowance, deductions, increment date/rate. Payroll cycle generates monthly run items from staff data. Approver changes status, payment action records paid amount. Payroll estimates were removed from this module.</td><td><span class="badge pass">PASS</span> Backend payroll, payroll staff, and payroll payment tests passed.</td><td>No backend failure observed. Frontend has no dedicated Payroll component test, so browser-level payroll UI coverage should be added.</td></tr>
+      <tr><td>Estimates Management</td><td>Create/list/delete payroll estimates, fetch staff from Payroll Staff Master, formula preview and save.</td><td>User selects staff and year. System calculates: basic pay x 4 months, basic pay x next 8 months, increment rate x 6 months, then total estimated salary. Backend saves in <code>payroll_estimates</code>. Same staff/year updates existing estimate instead of duplicate.</td><td><span class="badge pass">PASS</span> Backend focused test verifies create/list/delete, permissions, and formula. Frontend production build confirms page compiles.</td><td>Frontend component-level test for new Estimates page is not yet present. Add one for staff selection, preview formula, save, and delete.</td></tr>
+      <tr><td>Internal Revenue</td><td>Sheet data display, add record, edit cells, save cells, recalculate totals.</td><td>Frontend behaves like a small spreadsheet. Edited cells are sent to backend internal revenue cells endpoint and reloaded into the same positions.</td><td><span class="badge pass">PASS</span> Three frontend tests passed. Backend route provides index, bulk_save, and import_rows.</td><td>No functional failure observed.</td></tr>
+      <tr><td>Reports</td><td>Period controls, charts, generated report rows, analytics view.</td><td>Reports page fetches report data and renders summary tables/charts for the selected period. Chart/report rows are generated from backend reporting data.</td><td><span class="badge pass">PASS</span> Frontend Reports test passed. Backend reports/notifications flow test passed.</td><td>No functional failure observed.</td></tr>
+      <tr><td>Notifications</td><td>List notifications, mark one read, mark all read, unread badge.</td><td>Layout fetches notifications for users with notification permission. User can update read status through backend notification endpoints.</td><td><span class="badge pass">PASS</span> Frontend notification test passed. Backend reports/notifications flow test passed.</td><td>No functional failure observed.</td></tr>
+      <tr><td>Audit Logs</td><td>View audit records, create audit record for key actions.</td><td>Backend records action, entity type, entity id, user, IP, user agent, and metadata. Audit page displays records to permitted roles.</td><td><span class="badge pass">PASS</span> Frontend audit log render test passed. Backend audit route available and broader tests passed.</td><td>No functional failure observed.</td></tr>
+      <tr><td>Settings/Profile</td><td>Profile management, role-based settings access.</td><td>User opens settings from avatar/header. Backend profile flow validates profile update access.</td><td><span class="badge pass">PASS</span> Backend profile integration test passed.</td><td>No frontend dedicated settings test listed.</td></tr>
+      <tr><td>Access Control</td><td>Permission-based sidebar, protected pages, role matrix.</td><td>Frontend uses user permission list to show/hide modules. Backend enforces permissions again with <code>require_permission!</code>, so hidden UI is not the only security layer.</td><td><span class="badge pass">PASS</span> Frontend AppLayout/AccessPages tests and backend role access matrix passed.</td><td>No functional failure observed.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Detailed Issue Log</h2>
+  <table>
+    <thead><tr><th>ID</th><th>Area</th><th>Issue</th><th>Impact</th><th>Recommended Fix</th></tr></thead>
+    <tbody>
+      <tr><td>FT-01</td><td>Frontend Tests</td><td><code>npm test</code> default 5000 ms timeout fails for Users, Requests, and BudgetManagement tests.</td><td>Can confuse examiner/developer because tests look failed even though they pass with realistic timeout.</td><td>Set Vitest global <code>testTimeout: 15000</code> or optimize those tests/components.</td></tr>
+      <tr><td>FT-02</td><td>Frontend UI Library</td><td>Ant Design deprecation warnings: <code>Card bordered</code>, <code>Modal destroyOnClose</code>, <code>Table pagination.position</code>, <code>Space direction</code>.</td><td>Not breaking now, but future AntD upgrade may remove these props.</td><td>Replace with current AntD props: <code>variant</code>, <code>destroyOnHidden</code>, <code>pagination.placement</code>, and <code>orientation</code> where applicable.</td></tr>
+      <tr><td>FT-03</td><td>Frontend Build</td><td>Vite warns that JS chunk is larger than 500 kB after minification.</td><td>App still builds, but initial load can be slower on low-end systems.</td><td>Add route-level lazy loading/code splitting for large modules such as Reports, Payroll, Internal Revenue.</td></tr>
+      <tr><td>FT-04</td><td>Frontend Dependencies</td><td><code>baseline-browser-mapping</code> data is more than two months old.</td><td>No immediate functional break, but browser compatibility guidance may be stale.</td><td>Run <code>npm i baseline-browser-mapping@latest -D</code> during dependency maintenance.</td></tr>
+      <tr><td>FT-05</td><td>Estimates Management</td><td>Backend flow is tested, but no frontend unit test exists for the new Estimates page.</td><td>Future UI change could break staff selection or preview without automated detection.</td><td>Add Vitest test that mocks <code>listPayrollEstimates</code>, selects staff, verifies formula preview, saves, and deletes.</td></tr>
+      <tr><td>FT-06</td><td>Payroll UI</td><td>Payroll backend is tested, but frontend Payroll page has no dedicated component test in current list.</td><td>Payroll UI regressions may only be caught manually.</td><td>Add frontend tests for Staff Master import, cycle generation button flow, payment drawer, and payslip view.</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Functional Formulas Verified</h2>
+  <table>
+    <thead><tr><th>Function</th><th>Formula/Rule</th><th>Example From Test</th><th>Status</th></tr></thead>
+    <tbody>
+      <tr><td>Payroll Estimate First 4 Months</td><td><code>monthly_basic_pay * 4</code></td><td>40,000 x 4 = 160,000</td><td><span class="badge pass">PASS</span></td></tr>
+      <tr><td>Payroll Estimate Next 8 Months</td><td><code>monthly_basic_pay * 8</code></td><td>40,000 x 8 = 320,000</td><td><span class="badge pass">PASS</span></td></tr>
+      <tr><td>Increment Addition</td><td><code>increment_rate * 6</code></td><td>10 x 6 = 60 in fixture test data</td><td><span class="badge pass">PASS</span></td></tr>
+      <tr><td>Total Estimated Salary</td><td><code>first_four_months + next_eight_months + increment_six_months</code></td><td>160,000 + 320,000 + 60 = 480,060</td><td><span class="badge pass">PASS</span></td></tr>
+      <tr><td>Annual Payroll Remaining</td><td><code>allocation - paid/utilized payroll</code></td><td>Payroll module no longer subtracts estimates; estimates are separate module.</td><td><span class="badge pass">PASS</span></td></tr>
+    </tbody>
+  </table>
+
+  <h2>Conclusion</h2>
+  <p>The backend workflows are stable according to the current automated suite. The frontend builds and passes lint. Frontend automated tests need a higher timeout or optimization; with 15 seconds all existing frontend tests pass. The main functional risks are missing frontend tests for the newly added Estimates Management page and the Payroll UI. These are recommended before final viva so the examiner can see stronger testing coverage.</p>
+</body>
+</html>

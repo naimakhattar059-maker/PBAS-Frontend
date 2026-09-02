@@ -1,0 +1,409 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>PBAS System Tools and Technologies</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 18mm;
+    }
+
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      color: #172033;
+      line-height: 1.55;
+      margin: 0;
+      background: #ffffff;
+      font-size: 12px;
+    }
+
+    h1 {
+      color: #0f4f9f;
+      font-size: 26px;
+      margin: 0 0 8px;
+      text-align: center;
+      letter-spacing: 0;
+    }
+
+    .subtitle {
+      text-align: center;
+      color: #52627a;
+      margin-bottom: 24px;
+      font-size: 13px;
+    }
+
+    h2 {
+      color: #0f4f9f;
+      font-size: 17px;
+      border-bottom: 2px solid #1aa7c7;
+      padding-bottom: 5px;
+      margin: 24px 0 10px;
+    }
+
+    h3 {
+      color: #1f3556;
+      font-size: 14px;
+      margin: 16px 0 6px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 10px 0 14px;
+      page-break-inside: avoid;
+    }
+
+    th,
+    td {
+      border: 1px solid #d8e1ee;
+      padding: 7px 8px;
+      vertical-align: top;
+    }
+
+    th {
+      background: #eaf5ff;
+      color: #08264d;
+      text-align: left;
+      font-weight: 700;
+    }
+
+    tr:nth-child(even) td {
+      background: #fbfdff;
+    }
+
+    ul {
+      margin: 6px 0 12px 20px;
+      padding: 0;
+    }
+
+    li {
+      margin: 3px 0;
+    }
+
+    code {
+      font-family: "Courier New", monospace;
+      background: #eef5ff;
+      padding: 1px 4px;
+      border-radius: 3px;
+      color: #0a3c78;
+    }
+
+    .note {
+      background: #f1fbf8;
+      border-left: 4px solid #16b78f;
+      padding: 10px 12px;
+      margin: 12px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>PBAS System Tools and Technologies</h1>
+  <div class="subtitle">Frontend and Backend Technical Stack with Versions</div>
+
+  <h2>1. System Architecture</h2>
+  <p>
+    PBAS, Budget Automation System, is built as a web-based system with a separate frontend and backend.
+    The frontend is a React single page application, while the backend is a Ruby on Rails REST API.
+    The frontend communicates with backend APIs under the <code>/api/v1</code> namespace.
+  </p>
+
+  <table>
+    <tr>
+      <th>Layer</th>
+      <th>Technology</th>
+      <th>Purpose</th>
+    </tr>
+    <tr>
+      <td>Frontend</td>
+      <td>React with Vite</td>
+      <td>User interface, forms, dashboards, reports, routing, and API communication.</td>
+    </tr>
+    <tr>
+      <td>Backend</td>
+      <td>Ruby on Rails API</td>
+      <td>Business logic, authentication, database operations, validations, and reports APIs.</td>
+    </tr>
+    <tr>
+      <td>Database</td>
+      <td>SQLite in current development configuration</td>
+      <td>Stores users, requests, budgets, payroll, estimates, internal revenue, audit logs, and notifications.</td>
+    </tr>
+    <tr>
+      <td>Authentication</td>
+      <td>JWT and bcrypt</td>
+      <td>Secure login tokens and password hashing.</td>
+    </tr>
+  </table>
+
+  <h2>2. Frontend Tools and Versions</h2>
+  <table>
+    <tr>
+      <th>Tool / Library</th>
+      <th>Version</th>
+      <th>Use in System</th>
+    </tr>
+    <tr>
+      <td>Node.js</td>
+      <td>20.20.0</td>
+      <td>JavaScript runtime used for frontend development and build commands.</td>
+    </tr>
+    <tr>
+      <td>npm</td>
+      <td>10.8.2</td>
+      <td>Package manager used to install and run frontend dependencies.</td>
+    </tr>
+    <tr>
+      <td>React</td>
+      <td>19.2.0</td>
+      <td>Main frontend framework for building UI components and pages.</td>
+    </tr>
+    <tr>
+      <td>React DOM</td>
+      <td>19.2.0</td>
+      <td>Renders React components into the browser DOM.</td>
+    </tr>
+    <tr>
+      <td>Vite</td>
+      <td>7.2.4</td>
+      <td>Development server and production build tool.</td>
+    </tr>
+    <tr>
+      <td>@vitejs/plugin-react</td>
+      <td>5.1.1</td>
+      <td>React support inside Vite.</td>
+    </tr>
+    <tr>
+      <td>Ant Design</td>
+      <td>6.0.0</td>
+      <td>UI components such as forms, buttons, tables, cards, modals, tags, inputs, and layouts.</td>
+    </tr>
+    <tr>
+      <td>@ant-design/icons</td>
+      <td>6.1.0</td>
+      <td>Icons used in sidebar, buttons, authentication pages, and module actions.</td>
+    </tr>
+    <tr>
+      <td>React Router DOM</td>
+      <td>7.9.6</td>
+      <td>Frontend routing between dashboard, login, payroll, estimates, reports, settings, and other pages.</td>
+    </tr>
+    <tr>
+      <td>Redux Toolkit</td>
+      <td>2.10.1</td>
+      <td>State management, especially authentication state and async API actions.</td>
+    </tr>
+    <tr>
+      <td>React Redux</td>
+      <td>9.2.0</td>
+      <td>Connects React components with the Redux store.</td>
+    </tr>
+    <tr>
+      <td>React Easy Crop</td>
+      <td>5.5.7</td>
+      <td>Profile image crop functionality in settings/profile area.</td>
+    </tr>
+    <tr>
+      <td>ESLint</td>
+      <td>9.39.1</td>
+      <td>Frontend code quality and lint checking.</td>
+    </tr>
+    <tr>
+      <td>Vitest</td>
+      <td>4.1.5</td>
+      <td>Frontend automated testing.</td>
+    </tr>
+    <tr>
+      <td>Testing Library React</td>
+      <td>16.3.2</td>
+      <td>Testing React components from the user interaction perspective.</td>
+    </tr>
+    <tr>
+      <td>jsdom</td>
+      <td>26.1.0</td>
+      <td>Browser-like test environment for frontend tests.</td>
+    </tr>
+  </table>
+
+  <h3>Frontend Commands</h3>
+  <table>
+    <tr>
+      <th>Command</th>
+      <th>Purpose</th>
+    </tr>
+    <tr>
+      <td><code>npm run dev</code></td>
+      <td>Starts the frontend development server.</td>
+    </tr>
+    <tr>
+      <td><code>npm run build</code></td>
+      <td>Creates production build of the frontend.</td>
+    </tr>
+    <tr>
+      <td><code>npm run preview</code></td>
+      <td>Previews the production build locally.</td>
+    </tr>
+    <tr>
+      <td><code>npm run lint</code></td>
+      <td>Runs ESLint to check frontend code quality.</td>
+    </tr>
+    <tr>
+      <td><code>npm run test</code></td>
+      <td>Runs frontend test suite using Vitest.</td>
+    </tr>
+  </table>
+
+  <h2>3. Backend Tools and Versions</h2>
+  <table>
+    <tr>
+      <th>Tool / Gem</th>
+      <th>Version</th>
+      <th>Use in System</th>
+    </tr>
+    <tr>
+      <td>Ruby</td>
+      <td>3.3.10</td>
+      <td>Programming language used for backend development.</td>
+    </tr>
+    <tr>
+      <td>Ruby on Rails</td>
+      <td>8.1.1</td>
+      <td>Main backend framework for APIs, models, controllers, validations, migrations, and tests.</td>
+    </tr>
+    <tr>
+      <td>Puma</td>
+      <td>7.1.0</td>
+      <td>Rails application web server.</td>
+    </tr>
+    <tr>
+      <td>SQLite</td>
+      <td>Development database adapter</td>
+      <td>Current development database configuration uses <code>storage/development.sqlite3</code>.</td>
+    </tr>
+    <tr>
+      <td>mysql2</td>
+      <td>0.5.7</td>
+      <td>MySQL adapter gem available in the backend project.</td>
+    </tr>
+    <tr>
+      <td>bcrypt</td>
+      <td>3.1.20</td>
+      <td>Secure password hashing for authentication.</td>
+    </tr>
+    <tr>
+      <td>jwt</td>
+      <td>2.10.2</td>
+      <td>JSON Web Token based authentication/session handling.</td>
+    </tr>
+    <tr>
+      <td>rack-cors</td>
+      <td>3.0.0</td>
+      <td>Allows frontend and backend to communicate across different local ports/domains.</td>
+    </tr>
+    <tr>
+      <td>bootsnap</td>
+      <td>1.19.0</td>
+      <td>Improves Rails boot performance.</td>
+    </tr>
+    <tr>
+      <td>solid_queue</td>
+      <td>1.2.4</td>
+      <td>Rails background job queue support.</td>
+    </tr>
+    <tr>
+      <td>solid_cache</td>
+      <td>1.0.10</td>
+      <td>Rails cache storage support.</td>
+    </tr>
+    <tr>
+      <td>solid_cable</td>
+      <td>3.0.12</td>
+      <td>Rails Action Cable storage support.</td>
+    </tr>
+    <tr>
+      <td>Brakeman</td>
+      <td>7.1.1</td>
+      <td>Static security analysis for Rails code.</td>
+    </tr>
+    <tr>
+      <td>RuboCop Rails Omakase</td>
+      <td>1.1.0</td>
+      <td>Ruby/Rails code style checking.</td>
+    </tr>
+    <tr>
+      <td>Minitest</td>
+      <td>Rails default test framework</td>
+      <td>Backend automated tests for APIs and business flows.</td>
+    </tr>
+  </table>
+
+  <h3>Backend Commands</h3>
+  <table>
+    <tr>
+      <th>Command</th>
+      <th>Purpose</th>
+    </tr>
+    <tr>
+      <td><code>bin/rails server</code></td>
+      <td>Starts the backend Rails server.</td>
+    </tr>
+    <tr>
+      <td><code>bin/rails db:migrate</code></td>
+      <td>Applies database migrations.</td>
+    </tr>
+    <tr>
+      <td><code>bin/rails db:seed</code></td>
+      <td>Loads seed/sample data into the database.</td>
+    </tr>
+    <tr>
+      <td><code>bin/rails test</code></td>
+      <td>Runs backend automated tests.</td>
+    </tr>
+    <tr>
+      <td><code>bin/rails console</code></td>
+      <td>Opens Rails console to inspect models, records, and database data.</td>
+    </tr>
+    <tr>
+      <td><code>bin/rails routes</code></td>
+      <td>Shows all backend API routes available in the system.</td>
+    </tr>
+  </table>
+
+  <h2>4. Main System Modules</h2>
+  <ul>
+    <li><strong>Dashboard:</strong> Shows summary of system data and quick status information.</li>
+    <li><strong>User Management:</strong> Handles users, roles, activation/deactivation, and account management.</li>
+    <li><strong>Resource Request Management:</strong> Handles request creation, verification, approval, rejection, and tracking.</li>
+    <li><strong>Budget Management:</strong> Handles budget heads, categories, allocations, utilization, and remaining budget.</li>
+    <li><strong>Payroll Management:</strong> Stores staff payroll data, allowances, deductions, gross pay, net pay, and active/inactive status.</li>
+    <li><strong>Estimates Management:</strong> Shows estimates, including payroll estimates fetched from payroll data.</li>
+    <li><strong>Internal Revenue:</strong> Stores revenue entries and non-public fund entries with receipt/cutting impact.</li>
+    <li><strong>Reports:</strong> Presents budget, payroll, request, and revenue related reporting data.</li>
+    <li><strong>Audit Logs:</strong> Tracks important system actions for accountability.</li>
+    <li><strong>Settings:</strong> Handles profile, password, image, and account related settings.</li>
+    <li><strong>Notifications:</strong> Shows system notifications and unread/read state.</li>
+    <li><strong>Authentication:</strong> Includes signup, login, email verification, forgot password, and reset password flows.</li>
+  </ul>
+
+  <h2>5. Reports and Charts Technique</h2>
+  <p>
+    The current frontend dependency list does not include a separate chart library such as Recharts or Chart.js.
+    Reports and dashboard visual information are created using React components, Ant Design UI components,
+    tables, cards, progress indicators, filters, CSS styling, and backend API data aggregation.
+  </p>
+
+  <h2>6. Backend API Coverage</h2>
+  <p>
+    The backend exposes API controllers for sessions, registrations, password reset, email verification,
+    users, workflow requests, budgets, budget heads, budget categories, payrolls, payroll staff,
+    payroll estimates, internal revenue, dashboard, reports, audit logs, notifications, invitations,
+    and profile settings.
+  </p>
+
+  <div class="note">
+    <strong>Summary:</strong> PBAS uses React, Vite, Ant Design, Redux Toolkit, and React Router on the frontend.
+    The backend uses Ruby on Rails API with JWT authentication, bcrypt password hashing, SQLite development
+    database, Rails migrations, REST controllers, and automated tests.
+  </div>
+</body>
+</html>

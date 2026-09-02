@@ -7,18 +7,17 @@ import {
   Input,
   InputNumber,
   Modal,
-  Popover,
-  Timeline,
   Row,
   Select,
   Space,
   Table,
+  Timeline,
   Tag,
   Typography,
   Upload,
   message,
 } from "antd";
-import { DeleteOutlined, EditOutlined, FilterOutlined, MoreOutlined, UploadOutlined } from "@ant-design/icons";
+import { BankOutlined, CheckOutlined, CloseCircleOutlined, DeleteOutlined, EditOutlined, FileTextOutlined, FilterOutlined, HistoryOutlined, LaptopOutlined, SendOutlined, UploadOutlined } from "@ant-design/icons";
 import { useSelector } from "react-redux";
 import AccessDenied from "../components/AccessDenied";
 import { hasAnyPermission, hasPermission } from "../utils/permissions";
@@ -66,9 +65,23 @@ const statusColors = {
   rejected: "red",
 };
 
+const requestTypeIcons = {
+  budget: <BankOutlined />,
+  resource: <LaptopOutlined />,
+  payroll: <FileTextOutlined />,
+  general: <FileTextOutlined />,
+};
+
 const isHeadOfInstitute = (user) => user?.role === "head_of_institute";
-const isHoiActionableResourceRequest = (record) =>
-  record.request_type === "resource" && record.status === "verified";
+
+const getActionFlag = (record, key, fallback = false) =>
+  typeof record.actions?.[key] === "boolean" ? record.actions[key] : fallback;
+
+const canSubmitRecord = (record) => getActionFlag(record, "can_submit", record.status === "draft");
+const canEditRecord = (record) => getActionFlag(record, "can_edit", record.status === "draft");
+const canVerifyRecord = (record) => getActionFlag(record, "can_verify", record.status === "submitted");
+const canApproveRecord = (record) => getActionFlag(record, "can_approve", record.status === "verified");
+const canRejectRecord = (record) => getActionFlag(record, "can_reject", ["submitted", "verified"].includes(record.status));
 
 const fileToDataUrl = (file) =>
   new Promise((resolve, reject) => {
@@ -87,7 +100,6 @@ const Requests = () => {
   const [budgets, setBudgets] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
-  const [popoverOpenId, setPopoverOpenId] = useState(null);
   const [discardModalOpen, setDiscardModalOpen] = useState(false);
   const [statusFilter, setStatusFilter] = useState(null);
   const [auditPreview, setAuditPreview] = useState({ open: false, title: "", entries: [] });
@@ -256,119 +268,143 @@ const Requests = () => {
     }
   };
 
-  const actionMenu = (record) => (
-    <Space direction="vertical" style={{ width: 160 }}>
-      <Button
-        type="text"
-        icon={<EditOutlined />}
-        disabled={!record.actions?.can_edit || !canUpdateRequests}
-        onClick={() => {
-          setPopoverOpenId(null);
-          openEdit(record);
-        }}
-      >
-        Edit
-      </Button>
-      <Button
-        type="text"
-        disabled={!record.actions?.can_submit || !canCreateRequests}
-        onClick={() => {
-          setPopoverOpenId(null);
-          runAction(submitRequest, record.id);
-        }}
-      >
-        Submit
-      </Button>
-      <Button
-        type="text"
-        disabled={!Array.isArray(record.audit_entries) || record.audit_entries.length === 0}
-        onClick={() => {
-          setPopoverOpenId(null);
-          setAuditPreview({
-            open: true,
-            title: record.title,
-            entries: record.audit_entries || [],
-          });
-        }}
-      >
-        Audit
-      </Button>
-      <Button
-        type="text"
-        disabled={!record.actions?.can_verify || !canVerifyRequests}
-        onClick={() => {
-          setPopoverOpenId(null);
-          Modal.confirm({
-            title: "Verify request?",
-            content: "This will move the request to verified.",
-            okText: "Verify",
-            onOk: () => runAction(verifyRequest, record.id, "Verified by Admin Officer"),
-          });
-        }}
-      >
-        Verify
-      </Button>
-      <Button
-        type="text"
-        disabled={
-          !canApproveRequests ||
-          !(record.actions?.can_approve || (isHeadOfInstitute(currentUser) && isHoiActionableResourceRequest(record)))
-        }
-        onClick={() => {
-          setPopoverOpenId(null);
-          Modal.confirm({
-            title: "Approve request?",
-            content: "This will finalize the request.",
-            okText: "Approve",
-            type: "primary",
-            onOk: () => runAction(approveRequest, record.id, "Approved by HOI"),
-          });
-        }}
-      >
-        Approve
-      </Button>
-      <Button
-        danger
-        type="text"
-        disabled={
-          !canApproveRequests ||
-          !(record.actions?.can_reject || (isHeadOfInstitute(currentUser) && isHoiActionableResourceRequest(record)))
-        }
-        onClick={() => {
-          setPopoverOpenId(null);
-          Modal.confirm({
-            title: "Reject request?",
-            content: "This will mark the request as rejected.",
-            okText: "Reject",
-            okButtonProps: { danger: true },
-            onOk: () => runAction(rejectRequest, record.id, "Rejected during review"),
-          });
-        }}
-      >
-        Reject
-      </Button>
-      <Button
-        danger
-        type="text"
-        icon={<DeleteOutlined />}
-        disabled={!record.actions?.can_edit || !canUpdateRequests}
-        onClick={() => {
-          setPopoverOpenId(null);
-          Modal.confirm({
-            title: "Delete request?",
-            content: `Delete ${record.title}?`,
-            okText: "Delete",
-            okButtonProps: { danger: true },
-            onOk: async () => {
-              await runAction(deleteRequest, record.id);
-            },
-          });
-        }}
-      >
-        Delete
-      </Button>
-    </Space>
-  );
+  const actionButtons = (record) => {
+    const canManageBeforeSubmit = ["draft", "rejected"].includes(record.status) && canCreateRequests;
+    const canReviewSubmitted = record.status === "submitted" && canVerifyRequests;
+    const canFinalizeVerified = record.status === "verified" && canApproveRequests;
+    const actions = [
+      canManageBeforeSubmit && canUpdateRequests && canEditRecord(record) && (
+        <Button key="edit" size="small" icon={<EditOutlined />} onClick={() => openEdit(record)}>
+          Edit
+        </Button>
+      ),
+      canManageBeforeSubmit && canSubmitRecord(record) && (
+        <Button key="submit" size="small" type="primary" icon={<SendOutlined />} onClick={() => runAction(submitRequest, record.id)}>
+          Submit
+        </Button>
+      ),
+      Array.isArray(record.audit_entries) && record.audit_entries.length > 0 && (
+        <Button
+          key="audit"
+          size="small"
+          icon={<HistoryOutlined />}
+          onClick={() => {
+            setAuditPreview({
+              open: true,
+              title: record.title,
+              entries: record.audit_entries || [],
+            });
+          }}
+        >
+          Audit
+        </Button>
+      ),
+      canReviewSubmitted && canVerifyRecord(record) && (
+        <Button
+          key="verify"
+          size="small"
+          type="primary"
+          icon={<CheckOutlined />}
+          onClick={() => {
+            Modal.confirm({
+              title: "Verify request?",
+              content: "This will move the request to verified.",
+              okText: "Verify",
+              onOk: () => runAction(verifyRequest, record.id, "Verified by Admin Officer"),
+            });
+          }}
+        >
+          Verify
+        </Button>
+      ),
+      canReviewSubmitted && canRejectRecord(record) && (
+        <Button
+          key="reject-submitted"
+          danger
+          size="small"
+          icon={<CloseCircleOutlined />}
+          onClick={() => {
+            Modal.confirm({
+              title: "Reject request?",
+              content: "This will mark the request as rejected.",
+              okText: "Reject",
+              okButtonProps: { danger: true },
+              onOk: () => runAction(rejectRequest, record.id, "Rejected during admin review"),
+            });
+          }}
+        >
+          Reject
+        </Button>
+      ),
+      canFinalizeVerified && canApproveRecord(record) && (
+        <Button
+          key="approve"
+          size="small"
+          type="primary"
+          icon={<CheckOutlined />}
+          onClick={() => {
+            Modal.confirm({
+              title: "Approve request?",
+              content: "This will finalize the request.",
+              okText: "Approve",
+              type: "primary",
+              onOk: () => runAction(approveRequest, record.id, "Approved by HOI"),
+            });
+          }}
+        >
+          Approve
+        </Button>
+      ),
+      canFinalizeVerified && canRejectRecord(record) && (
+        <Button
+          key="reject-verified"
+          danger
+          size="small"
+          icon={<CloseCircleOutlined />}
+          onClick={() => {
+            Modal.confirm({
+              title: "Reject request?",
+              content: "This will mark the request as rejected.",
+              okText: "Reject",
+              okButtonProps: { danger: true },
+              onOk: () => runAction(rejectRequest, record.id, "Rejected by HOI"),
+            });
+          }}
+        >
+          Reject
+        </Button>
+      ),
+      canManageBeforeSubmit && canUpdateRequests && canEditRecord(record) && (
+        <Button
+          key="delete"
+          aria-label="Delete"
+          title="Delete"
+          danger
+          size="small"
+          icon={<DeleteOutlined />}
+          onClick={() => {
+            Modal.confirm({
+              title: "Delete request?",
+              content: `Delete ${record.title}?`,
+              okText: "Delete",
+              okButtonProps: { danger: true },
+              onOk: async () => {
+                await runAction(deleteRequest, record.id);
+              },
+            });
+          }}
+        />
+      ),
+    ].filter(Boolean);
+
+    return actions.length > 0 ? (
+      <Space size={6} wrap className="request-action-buttons">
+        {actions}
+      </Space>
+    ) : (
+      <Text type="secondary">No actions</Text>
+    );
+  };
 
   const columns = [
     {
@@ -377,6 +413,16 @@ const Requests = () => {
       key: "title",
       width: 160,
       ellipsis: true,
+      render: (title, record) => (
+        <Space size={8} className="request-title-cell">
+          <span className={`request-title-icon request-title-icon-${record.request_type || "general"}`}>
+            {requestTypeIcons[record.request_type] || requestTypeIcons.general}
+          </span>
+          <Text ellipsis title={title} className="request-title-text">
+            {title}
+          </Text>
+        </Space>
+      ),
     },
     {
       title: "Type",
@@ -462,18 +508,8 @@ const Requests = () => {
     {
       title: "Actions",
       key: "actions",
-      width: 70,
-      render: (_, record) => (
-        <Popover
-          trigger="click"
-          placement="bottomRight"
-          open={popoverOpenId === record.id}
-          onOpenChange={(open) => setPopoverOpenId(open ? record.id : null)}
-          content={actionMenu(record)}
-        >
-          <Button type="text" icon={<MoreOutlined />} />
-        </Popover>
-      ),
+      width: 260,
+      render: (_, record) => actionButtons(record),
     },
   ];
 
@@ -535,7 +571,7 @@ const Requests = () => {
             rowKey="id"
             pagination={{ pageSize: 6, size: "small", showSizeChanger: false, position: ["bottomRight"] }}
             tableLayout="fixed"
-            scroll={{ x: 1180 }}
+            scroll={{ x: 1370 }}
           />
         </div>
       </Card>
@@ -669,6 +705,7 @@ const Requests = () => {
           }))}
         />
       </Modal>
+
     </div>
   );
 };

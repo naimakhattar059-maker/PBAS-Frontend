@@ -1,8 +1,9 @@
 .settings-page {
   padding: 18px;
   background:
-    radial-gradient(circle at 92% 6%, rgba(45, 212, 191, 0.18), transparent 18%),
-    radial-gradient(circle at 8% 28%, rgba(139, 92, 246, 0.12), transparent 24%),
+    radial-gradient(circle at 92% 6%, rgba(34, 211, 238, 0.34), transparent 18%),
+    radial-gradient(circle at 8% 28%, rgba(139, 92, 246, 0.24), transparent 24%),
+    radial-gradient(circle at 74% 78%, rgba(16, 185, 129, 0.18), transparent 24%),
     var(--pbas-sky-100);
   min-height: calc(100vh - 90px);
 }
@@ -11,11 +12,12 @@
   margin-bottom: 18px;
   padding: 18px 20px;
   border-radius: 22px;
-  border: 1px solid rgba(98, 177, 226, 0.18);
+  border: 1px solid rgba(98, 177, 226, 0.28);
   background:
-    radial-gradient(circle at 96% 22%, rgba(24, 196, 184, 0.2), transparent 24%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(232, 247, 255, 0.98));
-  box-shadow: 0 16px 32px rgba(24, 57, 99, 0.1);
+    radial-gradient(circle at 94% 18%, rgba(34, 211, 238, 0.38), transparent 24%),
+    radial-gradient(circle at 68% 100%, rgba(124, 58, 237, 0.22), transparent 24%),
+    linear-gradient(135deg, rgba(255, 255, 255, 0.99), rgba(218, 244, 255, 0.98));
+  box-shadow: 0 18px 38px rgba(20, 79, 130, 0.18);
   position: relative;
   overflow: hidden;
 }
@@ -25,7 +27,7 @@
   position: absolute;
   inset: 0 auto 0 0;
   width: 7px;
-  background: linear-gradient(180deg, #1463ff, #18c4b8, #8b5cf6);
+  background: linear-gradient(180deg, #075cff, #06b6d4, #8b5cf6, #ec4899);
 }
 
 .settings-header h3.ant-typography {
@@ -37,15 +39,15 @@
 }
 
 .settings-header .ant-typography-secondary {
-  color: #526a78;
+  color: #425a78;
   position: relative;
   z-index: 1;
 }
 
 .settings-card {
   border-radius: 20px;
-  border: 1px solid rgba(98, 177, 226, 0.18);
-  box-shadow: 0 16px 34px rgba(24, 57, 99, 0.1);
+  border: 1px solid rgba(98, 177, 226, 0.26);
+  box-shadow: 0 18px 38px rgba(20, 79, 130, 0.16);
   overflow: hidden;
   position: relative;
 }
@@ -60,29 +62,31 @@
 
 .settings-profile-card {
   background:
-    radial-gradient(circle at 7% 8%, rgba(20, 99, 255, 0.08), transparent 22%),
-    linear-gradient(135deg, #f8fbff 0%, #ffffff 52%, #f1fbff 100%);
-  border-color: rgba(20, 99, 255, 0.18);
+    radial-gradient(circle at 8% 10%, rgba(20, 99, 255, 0.2), transparent 24%),
+    radial-gradient(circle at 94% 12%, rgba(34, 211, 238, 0.28), transparent 24%),
+    linear-gradient(135deg, #dff5ff 0%, #ffffff 52%, #ecfeff 100%);
+  border-color: rgba(20, 99, 255, 0.34);
 }
 
 .settings-profile-card::before {
-  background: linear-gradient(90deg, #1463ff, #38bdf8);
+  background: linear-gradient(90deg, #075cff, #06b6d4, #22c55e);
 }
 
 .settings-password-card {
   background:
-    radial-gradient(circle at 94% 10%, rgba(139, 92, 246, 0.11), transparent 24%),
-    linear-gradient(135deg, #fbf8ff 0%, #ffffff 52%, #f5fbff 100%);
-  border-color: rgba(139, 92, 246, 0.18);
+    radial-gradient(circle at 94% 10%, rgba(139, 92, 246, 0.28), transparent 24%),
+    radial-gradient(circle at 12% 90%, rgba(236, 72, 153, 0.13), transparent 26%),
+    linear-gradient(135deg, #f0ddff 0%, #ffffff 52%, #f8f0ff 100%);
+  border-color: rgba(139, 92, 246, 0.36);
 }
 
 .settings-password-card::before {
-  background: linear-gradient(90deg, #8b5cf6, #f472b6);
+  background: linear-gradient(90deg, #7c3aed, #a855f7, #ec4899);
 }
 
 .settings-card .ant-card-head {
-  background: rgba(255, 255, 255, 0.58);
-  border-bottom-color: rgba(98, 177, 226, 0.14);
+  background: linear-gradient(90deg, rgba(20, 99, 255, 0.1), rgba(24, 196, 184, 0.08));
+  border-bottom-color: rgba(98, 177, 226, 0.24);
   font-weight: 800;
 }
 
@@ -97,10 +101,12 @@
   margin-bottom: 24px;
   padding: 18px;
   border-radius: 18px;
-  border: 1px solid rgba(98, 177, 226, 0.14);
+  border: 1px solid rgba(98, 177, 226, 0.28);
   background:
-    radial-gradient(circle at 5% 50%, rgba(24, 196, 184, 0.16), transparent 24%),
-    rgba(255, 255, 255, 0.62);
+    radial-gradient(circle at 5% 50%, rgba(24, 196, 184, 0.28), transparent 24%),
+    radial-gradient(circle at 92% 12%, rgba(20, 99, 255, 0.16), transparent 22%),
+    rgba(255, 255, 255, 0.72);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
 }
 
 .profile-avatar-wrap {
@@ -111,12 +117,12 @@
 
 .profile-avatar {
   cursor: pointer;
-  background: linear-gradient(135deg, #dff9ff, #e8f0ff);
+  background: linear-gradient(135deg, #93e7ff, #c4b5fd, #ecfeff);
   color: #07336d;
   font-size: 42px;
   font-weight: 900;
-  border: 3px solid rgba(20, 99, 255, 0.32);
-  box-shadow: 0 14px 28px rgba(20, 99, 255, 0.16);
+  border: 3px solid rgba(20, 99, 255, 0.52);
+  box-shadow: 0 16px 34px rgba(20, 99, 255, 0.24);
 }
 
 .avatar-camera {
@@ -131,9 +137,9 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #7c3aed, #1463ff) !important;
+  background: linear-gradient(135deg, #7c3aed, #1463ff, #06b6d4) !important;
   border: 0 !important;
-  box-shadow: 0 8px 20px rgba(47, 137, 255, 0.22);
+  box-shadow: 0 10px 24px rgba(47, 137, 255, 0.34);
 }
 
 .settings-card .ant-form-item-label > label {
@@ -146,31 +152,31 @@
   border-color: rgba(98, 177, 226, 0.35);
   border-radius: 10px;
   min-height: 44px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(241, 249, 255, 0.92));
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(224, 247, 255, 0.94));
   color: #17345f;
 }
 
 .settings-card .ant-input:hover,
 .settings-card .ant-input-affix-wrapper:hover {
-  border-color: rgba(20, 99, 255, 0.45);
-  background: linear-gradient(135deg, #ffffff, rgba(232, 247, 255, 0.96));
+  border-color: rgba(20, 99, 255, 0.62);
+  background: linear-gradient(135deg, #ffffff, rgba(218, 244, 255, 0.98));
 }
 
 .settings-card .ant-input:focus,
 .settings-card .ant-input-affix-wrapper-focused {
   border-color: #1463ff !important;
-  box-shadow: 0 0 0 3px rgba(20, 99, 255, 0.1) !important;
+  box-shadow: 0 0 0 3px rgba(20, 99, 255, 0.16) !important;
   background: #ffffff;
 }
 
 .settings-profile-card .ant-input,
 .settings-profile-card .ant-input-affix-wrapper {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(235, 250, 255, 0.9));
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(224, 247, 255, 0.94));
 }
 
 .settings-password-card .ant-input,
 .settings-password-card .ant-input-affix-wrapper {
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(248, 242, 255, 0.92));
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.98), rgba(243, 232, 255, 0.96));
 }
 
 .settings-card .ant-input::placeholder,
@@ -190,13 +196,13 @@
 .settings-card .ant-btn-primary {
   border: 0 !important;
   border-radius: 999px !important;
-  background: linear-gradient(135deg, #5b35b1, #7c3aed) !important;
-  box-shadow: 0 10px 20px rgba(91, 53, 177, 0.22);
+  background: linear-gradient(135deg, #6336d8, #8b5cf6, #ec4899) !important;
+  box-shadow: 0 12px 24px rgba(99, 54, 216, 0.34);
   font-weight: 800;
 }
 
 .settings-profile-card .ant-btn-primary {
-  background: linear-gradient(135deg, #1463ff, #18c4b8) !important;
+  background: linear-gradient(135deg, #075cff, #06b6d4, #22c55e) !important;
 }
 
 .cropper-shell {

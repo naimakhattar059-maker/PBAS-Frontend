@@ -6,6 +6,7 @@ import { listAuditLogs } from "../api/auditLogs";
 import AccessDenied from "../components/AccessDenied";
 import { hasAnyPermission } from "../utils/permissions";
 import "./Dashboard.css";
+import "./AuditLogs.css";
 
 const { RangePicker } = DatePicker;
 const { Title, Text } = Typography;
@@ -305,9 +306,9 @@ const AuditLogs = () => {
   }
 
   return (
-    <div className="dashboard-page">
-      <div className="dashboard-shell">
-        <div className="dashboard-hero">
+    <div className="dashboard-page audit-page">
+      <div className="dashboard-shell audit-shell">
+        <div className="dashboard-hero audit-hero">
           <div>
             <Text className="eyebrow">Audit Logs</Text>
             <div className="title-row">
@@ -322,7 +323,7 @@ const AuditLogs = () => {
           </div>
         </div>
 
-        <Card className="panel-card" bordered={false}>
+        <Card className="panel-card audit-filter-card" bordered={false}>
           <Space className="audit-toolbar" wrap>
             <Input
               allowClear
@@ -337,14 +338,14 @@ const AuditLogs = () => {
             {canViewAll && <Select value={userFilter} onChange={setUserFilter} options={userOptions} style={{ width: 240 }} />}
             {canViewAll && <Select value={roleFilter} onChange={setRoleFilter} options={roleOptions} style={{ width: 160 }} />}
             <RangePicker value={dateRange} onChange={setDateRange} />
-            <Button icon={<ReloadOutlined />} onClick={loadAuditLogs} loading={loading}>
+            <Button className="audit-refresh-button" icon={<ReloadOutlined />} onClick={loadAuditLogs} loading={loading}>
               Refresh
             </Button>
           </Space>
         </Card>
       </div>
 
-      <Card className="panel-card" style={{ marginTop: 16 }} bordered={false}>
+      <Card className="panel-card audit-table-card" style={{ marginTop: 16 }} bordered={false}>
         <Table
           columns={columns}
           dataSource={filteredLogs}

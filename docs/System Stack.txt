@@ -1,0 +1,88 @@
+System Stack
+
+  Aap ke system ka architecture 2 parts mein hai:
+
+  Frontend
+
+  - Framework: React 19.2.0
+  - Build tool: Vite 7.2.4
+  - Package manager/runtime: Node.js v20.20.0, npm 10.8.2
+  - UI library: Ant Design 6.0.0
+  - Icons: @ant-design/icons 6.1.0
+  - Routing: react-router-dom 7.9.6
+  - State management: Redux Toolkit 2.10.1 + React Redux 9.2.0
+  - Image crop/profile photo tool: react-easy-crop 5.5.7
+  - Testing: Vitest 4.1.5, Testing Library React 16.3.2, jest-dom 6.9.1, jsdom 26.1.0
+  - Linting: ESLint 9.39.1
+
+  Frontend commands:
+
+  npm run dev       # frontend local server
+  npm run build     # production build
+  npm run preview   # build preview
+  npm run lint      # frontend code lint
+  npm run test      # frontend tests
+
+  Backend
+
+  - Framework: Ruby on Rails 8.1.1
+  - Language/runtime: Ruby 3.3.10
+  - API type: Rails REST API under /api/v1
+  - Server: Puma 7.1.0
+  - Database in current development config: SQLite, file: storage/development.sqlite3
+  - MySQL support gem also present: mysql2 0.5.7
+  - Password hashing: bcrypt 3.1.20
+  - Authentication token: jwt 2.10.2
+  - CORS handling: rack-cors 3.0.0
+  - Performance boot cache: bootsnap 1.19.0
+  - Background/cache/cable Rails stack: solid_queue 1.2.4, solid_cache 1.0.10, solid_cable 3.0.12
+  - Security/static analysis: brakeman 7.1.1
+  - Ruby linting style: rubocop-rails-omakase 1.1.0
+  - Backend tests: Rails default Minitest
+
+  Backend commands:
+
+  bin/rails server       # backend server
+  bin/rails db:migrate   # database migrations
+  bin/rails db:seed      # seed/sample data
+  bin/rails test         # backend tests
+  bin/rails console      # database/models inspect
+
+  Main Modules
+  System mein ye major modules included hain:
+
+  - Dashboard
+  - User Management
+  - Resource Request Management
+  - Budget Management
+  - Payroll Management
+  - Estimates Management
+  - Internal Revenue
+  - Reports
+  - Audit Logs
+  - Settings
+  - Notifications
+  - Authentication: Signup, Login, Email Verification, Password Reset
+
+  Reports / Charts Technique
+  Current frontend dependencies mein koi separate chart library, jaise recharts ya chart.js, installed nahi hai. Reports aur dashboard visuals mostly React components, Ant Design tables/
+  cards/progress UI, CSS styling, filters, and backend API data aggregation se ban rahe hain.
+
+  Backend API Structure
+  Backend Rails API mein controllers available hain for:
+
+  - auth/session/registration/password/email verification
+  - users
+  - workflow/resource requests
+  - budgets/categories/heads
+  - payroll, payroll staff, payroll estimates
+  - internal revenue records/cells
+  - dashboard
+  - reports
+  - audit logs
+  - notifications
+
+  Short version: Frontend React + Vite + Ant Design hai, backend Ruby on Rails API hai, authentication JWT/bcrypt se hoti hai, database current development mein SQLite hai, aur system
+  testing frontend par Vitest aur backend par Rails Minitest se hoti hai.
+
+

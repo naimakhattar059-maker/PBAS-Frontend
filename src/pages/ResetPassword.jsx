@@ -3,15 +3,19 @@ import { Button, Form, Input, Typography, message } from "antd";
 import { Link, useSearchParams } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import AuthLayout from "../components/AuthLayout";
+import PasswordRequirements from "../components/PasswordRequirements";
 import { resetPassword } from "../store/authSlice";
+import { strongPasswordRules } from "../utils/authValidation";
 
 const { Text } = Typography;
 
 const ResetPassword = () => {
+  const [form] = Form.useForm();
   const dispatch = useDispatch();
   const { status, error } = useSelector((state) => state.auth);
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
+  const watchedPassword = Form.useWatch("password", form);
 
   const onFinish = async (values) => {
     try {
@@ -41,14 +45,15 @@ const ResetPassword = () => {
 
   return (
     <AuthLayout title="Set a new password">
-      <Form layout="vertical" onFinish={onFinish} requiredMark="optional">
+      <Form form={form} layout="vertical" onFinish={onFinish} requiredMark="optional">
         <Form.Item
           label="New password"
           name="password"
-          rules={[{ required: true, message: "Please enter a password" }]}
+          rules={strongPasswordRules}
         >
           <Input.Password size="large" prefix={<LockOutlined />} placeholder="New password" />
         </Form.Item>
+        <PasswordRequirements value={watchedPassword} />
         <Form.Item
           label="Confirm password"
           name="password_confirmation"

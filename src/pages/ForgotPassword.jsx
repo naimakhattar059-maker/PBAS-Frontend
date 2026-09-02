@@ -4,6 +4,7 @@ import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import AuthLayout from "../components/AuthLayout";
 import { requestPasswordReset } from "../store/authSlice";
+import { emailRules } from "../utils/authValidation";
 
 const { Text } = Typography;
 
@@ -13,7 +14,7 @@ const ForgotPassword = () => {
 
   const onFinish = async (values) => {
     try {
-      await dispatch(requestPasswordReset(values.email)).unwrap();
+      await dispatch(requestPasswordReset(values.email.trim().toLowerCase())).unwrap();
       message.success("If that email exists, we've sent reset instructions.");
     } catch (err) {
       message.error(err);
@@ -26,7 +27,7 @@ const ForgotPassword = () => {
         <Form.Item
           label="Email"
           name="email"
-          rules={[{ required: true, message: "Please enter your email" }]}
+          rules={emailRules}
         >
           <Input size="large" prefix={<MailOutlined />} placeholder="Enter your email" />
         </Form.Item>

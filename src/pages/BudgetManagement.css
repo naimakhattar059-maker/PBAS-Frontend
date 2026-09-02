@@ -593,6 +593,109 @@
   line-height: 26px;
 }
 
+.request-title-cell {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.request-title-icon {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  font-size: 13px;
+  box-shadow: 0 6px 14px rgba(28, 52, 70, 0.08);
+}
+
+.request-title-icon-budget {
+  color: #0f6f60;
+  background: linear-gradient(135deg, #dff8ef, #b9eadc);
+}
+
+.request-title-icon-resource {
+  color: #145c9e;
+  background: linear-gradient(135deg, #dfefff, #bcd9ff);
+}
+
+.request-title-icon-payroll {
+  color: #7c4a03;
+  background: linear-gradient(135deg, #fff2cf, #ffd98a);
+}
+
+.request-title-icon-general {
+  color: #5b4bb2;
+  background: linear-gradient(135deg, #ede8ff, #d8cdfd);
+}
+
+.request-title-text {
+  min-width: 0;
+  max-width: 116px;
+}
+
+.requests-status-row .request-stat-card-draft {
+  background: linear-gradient(145deg, #f8fafc 0%, #eef2f7 100%);
+  border-color: rgba(100, 116, 139, 0.18);
+}
+
+.requests-status-row .request-stat-card-submitted {
+  background: linear-gradient(145deg, #eef6ff 0%, #dbeafe 100%);
+  border-color: rgba(59, 130, 246, 0.2);
+}
+
+.requests-status-row .request-stat-card-verified {
+  background: linear-gradient(145deg, #f0fdfa 0%, #ccfbf1 100%);
+  border-color: rgba(20, 184, 166, 0.2);
+}
+
+.requests-status-row .request-stat-card-approved {
+  background: linear-gradient(145deg, #f0fdf4 0%, #dcfce7 100%);
+  border-color: rgba(34, 197, 94, 0.22);
+}
+
+.requests-status-row .request-stat-card-rejected {
+  background: linear-gradient(145deg, #fff1f2 0%, #ffe4e6 100%);
+  border-color: rgba(244, 63, 94, 0.2);
+}
+
+.requests-status-row .request-stat-card-draft .request-stat-value {
+  color: #334155 !important;
+}
+
+.requests-status-row .request-stat-card-submitted .request-stat-value {
+  color: #1d4ed8 !important;
+}
+
+.requests-status-row .request-stat-card-verified .request-stat-value {
+  color: #0f766e !important;
+}
+
+.requests-status-row .request-stat-card-approved .request-stat-value {
+  color: #15803d !important;
+}
+
+.requests-status-row .request-stat-card-rejected .request-stat-value {
+  color: #be123c !important;
+}
+
+.request-action-buttons {
+  max-width: 240px;
+  row-gap: 6px !important;
+}
+
+.request-action-buttons .ant-btn {
+  min-width: 34px;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+.request-action-buttons .ant-btn-icon-only {
+  width: 32px;
+  padding-inline: 0;
+}
+
 @media (max-width: 768px) {
   .budget-header {
     flex-direction: column;

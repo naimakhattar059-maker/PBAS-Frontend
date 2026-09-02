@@ -5,6 +5,7 @@ import { useDispatch, useSelector } from "react-redux";
 import AuthLayout from "../components/AuthLayout";
 import { login, resendVerification } from "../store/authSlice";
 import { useEffect, useState } from "react";
+import { emailRules, emailValidationMessage, isValidEmail } from "../utils/authValidation";
 
 const { Text } = Typography;
 
@@ -44,6 +45,9 @@ const Login = () => {
     if (!email) {
       return message.info("Enter your email to resend verification.");
     }
+    if (!isValidEmail(email)) {
+      return message.error(emailValidationMessage);
+    }
     try {
       await dispatch(resendVerification(email)).unwrap();
       message.info(`Verification email sent to ${email}`);
@@ -63,7 +67,7 @@ const Login = () => {
         <Form.Item
           label="Email"
           name="email"
-          rules={[{ required: true, message: "Please enter your email" }]}
+          rules={emailRules}
         >
           <Input size="small" prefix={<MailOutlined />} placeholder="Enter email" />
         </Form.Item>

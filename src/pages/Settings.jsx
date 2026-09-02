@@ -5,8 +5,10 @@ import "react-easy-crop/react-easy-crop.css";
 import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { changePassword, fetchProfile, updateProfile } from "../api/profile";
+import PasswordRequirements from "../components/PasswordRequirements";
 import { setAuth } from "../store/authSlice";
 import { getCroppedCircleImage } from "../utils/cropImage";
+import { emailRules, strongPasswordRules } from "../utils/authValidation";
 import { getAvatarInitial } from "../utils/userAvatar";
 import "./Settings.css";
 
@@ -27,6 +29,7 @@ const Settings = () => {
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
   const fileInputRef = useRef(null);
+  const watchedPassword = Form.useWatch("password", passwordForm);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -101,7 +104,7 @@ const Settings = () => {
     try {
       const payload = await updateProfile(token, {
         username: values.username,
-        email: values.email,
+        email: values.email.trim().toLowerCase(),
         father_name: values.father_name,
         cnic: values.cnic,
         department: values.department,
@@ -187,10 +190,7 @@ const Settings = () => {
                   <Form.Item
                     label="Email"
                     name="email"
-                    rules={[
-                      { required: true, message: "Enter email" },
-                      { type: "email", message: "Enter a valid email" },
-                    ]}
+                    rules={emailRules}
                   >
                     <Input />
                   </Form.Item>
@@ -241,10 +241,11 @@ const Settings = () => {
               <Form.Item
                 label="New password"
                 name="password"
-                rules={[{ required: true, message: "Enter new password" }]}
+                rules={strongPasswordRules}
               >
                 <Input.Password prefix={<LockOutlined />} />
               </Form.Item>
+              <PasswordRequirements value={watchedPassword} />
               <Form.Item
                 label="Re-enter password"
                 name="password_confirmation"

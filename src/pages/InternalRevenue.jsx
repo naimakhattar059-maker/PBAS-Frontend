@@ -1,9 +1,14 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Button, Card, DatePicker, Form, Input, Modal, Space, Tag, Typography, message } from "antd";
+import { Button, Card, DatePicker, Form, Input, InputNumber, Modal, Select, Space, Table, Tag, Typography, message } from "antd";
 import { DownloadOutlined, PlusOutlined, ReloadOutlined, SaveOutlined } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useSelector } from "react-redux";
-import { listInternalRevenueCells, saveInternalRevenueCells } from "../api/internalRevenue";
+import {
+  createInternalRevenueRecord,
+  listInternalRevenueCells,
+  listInternalRevenueRecords,
+  saveInternalRevenueCells,
+} from "../api/internalRevenue";
 import AccessDenied from "../components/AccessDenied";
 import { hasPermission } from "../utils/permissions";
 import "./InternalRevenue.css";
@@ -40,7 +45,32 @@ const recordTypeOptions = [
   { key: "bs", title: "BS Funds", description: "Admin, BS Student Fund, Academic, TVF, transport and university dues" },
   { key: "inter", title: "Inter Funds", description: "IDF, IT, exam, transport and refund entries" },
   { key: "others", title: "Others", description: "Registration funds, government dues, project amount and other revenue" },
+  { key: "non_public", title: "Non Public Fund", description: "Record non-public fund receipts and expense/cutting entries" },
 ];
+
+const nonPublicFundOptions = [
+  { value: "idf", label: "IDF" },
+  { value: "exam", label: "Exam" },
+  { value: "bs", label: "BS" },
+  { value: "other", label: "Other" },
+];
+
+const nonPublicExpenseOptions = [
+  { value: "postage", label: "Postage" },
+  { value: "tel", label: "Telephone" },
+  { value: "gas", label: "Gas" },
+  { value: "water", label: "Water" },
+  { value: "elec", label: "Electricity" },
+  { value: "stationery", label: "Stationery" },
+  { value: "poll_charges_public", label: "Poll charges public" },
+  { value: "poll_charges_private", label: "Poll charges private" },
+  { value: "newspaper", label: "Newspaper" },
+  { value: "advertisement", label: "Advertisement / publicity" },
+  { value: "others", label: "Others" },
+];
+
+const optionLabel = (options, value, fallback = "—") =>
+  options.find((option) => option.value === value)?.label || value || fallback;
 
 const recordFieldGroups = {
   bs: [
@@ -219,6 +249,7 @@ const InternalRevenue = () => {
   const [recordModalOpen, setRecordModalOpen] = useState(false);
   const [recordType, setRecordType] = useState(null);
   const [recordDate, setRecordDate] = useState(() => dayjs(defaultRevenueMonth));
+  const [nonPublicRecords, setNonPublicRecords] = useState([]);
   const [recordForm] = Form.useForm();
   const inputRefs = useRef(new Map());
   const rowsRef = useRef(rows);
@@ -229,13 +260,19 @@ const InternalRevenue = () => {
 
   const revenueSummary = useMemo(() => {
     const calculatedRows = applyFormulas(rows);
-    const totalRow = calculatedRows[findSummaryIndex(calculatedRows, "T. Exp")] || [];
-    const closingRow = calculatedRows[findSummaryIndex(calculatedRows, "Clos")] || [];
+    const totalRowIndex = findSummaryIndex(calculatedRows, "T. Exp");
+    const lastDataRow = totalRowIndex > dataStartRow ? totalRowIndex : calculatedRows.length;
+    const dataTotals = calculatedRows
+      .slice(dataStartRow, lastDataRow)
+      .filter((row, rowIndex) => !isDecorativeRow(rowIndex + dataStartRow))
+      .map((row) => numberValue(row[grandTotalColumn]));
+    const totalReceipts = dataTotals.filter((value) => value > 0).reduce((sum, value) => sum + value, 0);
+    const totalExpenses = Math.abs(dataTotals.filter((value) => value < 0).reduce((sum, value) => sum + value, 0));
 
     return {
-      totalInternalRevenue: totalRow[grandTotalColumn] || 0,
-      remainingAmount: closingRow[grandTotalColumn] || 0,
-      utilizedAmount: totalRow[grandTotalColumn] || 0,
+      totalInternalRevenue: totalReceipts,
+      remainingAmount: totalReceipts - totalExpenses,
+      utilizedAmount: totalExpenses,
     };
   }, [rows]);
 
@@ -330,6 +367,25 @@ const InternalRevenue = () => {
         if (!active) return;
         setLoadState("error");
         message.error(err.message || "Could not load saved internal revenue cells");
+      });
+
+    return () => {
+      active = false;
+    };
+  }, [canViewInternalRevenue, period, token]);
+
+  useEffect(() => {
+    if (!canViewInternalRevenue || !token) return;
+
+    let active = true;
+    listInternalRevenueRecords(token, period)
+      .then((payload) => {
+        if (!active) return;
+        setNonPublicRecords(payload.records || []);
+      })
+      .catch((err) => {
+        if (!active) return;
+        message.error(err.message || "Could not load non-public fund records");
       });
 
     return () => {
@@ -465,7 +521,79 @@ const InternalRevenue = () => {
     recordForm.resetFields();
   };
 
-  const submitRecordForm = (values) => {
+  const saveNonPublicRecord = async (record) => {
+    const payload = await createInternalRevenueRecord(token, record);
+    setNonPublicRecords((current) => [payload.record, ...current]);
+    return payload.record;
+  };
+
+  const submitRecordForm = async (values) => {
+    if (recordType === "non_public") {
+      const fundLabel = nonPublicFundOptions.find((option) => option.value === values.fund)?.label || "Non Public";
+      const expenseLabel = nonPublicExpenseOptions.find((option) => option.value === values.expense_head)?.label || "Expense";
+      const entryNo = values.entry_no || "";
+      const notes = values.notes ? ` - ${values.notes}` : "";
+      const receiptAmount = numberValue(values.receipt_amount);
+      const expenseAmount = numberValue(values.expense_amount);
+      const entriesToSave = [];
+      const nextPeriod = recordDate ? recordDate.startOf("month").format("YYYY-MM") : period;
+
+      if (receiptAmount > 0) {
+        entriesToSave.push({
+          period: nextPeriod,
+          entry_no: entryNo,
+          fund: values.fund,
+          transaction_type: "receipt",
+          amount: receiptAmount,
+          notes: values.notes,
+          rowValues: {
+            0: `${entryNo} Non Public Fund ${fundLabel} receipt${notes}`.trim(),
+            26: receiptAmount,
+          },
+        });
+      }
+
+      if (expenseAmount > 0) {
+        entriesToSave.push({
+          period: nextPeriod,
+          entry_no: entryNo,
+          fund: values.fund,
+          transaction_type: "expense",
+          expense_head: values.expense_head,
+          amount: expenseAmount,
+          notes: values.notes,
+          rowValues: {
+            0: `${entryNo} Non Public Fund ${fundLabel} ${expenseLabel} cutting${notes}`.trim(),
+            26: -expenseAmount,
+          },
+        });
+      }
+
+      if (entriesToSave.length === 0) {
+        message.error("Enter receipt amount or expense/cutting amount");
+        return;
+      }
+
+      if (recordDate) {
+        const nextMonth = recordDate.startOf("month").format("YYYY-MM-DD");
+        setRevenueMonth(nextMonth);
+        localStorage.setItem(revenueMonthStorageKey, nextMonth);
+      }
+
+      try {
+        for (const entry of entriesToSave) {
+          const { rowValues, ...recordPayload } = entry;
+          await saveNonPublicRecord(recordPayload);
+          insertRecordRow(rowValues);
+        }
+        closeRecordModal();
+        message.success("Non Public Fund record added");
+      } catch (err) {
+        message.error(err.message || "Could not save non-public fund record");
+      }
+      return;
+    }
+
     const fields = recordFieldGroups[recordType] || [];
     const rowValues = fields.reduce((acc, field) => {
       acc[field.column] = values[`column_${field.column}`] ?? "";
@@ -512,6 +640,65 @@ const InternalRevenue = () => {
     if (saveState === "error") return <Tag color="error">Save failed</Tag>;
     return <Tag>Ready</Tag>;
   }, [loadState, saveState]);
+
+  const nonPublicSummary = useMemo(() => {
+    const receipts = nonPublicRecords
+      .filter((record) => record.transaction_type === "receipt")
+      .reduce((sum, record) => sum + numberValue(record.amount), 0);
+    const expenses = nonPublicRecords
+      .filter((record) => record.transaction_type === "expense")
+      .reduce((sum, record) => sum + numberValue(record.amount), 0);
+
+    return {
+      receipts,
+      expenses,
+      balance: receipts - expenses,
+    };
+  }, [nonPublicRecords]);
+
+  const nonPublicColumns = [
+    {
+      title: "Entry No",
+      dataIndex: "entry_no",
+      key: "entry_no",
+      render: (value) => value || "—",
+    },
+    {
+      title: "Fund",
+      dataIndex: "fund",
+      key: "fund",
+      render: (value) => optionLabel(nonPublicFundOptions, value),
+    },
+    {
+      title: "Type",
+      dataIndex: "transaction_type",
+      key: "transaction_type",
+      render: (value) => <Tag color={value === "receipt" ? "green" : "orange"}>{value === "receipt" ? "Receipt" : "Cutting"}</Tag>,
+    },
+    {
+      title: "Expense Head",
+      dataIndex: "expense_head",
+      key: "expense_head",
+      render: (value) => optionLabel(nonPublicExpenseOptions, value),
+    },
+    {
+      title: "Amount",
+      dataIndex: "amount",
+      key: "amount",
+      render: (value, record) => (
+        <Text type={record.transaction_type === "expense" ? "danger" : undefined}>
+          {record.transaction_type === "expense" ? "- " : ""}
+          {formatCurrency(value)}
+        </Text>
+      ),
+    },
+    {
+      title: "Notes",
+      dataIndex: "notes",
+      key: "notes",
+      render: (value) => value || "—",
+    },
+  ];
 
   const exportSectionToPdf = (sectionKey) => {
     const section = exportSections[sectionKey];
@@ -618,6 +805,29 @@ const InternalRevenue = () => {
         </Card>
       </div>
 
+      <Card
+        bordered={false}
+        className="internal-revenue-card internal-revenue-non-public-card"
+        title="Non Public Fund Entries"
+        extra={
+          <Space wrap>
+            <Tag color="green">Receipts: {formatCurrency(nonPublicSummary.receipts)}</Tag>
+            <Tag color="orange">Cutting: {formatCurrency(nonPublicSummary.expenses)}</Tag>
+            <Tag color="blue">Balance: {formatCurrency(nonPublicSummary.balance)}</Tag>
+          </Space>
+        }
+      >
+        <Table
+          className="internal-revenue-record-table"
+          columns={nonPublicColumns}
+          dataSource={nonPublicRecords}
+          rowKey="id"
+          size="small"
+          pagination={{ pageSize: 5, size: "small" }}
+          locale={{ emptyText: "No non-public fund entries yet" }}
+        />
+      </Card>
+
       <Card bordered={false} className="internal-revenue-card">
         <div className="internal-revenue-export-bar">
           <Text strong>Export PDF</Text>
@@ -714,9 +924,9 @@ const InternalRevenue = () => {
           ))}
         </div>
 
-        {recordType === "others" ? (
+        {recordType === "others" || recordType === "non_public" ? (
           <div className="internal-revenue-record-date">
-            <Text strong>Select month/date for other revenue</Text>
+            <Text strong>{recordType === "non_public" ? "Select month/date for non-public fund" : "Select month/date for other revenue"}</Text>
             <DatePicker
               picker="month"
               allowClear={false}
@@ -727,7 +937,41 @@ const InternalRevenue = () => {
           </div>
         ) : null}
 
-        {recordType ? (
+        {recordType === "non_public" ? (
+          <Form
+            className="internal-revenue-record-form"
+            form={recordForm}
+            layout="vertical"
+            onFinish={submitRecordForm}
+          >
+            <div className="internal-revenue-record-grid">
+              <Form.Item label="Entry no." name="entry_no">
+                <Input placeholder="Entry no" />
+              </Form.Item>
+              <Form.Item label="Fund" name="fund" rules={[{ required: true, message: "Select fund" }]}>
+                <Select placeholder="Select fund" options={nonPublicFundOptions} />
+              </Form.Item>
+              <Form.Item label="Receipt amount" name="receipt_amount">
+                <InputNumber min={0} precision={2} placeholder="0" style={{ width: "100%" }} />
+              </Form.Item>
+              <Form.Item label="Expense / cutting head" name="expense_head">
+                <Select allowClear placeholder="Select expense head" options={nonPublicExpenseOptions} />
+              </Form.Item>
+              <Form.Item label="Expense / cutting amount" name="expense_amount">
+                <InputNumber min={0} precision={2} placeholder="0" style={{ width: "100%" }} />
+              </Form.Item>
+              <Form.Item label="Notes" name="notes">
+                <Input placeholder="Optional remarks" />
+              </Form.Item>
+            </div>
+            <Space>
+              <Button type="primary" htmlType="submit">
+                Add to Sheet
+              </Button>
+              <Button onClick={closeRecordModal}>Cancel</Button>
+            </Space>
+          </Form>
+        ) : recordType ? (
           <Form
             className="internal-revenue-record-form"
             form={recordForm}
