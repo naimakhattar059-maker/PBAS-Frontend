@@ -211,6 +211,34 @@ const payrollDeductionTotal = (record) =>
 const payrollGrossPay = (record) => Number(record?.gross_pay || payrollBasicPay(record) + payrollAllowanceTotal(record));
 const payrollNetPay = (record) =>
   Number(record?.net_pay || Math.max(payrollGrossPay(record) - payrollDeductionTotal(record), 0));
+const payrollEstimateFourMonths = (record) => Number(record?.estimate_actual_four_months || payrollBasicPay(record) * 4);
+const payrollEstimateEightMonths = (record) =>
+  Number(record?.estimate_anticipated_eight_months || payrollBasicPay(record) * 8);
+const payrollEstimateIncrementAmount = (record) =>
+  Number(record?.estimate_increment_amount || Number(record?.increment_rate || 0) * 7);
+const payrollTotalRevisedEstimate = (record) =>
+  payrollEstimateFourMonths(record) + payrollEstimateEightMonths(record) + payrollEstimateIncrementAmount(record);
+
+const estimateGroupLabel = (value) => {
+  if (value === "gazetted") return "Pay of Officers";
+  if (value === "non_gazetted") return "Pay of Others";
+  return "Regular Payroll";
+};
+
+const comparePayrollRank = (a, b) => {
+  const groupOrder = { gazetted: 1, non_gazetted: 2 };
+  const aGroup = groupOrder[a.estimate_pay_group] || 3;
+  const bGroup = groupOrder[b.estimate_pay_group] || 3;
+
+  if (aGroup !== bGroup) return aGroup - bGroup;
+  if (Number(b.bps || 0) !== Number(a.bps || 0)) return Number(b.bps || 0) - Number(a.bps || 0);
+  return String(a.full_name || "").localeCompare(String(b.full_name || ""));
+};
+
+const fiscalYearLabel = (year) => {
+  const startYear = Number(year);
+  return startYear ? `${startYear}-${startYear + 1}` : "—";
+};
 
 const Payroll = () => {
   const { token, user: currentUser } = useSelector((state) => state.auth);
@@ -221,6 +249,7 @@ const Payroll = () => {
   const watchedMonthlyBasicPay = watchedStaffValues.monthly_basic_pay || 0;
   const watchedDeductionAmount = watchedStaffValues.deduction_amount || 0;
   const watchedBps = watchedStaffValues.bps || 0;
+  const watchedEstimateYear = watchedStaffValues.estimate_year || currentYear;
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -247,6 +276,9 @@ const Payroll = () => {
   const [selectedRunRecord, setSelectedRunRecord] = useState(null);
   const [selectedItem, setSelectedItem] = useState(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedStaffId, setSelectedStaffId] = useState(null);
+  const [selectedStaffSnapshot, setSelectedStaffSnapshot] = useState(null);
+  const [staffDrawerOpen, setStaffDrawerOpen] = useState(false);
 
   const canViewPayroll = hasAnyPermission(currentUser, ["view_payroll"]);
   const canManagePayroll = hasPermission(currentUser, "generate_payroll");
@@ -263,6 +295,11 @@ const Payroll = () => {
     [payrollRuns, selectedRunId, selectedRunSnapshot, selectedRunRecord]
   );
   const selectedRunArchived = selectedRun ? isArchivedYear(selectedRun.year, archivedPayrollYears) : false;
+  const selectedStaff =
+    staffMembers.find((staff) => String(staff.id) === String(selectedStaffId)) ||
+    (selectedStaffSnapshot && String(selectedStaffSnapshot.id) === String(selectedStaffId)
+      ? selectedStaffSnapshot
+      : null);
   const payrollYears = useMemo(
     () =>
       Array.from(new Set([...payrollRuns.map((run) => Number(run.year)).filter(Boolean), currentYear]))
@@ -294,6 +331,7 @@ const Payroll = () => {
       }),
     [annualAllocations, archivedPayrollYears, payrollRuns, payrollYears]
   );
+  const rankedStaffMembers = useMemo(() => [...staffMembers].sort(comparePayrollRank), [staffMembers]);
 
   const activeAnnualSummary =
     annualPayrollSummaries.find((item) => item.year === currentYear) || {
@@ -390,6 +428,11 @@ const Payroll = () => {
       dra_allowance_config: undefined,
       deduction_amount: 0,
       increment_rate: 0,
+      estimate_year: 2025,
+      estimate_pay_group: undefined,
+      estimate_actual_four_months: 0,
+      estimate_anticipated_eight_months: 0,
+      estimate_increment_amount: 0,
       employment_type: "regular",
       staff_category: "non_teaching",
     });
@@ -440,6 +483,11 @@ const Payroll = () => {
       dra_allowance_config: undefined,
       deduction_amount: 0,
       increment_rate: 0,
+      estimate_year: 2025,
+      estimate_pay_group: undefined,
+      estimate_actual_four_months: 0,
+      estimate_anticipated_eight_months: 0,
+      estimate_increment_amount: 0,
       employment_type: "regular",
       staff_category: "non_teaching",
     });
@@ -491,6 +539,12 @@ const Payroll = () => {
       dra_allowance_config: buildAllowanceConfig(record.dra_allowance_year, record.dra_allowance_percentage),
     });
     setStaffModalOpen(true);
+  };
+
+  const openStaffDetails = (record) => {
+    setSelectedStaffId(record.id);
+    setSelectedStaffSnapshot(record);
+    setStaffDrawerOpen(true);
   };
 
   const submitRun = async (values) => {
@@ -565,6 +619,11 @@ const Payroll = () => {
         other_allowance_type: values.other_allowance_type || "",
         deduction_amount: values.deduction_amount || 0,
         increment_rate: values.increment_rate || 0,
+        estimate_year: values.estimate_year || null,
+        estimate_pay_group: values.estimate_pay_group || "",
+        estimate_actual_four_months: values.estimate_actual_four_months || 0,
+        estimate_anticipated_eight_months: values.estimate_anticipated_eight_months || 0,
+        estimate_increment_amount: values.estimate_increment_amount || 0,
       };
 
       if (editingStaffId) {
@@ -634,6 +693,26 @@ const Payroll = () => {
     const nextDeduction = getRankDeduction(watchedBps, watchedMonthlyBasicPay);
     staffForm.setFieldValue("deduction_amount", nextDeduction);
     message.success("Rank-based deduction applied");
+  };
+
+  const confirmToggleStaffActive = (record) => {
+    Modal.confirm({
+      title: record.active ? "Deactivate payroll staff?" : "Activate payroll staff?",
+      content: record.active
+        ? "Staff data will remain saved in the system, but this staff member will not be included in active payroll processing."
+        : "This staff member will become active again and can be included in payroll processing.",
+      okText: record.active ? "Deactivate" : "Activate",
+      okButtonProps: { danger: record.active },
+      centered: true,
+      onOk: async () => {
+        await runPayrollAction(
+          updatePayrollStaff,
+          record.id,
+          { active: !record.active },
+          record.active ? "Payroll staff deactivated" : "Payroll staff activated"
+        );
+      },
+    });
   };
 
   if (!canViewPayroll) {
@@ -717,24 +796,7 @@ const Payroll = () => {
       label: record.active ? "Deactivate staff" : "Activate staff",
       danger: record.active,
       icon: record.active ? <DeleteOutlined /> : <CheckOutlined />,
-      onClick: () =>
-        Modal.confirm({
-          title: record.active ? "Deactivate payroll staff?" : "Activate payroll staff?",
-          content: record.active
-            ? "Staff data will remain saved in the system, but this staff member will not be included in active payroll processing."
-            : "This staff member will become active again and can be included in payroll processing.",
-          okText: record.active ? "Deactivate" : "Activate",
-          okButtonProps: { danger: record.active },
-          centered: true,
-          onOk: async () => {
-            await runPayrollAction(
-              updatePayrollStaff,
-              record.id,
-              { active: !record.active },
-              record.active ? "Payroll staff deactivated" : "Payroll staff activated"
-            );
-          },
-        }),
+      onClick: () => confirmToggleStaffActive(record),
     },
   ];
 
@@ -807,12 +869,45 @@ const Payroll = () => {
       title: "Rank / BPS",
       dataIndex: "bps",
       key: "bps",
+      sorter: (a, b) => Number(a.bps || 0) - Number(b.bps || 0),
       render: (value) => value || "—",
+    },
+    {
+      title: "Estimate Group",
+      key: "estimate_group",
+      render: (_, record) => (
+        <div className="payroll-cell-stack">
+          <Tag color={record.estimate_pay_group === "gazetted" ? "blue" : record.estimate_pay_group === "non_gazetted" ? "purple" : "default"}>
+            {estimateGroupLabel(record.estimate_pay_group)}
+          </Tag>
+          <Text type="secondary">{record.estimate_year ? fiscalYearLabel(record.estimate_year) : "No estimate year"}</Text>
+        </div>
+      ),
     },
     {
       title: "Basic Pay",
       key: "basic_pay",
       render: (_, record) => money(payrollBasicPay(record)),
+    },
+    {
+      title: "4 Months",
+      key: "estimate_actual_four_months",
+      render: (_, record) => money(payrollEstimateFourMonths(record)),
+    },
+    {
+      title: "8 Months + Increment",
+      key: "estimate_eight_months",
+      render: (_, record) => (
+        <div className="payroll-cell-stack">
+          <Text>{money(payrollEstimateEightMonths(record) + payrollEstimateIncrementAmount(record))}</Text>
+          <Text type="secondary">Increment {money(payrollEstimateIncrementAmount(record))}</Text>
+        </div>
+      ),
+    },
+    {
+      title: "Total Revised 2025-2026",
+      key: "total_revised_estimate",
+      render: (_, record) => money(payrollTotalRevisedEstimate(record)),
     },
     {
       title: "Allowances",
@@ -859,7 +954,12 @@ const Payroll = () => {
           placement="bottomRight"
           menu={{ items: staffActionItems(record) }}
         >
-          <Button type="text" icon={<MoreOutlined />} onMouseDown={(event) => event.preventDefault()} />
+          <Button
+            type="text"
+            icon={<MoreOutlined />}
+            onClick={(event) => event.stopPropagation()}
+            onMouseDown={(event) => event.preventDefault()}
+          />
         </Dropdown>
       ),
     },
@@ -1079,11 +1179,15 @@ const Payroll = () => {
           <Table
             loading={loading}
             columns={staffColumns}
-            dataSource={staffMembers.slice(0, 5)}
+            dataSource={rankedStaffMembers.slice(0, 5)}
             rowKey="id"
             pagination={false}
             size="small"
-            scroll={{ x: 1100 }}
+            scroll={{ x: 1700 }}
+            rowClassName="payroll-clickable-row"
+            onRow={(record) => ({
+              onClick: () => openStaffDetails(record),
+            })}
           />
         </Card>
       ) : null}
@@ -1149,11 +1253,15 @@ const Payroll = () => {
         className="payroll-table"
         loading={loading}
         columns={staffColumns}
-        dataSource={staffMembers}
+        dataSource={rankedStaffMembers}
         rowKey="id"
         size="small"
-        scroll={{ x: 1100 }}
+        scroll={{ x: 1700 }}
         pagination={{ pageSize: 8, size: "small" }}
+        rowClassName="payroll-clickable-row"
+        onRow={(record) => ({
+          onClick: () => openStaffDetails(record),
+        })}
         locale={{
           emptyText: <Empty description="No payroll staff yet" />,
         }}
@@ -1270,6 +1378,171 @@ const Payroll = () => {
         ) : null}
       </Drawer>
 
+      <Drawer
+        open={staffDrawerOpen}
+        width={860}
+        onClose={() => {
+          setStaffDrawerOpen(false);
+          setSelectedStaffId(null);
+          setSelectedStaffSnapshot(null);
+        }}
+        title={
+          selectedStaff ? (
+            <div className="payroll-staff-drawer-title">
+              <span className="payroll-staff-avatar">{String(selectedStaff.full_name || "S").charAt(0).toUpperCase()}</span>
+              <span>
+                <span className="payroll-staff-name">{selectedStaff.full_name}</span>
+                <span className="payroll-staff-subtitle">
+                  {selectedStaff.post_description || "Staff"} · BPS {selectedStaff.bps || "—"}
+                </span>
+              </span>
+            </div>
+          ) : (
+            "Staff record"
+          )
+        }
+        className="payroll-drawer payroll-staff-drawer"
+        extra={
+          selectedStaff ? (
+            <Space wrap>
+              <Tag color={selectedStaff.active ? "green" : "red"}>{selectedStaff.active ? "Active" : "Inactive"}</Tag>
+              {canManagePayroll ? (
+                <>
+                  <Button size="small" icon={<EditOutlined />} onClick={() => openEditStaff(selectedStaff)}>
+                    Edit
+                  </Button>
+                  <Button
+                    size="small"
+                    danger={selectedStaff.active}
+                    icon={selectedStaff.active ? <DeleteOutlined /> : <CheckOutlined />}
+                    onClick={() => confirmToggleStaffActive(selectedStaff)}
+                  >
+                    {selectedStaff.active ? "Deactivate" : "Activate"}
+                  </Button>
+                </>
+              ) : null}
+            </Space>
+          ) : null
+        }
+      >
+        {selectedStaff ? (
+          <div className="payroll-drawer-body">
+            <Descriptions size="small" bordered column={2} className="payroll-descriptions payroll-staff-descriptions">
+              <Descriptions.Item label="Personnel No">{selectedStaff.personnel_no || "—"}</Descriptions.Item>
+              <Descriptions.Item label="Designation">{selectedStaff.post_description || "—"}</Descriptions.Item>
+              <Descriptions.Item label="Rank / BPS">{selectedStaff.bps || "—"}</Descriptions.Item>
+              <Descriptions.Item label="Department">{selectedStaff.department || "—"}</Descriptions.Item>
+              <Descriptions.Item label="Category">{toTitle(selectedStaff.staff_category)}</Descriptions.Item>
+              <Descriptions.Item label="Estimate Group">{estimateGroupLabel(selectedStaff.estimate_pay_group)}</Descriptions.Item>
+              <Descriptions.Item label="Estimate Year">
+                {selectedStaff.estimate_year ? fiscalYearLabel(selectedStaff.estimate_year) : "—"}
+              </Descriptions.Item>
+              <Descriptions.Item label="Increment Date">{selectedStaff.next_increment_date || "—"}</Descriptions.Item>
+            </Descriptions>
+
+            <Divider style={{ margin: "14px 0" }} />
+
+            <Row gutter={[12, 12]}>
+              <Col xs={24} md={8}>
+                <div className="payroll-preview-tile payroll-estimate-tile payroll-estimate-pay">
+                  <Text type="secondary">Pay Actual Being Drawn</Text>
+                  <div className="payroll-preview-value">{money(payrollBasicPay(selectedStaff))}</div>
+                </div>
+              </Col>
+              <Col xs={24} md={8}>
+                <div className="payroll-preview-tile payroll-estimate-tile payroll-estimate-four">
+                  <Text type="secondary">Actually Exp 4 Months</Text>
+                  <div className="payroll-preview-value">{money(payrollEstimateFourMonths(selectedStaff))}</div>
+                </div>
+              </Col>
+              <Col xs={24} md={8}>
+                <div className="payroll-preview-tile payroll-estimate-tile payroll-estimate-eight">
+                  <Text type="secondary">Anticipated Exp 8 Months</Text>
+                  <div className="payroll-preview-value">{money(payrollEstimateEightMonths(selectedStaff))}</div>
+                </div>
+              </Col>
+              <Col xs={24} md={8}>
+                <div className="payroll-preview-tile payroll-estimate-tile payroll-estimate-rate">
+                  <Text type="secondary">Rate of Increment</Text>
+                  <div className="payroll-preview-value">{money(selectedStaff.increment_rate)}</div>
+                </div>
+              </Col>
+              <Col xs={24} md={8}>
+                <div className="payroll-preview-tile payroll-estimate-tile payroll-estimate-increment">
+                  <Text type="secondary">Amount of Increment</Text>
+                  <div className="payroll-preview-value">{money(payrollEstimateIncrementAmount(selectedStaff))}</div>
+                </div>
+              </Col>
+              <Col xs={24} md={8}>
+                <div className="payroll-preview-tile payroll-preview-total payroll-estimate-tile">
+                  <Text type="secondary">Total Revised Estimate</Text>
+                  <div className="payroll-preview-value">{money(payrollTotalRevisedEstimate(selectedStaff))}</div>
+                </div>
+              </Col>
+            </Row>
+
+            <Descriptions size="small" bordered column={2} className="payroll-descriptions payroll-staff-descriptions">
+              <Descriptions.Item label="Allowances">{money(payrollAllowanceTotal(selectedStaff))}</Descriptions.Item>
+              <Descriptions.Item label="Gross Pay">{money(payrollGrossPay(selectedStaff))}</Descriptions.Item>
+              <Descriptions.Item label="Deductions">{money(payrollDeductionTotal(selectedStaff))}</Descriptions.Item>
+              <Descriptions.Item label="Net Pay">{money(payrollNetPay(selectedStaff))}</Descriptions.Item>
+              <Descriptions.Item label="CNIC">{selectedStaff.cnic || "—"}</Descriptions.Item>
+              <Descriptions.Item label="Bank">{selectedStaff.bank_name || "—"}</Descriptions.Item>
+              <Descriptions.Item label="Account">{selectedStaff.account_number || "—"}</Descriptions.Item>
+              <Descriptions.Item label="Notes">{selectedStaff.notes || "—"}</Descriptions.Item>
+            </Descriptions>
+
+            <div className="payroll-year-estimates-panel">
+              <div className="payroll-section-heading">
+                <Text strong>Saved year estimates</Text>
+                <Text type="secondary">Previous revised and next-year proposed data</Text>
+              </div>
+              <Table
+                rowKey={(record) => `${record.fiscal_year_label}-${record.estimate_type}`}
+                size="small"
+                dataSource={selectedStaff.year_estimates || []}
+                pagination={false}
+                scroll={{ x: 980 }}
+                locale={{ emptyText: <Empty image={Empty.PRESENTED_IMAGE_SIMPLE} description="No yearly estimate saved" /> }}
+                columns={[
+                  {
+                    title: "Year",
+                    dataIndex: "fiscal_year_label",
+                    key: "fiscal_year_label",
+                    fixed: "left",
+                    width: 120,
+                    render: (value, record) => (
+                      <Space direction="vertical" size={0}>
+                        <Text strong>{value}</Text>
+                        <Tag color={record.estimate_type === "proposed" ? "blue" : "green"}>
+                          {toTitle(record.estimate_type)}
+                        </Tag>
+                      </Space>
+                    ),
+                  },
+                  { title: "Min Pay", dataIndex: "min_pay", key: "min_pay", render: money },
+                  { title: "Max Pay", dataIndex: "max_pay", key: "max_pay", render: money },
+                  { title: "Actual Pay", dataIndex: "actual_pay", key: "actual_pay", render: money },
+                  { title: "Pay Officers", dataIndex: "pay_officers", key: "pay_officers", render: money },
+                  { title: "Pay Others", dataIndex: "pay_others", key: "pay_others", render: money },
+                  { title: "HRA", dataIndex: "hra", key: "hra", render: money },
+                  { title: "Convy Alce", dataIndex: "conveyance", key: "conveyance", render: money },
+                  { title: "Med Alce", dataIndex: "medical", key: "medical", render: money },
+                  { title: "Total Allces", dataIndex: "total_allowances", key: "total_allowances", render: money },
+                  { title: "Teach Alces", dataIndex: "teaching_allowance", key: "teaching_allowance", render: money },
+                  {
+                    title: "Grand Total",
+                    dataIndex: "grand_total",
+                    key: "grand_total",
+                    render: (value) => <Text strong>{money(value)}</Text>,
+                  },
+                ]}
+              />
+            </div>
+          </div>
+        ) : null}
+      </Drawer>
+
       <Modal open={runModalOpen} title={editingRunId ? "Edit payroll cycle" : "New payroll cycle"} onCancel={closeRunModal} footer={null} destroyOnClose>
         <Form form={runForm} layout="vertical" onFinish={submitRun}>
           <Row gutter={16}>
@@ -1305,7 +1578,20 @@ const Payroll = () => {
         </Form>
       </Modal>
 
-      <Modal open={staffModalOpen} title={editingStaffId ? "Edit staff record" : "Add payroll staff"} onCancel={closeStaffModal} footer={null} width={860} destroyOnClose>
+      <Modal
+        open={staffModalOpen}
+        title={
+          <div className="payroll-staff-modal-title">
+            <span>{editingStaffId ? "Edit staff record" : "Add payroll staff"}</span>
+            <small>{editingStaffId ? "Update payroll and revised estimate details" : "Create payroll and estimate record"}</small>
+          </div>
+        }
+        onCancel={closeStaffModal}
+        footer={null}
+        width={860}
+        destroyOnClose
+        className="payroll-staff-modal"
+      >
         <Form form={staffForm} layout="vertical" onFinish={submitStaff}>
           <Row gutter={16}>
             <Col xs={24} md={8}>
@@ -1335,6 +1621,42 @@ const Payroll = () => {
             </Col>
             <Col xs={24} md={8}>
               <Form.Item label="Increment rate" name="increment_rate">
+                <InputNumber min={0} precision={2} style={{ width: "100%" }} />
+              </Form.Item>
+            </Col>
+          </Row>
+
+          <Divider orientation="left">Revised estimate {fiscalYearLabel(watchedEstimateYear)}</Divider>
+          <Row gutter={16}>
+            <Col xs={24} md={8}>
+              <Form.Item label="Estimate year" name="estimate_year">
+                <InputNumber min={2000} max={2100} style={{ width: "100%" }} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item label="Estimate group" name="estimate_pay_group">
+                <Select
+                  allowClear
+                  placeholder="Select estimate group"
+                  options={[
+                    { value: "gazetted", label: "Pay of Officers" },
+                    { value: "non_gazetted", label: "Pay of Others" },
+                  ]}
+                />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item label="Actual exp 4 months" name="estimate_actual_four_months">
+                <InputNumber min={0} precision={2} style={{ width: "100%" }} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item label="Anticipated exp 8 months" name="estimate_anticipated_eight_months">
+                <InputNumber min={0} precision={2} style={{ width: "100%" }} />
+              </Form.Item>
+            </Col>
+            <Col xs={24} md={8}>
+              <Form.Item label="Amount of increment 12-25 to 6-26" name="estimate_increment_amount">
                 <InputNumber min={0} precision={2} style={{ width: "100%" }} />
               </Form.Item>
             </Col>

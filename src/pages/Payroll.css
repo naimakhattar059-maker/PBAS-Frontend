@@ -311,6 +311,14 @@
   background: rgba(223, 249, 255, 0.42) !important;
 }
 
+.payroll-clickable-row {
+  cursor: pointer;
+}
+
+.payroll-clickable-row:hover .payroll-strong {
+  color: #1463ff;
+}
+
 .payroll-cell-stack {
   display: flex;
   flex-direction: column;
@@ -329,11 +337,107 @@
 .payroll-drawer-body {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
 }
 
 .payroll-descriptions .ant-descriptions-item-label {
   width: 140px;
+}
+
+.payroll-staff-drawer .ant-drawer-header {
+  background: linear-gradient(135deg, #075985, #0f766e);
+  border-bottom: 0;
+  padding-block: 14px;
+}
+
+.payroll-staff-drawer .ant-drawer-close,
+.payroll-staff-drawer .ant-drawer-title {
+  color: #ffffff;
+}
+
+.payroll-staff-drawer .ant-drawer-extra .ant-tag {
+  border: 0;
+  font-weight: 800;
+}
+
+.payroll-staff-drawer .ant-drawer-extra .ant-btn {
+  border-color: rgba(255, 255, 255, 0.36);
+  color: #082f49;
+  font-weight: 800;
+  box-shadow: 0 8px 18px rgba(8, 47, 73, 0.16);
+}
+
+.payroll-staff-drawer .ant-drawer-body {
+  background:
+    radial-gradient(circle at 92% 8%, rgba(20, 184, 166, 0.14), transparent 20%),
+    linear-gradient(180deg, #f4fbff 0%, #ffffff 46%, #f7fffb 100%);
+}
+
+.payroll-staff-drawer-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.payroll-staff-avatar {
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  background: #d9f99d;
+  color: #14532d;
+  font-weight: 900;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.7);
+}
+
+.payroll-staff-name,
+.payroll-staff-subtitle {
+  display: block;
+  max-width: 440px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.payroll-staff-name {
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 900;
+}
+
+.payroll-staff-subtitle {
+  margin-top: 2px;
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.payroll-staff-descriptions {
+  overflow: hidden;
+  border: 1px solid rgba(14, 116, 144, 0.14);
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 12px 24px rgba(8, 47, 73, 0.08);
+}
+
+.payroll-staff-descriptions .ant-descriptions-view {
+  border: 0;
+}
+
+.payroll-staff-descriptions .ant-descriptions-item-label {
+  background: #eff6ff !important;
+  color: #475569;
+  font-weight: 800;
+}
+
+.payroll-staff-descriptions .ant-descriptions-item-content {
+  background: #ffffff !important;
+  color: #102a43;
+  font-weight: 700;
 }
 
 .payroll-audit {
@@ -367,11 +471,208 @@
   background: rgba(255, 255, 255, 0.82);
 }
 
+.payroll-estimate-tile {
+  min-height: 80px;
+  border-radius: 14px;
+  box-shadow: 0 12px 24px rgba(8, 47, 73, 0.08);
+}
+
+.payroll-estimate-pay {
+  border-color: rgba(14, 165, 233, 0.24);
+  background: linear-gradient(135deg, #e0f2fe, #ffffff);
+}
+
+.payroll-estimate-four {
+  border-color: rgba(16, 185, 129, 0.24);
+  background: linear-gradient(135deg, #dcfce7, #ffffff);
+}
+
+.payroll-estimate-eight {
+  border-color: rgba(99, 102, 241, 0.24);
+  background: linear-gradient(135deg, #e0e7ff, #ffffff);
+}
+
+.payroll-estimate-rate {
+  border-color: rgba(245, 158, 11, 0.28);
+  background: linear-gradient(135deg, #fef3c7, #ffffff);
+}
+
+.payroll-estimate-increment {
+  border-color: rgba(236, 72, 153, 0.22);
+  background: linear-gradient(135deg, #fce7f3, #ffffff);
+}
+
 .payroll-preview-value {
   margin-top: 6px;
   font-size: 16px;
   font-weight: 700;
   color: #324154;
+}
+
+.payroll-preview-total {
+  border-color: rgba(20, 99, 255, 0.32);
+  background: linear-gradient(135deg, #dbeafe, #ccfbf1);
+}
+
+.payroll-preview-total .payroll-preview-value {
+  color: #075985;
+  font-weight: 900;
+}
+
+.payroll-year-estimates-panel {
+  overflow: hidden;
+  border: 1px solid rgba(14, 116, 144, 0.16);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 12px 24px rgba(8, 47, 73, 0.08);
+}
+
+.payroll-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(14, 116, 144, 0.12);
+  background: linear-gradient(135deg, #ecfeff, #eff6ff);
+}
+
+.payroll-year-estimates-panel .ant-table {
+  background: transparent;
+}
+
+.payroll-year-estimates-panel .ant-table-thead > tr > th {
+  background: #f0f9ff !important;
+  color: #0f2742;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.payroll-year-estimates-panel .ant-table-tbody > tr > td {
+  color: #324154;
+  font-size: 12px;
+}
+
+.payroll-staff-drawer .ant-drawer-extra {
+  max-width: 100%;
+}
+
+.payroll-staff-modal .ant-modal-content {
+  overflow: hidden;
+  padding: 0;
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 96% 4%, rgba(34, 211, 238, 0.18), transparent 18%),
+    linear-gradient(180deg, #f8fcff 0%, #ffffff 42%, #f5fffb 100%);
+  box-shadow: 0 28px 64px rgba(8, 47, 73, 0.24);
+}
+
+.payroll-staff-modal .ant-modal-header {
+  margin: 0;
+  padding: 18px 24px;
+  background: linear-gradient(135deg, #075985, #0f766e);
+}
+
+.payroll-staff-modal .ant-modal-title,
+.payroll-staff-modal .ant-modal-close {
+  color: #ffffff;
+}
+
+.payroll-staff-modal .ant-modal-close:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+
+.payroll-staff-modal .ant-modal-body {
+  max-height: min(76vh, 780px);
+  padding: 22px 24px 24px;
+  overflow-y: auto;
+}
+
+.payroll-staff-modal-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.payroll-staff-modal-title span {
+  color: #ffffff;
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.payroll-staff-modal-title small {
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.payroll-staff-modal .ant-divider-horizontal.ant-divider-with-text {
+  margin: 20px 0 16px;
+  color: #075985;
+  font-weight: 900;
+}
+
+.payroll-staff-modal .ant-divider-horizontal.ant-divider-with-text::before,
+.payroll-staff-modal .ant-divider-horizontal.ant-divider-with-text::after {
+  border-block-start-color: rgba(14, 116, 144, 0.18);
+}
+
+.payroll-staff-modal .ant-divider-inner-text {
+  padding: 5px 16px;
+  border-radius: 999px;
+  background: #e0f2fe;
+}
+
+.payroll-staff-modal .ant-form-item-label > label {
+  color: #334155;
+  font-weight: 800;
+}
+
+.payroll-staff-modal .ant-input,
+.payroll-staff-modal .ant-input-number,
+.payroll-staff-modal .ant-select-selector,
+.payroll-staff-modal .ant-picker,
+.payroll-staff-modal textarea.ant-input {
+  border-color: #b9d7ef !important;
+  background: rgba(255, 255, 255, 0.94) !important;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.payroll-staff-modal .ant-input:hover,
+.payroll-staff-modal .ant-input-number:hover,
+.payroll-staff-modal .ant-select-selector:hover,
+.payroll-staff-modal .ant-picker:hover,
+.payroll-staff-modal textarea.ant-input:hover {
+  border-color: #38bdf8 !important;
+}
+
+.payroll-staff-modal .ant-input:focus,
+.payroll-staff-modal .ant-input-number-focused,
+.payroll-staff-modal .ant-select-focused .ant-select-selector,
+.payroll-staff-modal .ant-picker-focused,
+.payroll-staff-modal textarea.ant-input:focus {
+  border-color: #0ea5e9 !important;
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.16) !important;
+}
+
+.payroll-staff-modal .payroll-preview-card {
+  border: 1px solid rgba(14, 116, 144, 0.14);
+  background:
+    radial-gradient(circle at 96% 12%, rgba(45, 212, 191, 0.16), transparent 24%),
+    linear-gradient(135deg, #f0f9ff, #ffffff);
+  box-shadow: 0 14px 26px rgba(8, 47, 73, 0.08);
+}
+
+.payroll-staff-modal .payroll-modal-actions {
+  position: sticky;
+  bottom: -24px;
+  z-index: 2;
+  margin: 18px -24px -24px;
+  padding: 14px 24px;
+  justify-content: flex-end;
+  background: rgba(248, 252, 255, 0.94);
+  border-top: 1px solid rgba(14, 116, 144, 0.12);
+  backdrop-filter: blur(10px);
 }
 
 .payroll-modal-actions {

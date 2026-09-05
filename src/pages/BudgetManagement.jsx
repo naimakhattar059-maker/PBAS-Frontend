@@ -25,7 +25,7 @@ import {
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useSelector } from "react-redux";
-import { createBudget, deleteBudget, listBudgets, updateBudget } from "../api/budgets";
+import { archiveBudget, createBudget, deleteBudget, listBudgets, updateBudget } from "../api/budgets";
 import AccessDenied from "../components/AccessDenied";
 import { hasAnyPermission, hasPermission } from "../utils/permissions";
 import "./BudgetManagement.css";
@@ -58,7 +58,7 @@ const toYearNumber = (value) => {
 const toStartDatePickerValue = (year) => (year ? dayjs(`${Number(year)}-01-01`) : null);
 const toEndDatePickerValue = (year) => (year ? dayjs(`${Number(year)}-12-31`) : null);
 const normalizeBudgetCategory = (category) => String(category || "").trim().toLowerCase();
-const isBudgetArchived = (budget) => Number(budget.end_year || budget.start_year) < currentYear;
+const isBudgetArchived = (budget) => Boolean(budget.archived) || Number(budget.end_year || budget.start_year) < currentYear;
 const rangesOverlap = (startA, endA, startB, endB) => Number(startA) <= Number(endB) && Number(startB) <= Number(endA);
 const sanitizeAmountInput = (value) => {
   const sanitized = String(value || "").replace(/[^\d.]/g, "");
@@ -366,6 +366,30 @@ const BudgetManagement = () => {
     });
   };
 
+  const handleArchive = (budget) => {
+    setPopoverOpenId(null);
+    Modal.confirm({
+      title: "Archive budget year?",
+      content: `Remaining PKR ${formatAmount(budget.remaining_amount ?? budget.amount)} will be surrendered and this budget will be locked.`,
+      okText: "Archive",
+      okButtonProps: { danger: true },
+      cancelText: "Cancel",
+      onOk: async () => {
+        try {
+          await archiveBudget(
+            token,
+            budget.id,
+            `Budget ${budget.start_year}-${budget.end_year} closed. Remaining amount surrendered.`
+          );
+          message.success("Budget archived and remaining amount surrendered");
+          loadBudgets();
+        } catch (err) {
+          message.error(err.message || "Could not archive budget");
+        }
+      },
+    });
+  };
+
   const actionMenu = (budget) => (
     <Space direction="vertical" className="budget-menu">
       <Button
@@ -389,6 +413,14 @@ const BudgetManagement = () => {
         }}
       >
         Audit
+      </Button>
+      <Button
+        danger
+        type="text"
+        disabled={!canUpdateBudgets || isBudgetArchived(budget)}
+        onClick={() => handleArchive(budget)}
+      >
+        Archive/Surrender
       </Button>
       <Button
         danger

@@ -96,6 +96,8 @@ const AppLayout = ({ children }) => {
   );
   const currentNav = visibleNavItems.find((i) => i.key === location.pathname);
   const headerLabel = currentNav?.headerLabel || currentNav?.label || 'Dashboard (P.G Budget System)';
+  const profileName = user?.username || 'User';
+  const profileRole = user?.designation || user?.role?.replaceAll('_', ' ') || 'Profile';
 
   const menu = (
     <Menu
@@ -164,6 +166,10 @@ const AppLayout = ({ children }) => {
               <Avatar size={34} src={user?.attachment_image_data || undefined} className='header-avatar'>
                 {user?.attachment_image_data ? null : getAvatarInitial(user?.username)}
               </Avatar>
+              <span className='header-profile-text'>
+                <span className='header-profile-name'>{profileName}</span>
+                <span className='header-profile-role'>{profileRole}</span>
+              </span>
             </Button>
           </div>
         </Header>

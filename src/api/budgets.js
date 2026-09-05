@@ -14,3 +14,6 @@ export const updateBudget = (token, id, budget) =>
 
 export const deleteBudget = (token, id) =>
   apiRequest(`/api/v1/budgets/${id}`, { method: "DELETE", token });
+
+export const archiveBudget = (token, id, note) =>
+  apiRequest(`/api/v1/budgets/${id}/archive`, { method: "PATCH", token, body: { note } });

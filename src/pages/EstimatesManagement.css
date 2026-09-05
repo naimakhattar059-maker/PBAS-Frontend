@@ -171,6 +171,14 @@
   font-weight: 800;
 }
 
+.estimate-clickable-row {
+  cursor: pointer;
+}
+
+.estimate-clickable-row:hover > td {
+  background: #e9f7ff !important;
+}
+
 .estimate-entry-panel {
   background:
     radial-gradient(circle at 94% 12%, rgba(16, 185, 129, 0.13), transparent 20%),
@@ -231,6 +239,16 @@
   gap: 2px;
 }
 
+.estimate-positive {
+  color: #047857 !important;
+  font-weight: 850 !important;
+}
+
+.estimate-negative {
+  color: #b42318 !important;
+  font-weight: 850 !important;
+}
+
 .estimate-table .ant-table-thead > tr > th {
   background: #dff5ff;
   color: #071a3a;
@@ -239,6 +257,153 @@
 
 .estimate-table .ant-table-tbody > tr:hover > td {
   background: #dcfaff;
+}
+
+.estimate-summary-statement .ant-card-head-title {
+  color: #071a3a;
+  font-weight: 850;
+}
+
+.estimate-statement-table .ant-table {
+  border: 1px solid #9fb7c7;
+}
+
+.estimate-statement-table .ant-table-thead > tr > th {
+  border-color: #9fb7c7 !important;
+  background: #eef7fb;
+  color: #0f2f44;
+  font-size: 12px;
+  line-height: 1.2;
+  text-align: center !important;
+  white-space: normal;
+}
+
+.estimate-statement-table .ant-table-tbody > tr > td {
+  border-color: #b8cad5 !important;
+  color: #1f3442;
+  font-size: 12px;
+  line-height: 1.25;
+  background: #ffffff;
+}
+
+.estimate-statement-table .ant-table-tbody > tr:hover > td {
+  background: #f4fbff;
+}
+
+.estimate-statement-input {
+  width: 116px;
+}
+
+.estimate-statement-input .ant-input-number-input {
+  padding-inline: 6px;
+  text-align: right;
+  font-size: 12px;
+}
+
+.estimate-total-row td {
+  background: #eaf6ff !important;
+  color: #071a3a !important;
+  font-weight: 850;
+}
+
+.estimate-modal-actions {
+  width: 100%;
+  justify-content: flex-end;
+}
+
+.estimate-record-modal .ant-modal-content {
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid rgba(14, 165, 233, 0.26);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 96% 5%, rgba(34, 211, 238, 0.22), transparent 24%),
+    linear-gradient(135deg, #ffffff 0%, #f4fbff 52%, #ecfdf5 100%);
+  box-shadow: 0 28px 70px rgba(15, 64, 115, 0.28);
+}
+
+.estimate-record-modal .ant-modal-header {
+  margin: 0;
+  padding: 20px 24px;
+  border-bottom: 1px solid rgba(14, 165, 233, 0.22);
+  background: linear-gradient(135deg, #dff7ff 0%, #f0fdf4 58%, #fff7ed 100%);
+}
+
+.estimate-record-modal .ant-modal-title {
+  color: #071a3a;
+  font-size: 18px;
+  font-weight: 850;
+}
+
+.estimate-record-modal .ant-modal-close {
+  top: 14px;
+  color: #33516b;
+}
+
+.estimate-record-modal .ant-modal-body {
+  padding: 22px 24px 8px;
+}
+
+.estimate-record-modal .ant-modal-footer {
+  margin: 0;
+  padding: 16px 24px 20px;
+  border-top: 1px solid rgba(98, 177, 226, 0.18);
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.estimate-record-modal .ant-form {
+  padding: 16px;
+  border: 1px solid rgba(98, 177, 226, 0.2);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.78);
+}
+
+.estimate-record-modal .ant-form-item-label > label {
+  color: #29445f;
+  font-weight: 750;
+}
+
+.estimate-record-modal .ant-input,
+.estimate-record-modal .ant-input-number,
+.estimate-record-modal .ant-select-selector {
+  border-color: #b7d5ea !important;
+  background: #ffffff !important;
+  color: #071a3a !important;
+}
+
+.estimate-record-modal .ant-input:hover,
+.estimate-record-modal .ant-input-number:hover,
+.estimate-record-modal .ant-select-selector:hover {
+  border-color: #22a6e8 !important;
+}
+
+.estimate-record-modal .ant-input:focus,
+.estimate-record-modal .ant-input-focused,
+.estimate-record-modal .ant-input-number-focused,
+.estimate-record-modal .ant-select-focused .ant-select-selector {
+  border-color: #0ea5e9 !important;
+  box-shadow: 0 0 0 3px rgba(14, 165, 233, 0.16) !important;
+}
+
+.estimate-record-modal .ant-form-disabled .ant-input,
+.estimate-record-modal .ant-form-disabled .ant-input-number,
+.estimate-record-modal .ant-form-disabled .ant-select-selector,
+.estimate-record-modal .ant-input[disabled],
+.estimate-record-modal .ant-input-number-disabled,
+.estimate-record-modal .ant-select-disabled .ant-select-selector {
+  background: linear-gradient(135deg, #f8fbff, #eef8ff) !important;
+  border-color: #d4e6f2 !important;
+  color: #48627a !important;
+  opacity: 1;
+}
+
+.estimate-record-modal .ant-input-number-input {
+  color: inherit !important;
+  font-weight: 650;
+}
+
+.estimate-record-modal .ant-btn {
+  border-radius: 999px;
 }
 
 .estimates-page .ant-btn-primary {
@@ -265,5 +430,10 @@
   .estimates-hero .ant-space,
   .estimate-toolbar .ant-btn {
     width: 100%;
+  }
+
+  .estimate-summary-statement .ant-card-extra {
+    width: 100%;
+    margin-left: 0;
   }
 }
