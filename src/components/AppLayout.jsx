@@ -38,7 +38,12 @@ const navItems = [
   { key: '/departments', icon: <ApartmentOutlined />, label: 'Resource Request Management', permission: 'view_requests' },
   { key: '/budget', icon: <FundOutlined />, label: 'Budget Management', permission: 'view_budgets' },
   { key: '/payroll', icon: <CalculatorOutlined />, label: 'Payroll Management', permission: 'view_payroll' },
-  { key: '/estimates', icon: <FileTextOutlined />, label: 'Estimates Management', permission: 'view_payroll' },
+  {
+    key: '/estimates',
+    icon: <FileTextOutlined />,
+    label: 'Estimates Management',
+    permissions: ['view_payroll_estimates', 'manage_payroll_estimates', 'approve_payroll_estimates'],
+  },
   { key: '/internal-revenue', icon: <BankOutlined />, label: 'Internal Revenue', permission: 'view_budgets' },
   { key: '/reports', icon: <FileTextOutlined />, label: 'Reports', permission: 'view_reports' },
   { key: '/audit-logs', icon: <AuditOutlined />, label: 'Audit Logs', permissions: ['view_audit_logs', 'view_reports'] },

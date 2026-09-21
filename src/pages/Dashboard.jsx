@@ -4,6 +4,7 @@ import {
   Card,
   Col,
   Row,
+  Select,
   Table,
   Tag,
   Tooltip,
@@ -16,10 +17,16 @@ import { fetchDashboard } from "../api/dashboard";
 import "./Dashboard.css";
 
 const { Title, Text } = Typography;
+const currentYear = new Date().getFullYear();
 
 const BUDGET_CHART_COLORS = {
   remaining: "#18c4b8",
   utilized: "#8b5cf6",
+};
+
+const REVENUE_CHART_COLORS = {
+  remaining: "#0f766e",
+  utilized: "#e11d48",
 };
 
 const statusTag = (status) => {
@@ -40,14 +47,16 @@ const statusTag = (status) => {
 const Dashboard = () => {
   const { token, user } = useSelector((state) => state.auth);
   const [data, setData] = useState(null);
+  const [selectedYear, setSelectedYear] = useState(currentYear);
   const [loading, setLoading] = useState(true);
   const [showAllActivities, setShowAllActivities] = useState(false);
 
   useEffect(() => {
     const load = async () => {
       if (!token) return;
+      setLoading(true);
       try {
-        const payload = await fetchDashboard(token);
+        const payload = await fetchDashboard(token, selectedYear);
         setData(payload);
       } catch (err) {
         message.error(err.message || "Failed to load dashboard");
@@ -56,7 +65,7 @@ const Dashboard = () => {
       }
     };
     load();
-  }, [token]);
+  }, [selectedYear, token]);
 
   const activityColumns = useMemo(
     () => [
@@ -126,7 +135,13 @@ const Dashboard = () => {
 
   const recentActivities = data?.recent_activities || [];
   const visibleActivities = showAllActivities ? recentActivities : recentActivities.slice(0, 4);
+  const dashboardYear = data?.year || selectedYear;
+  const yearOptions = (data?.available_years?.length ? data.available_years : [selectedYear]).map((year) => ({
+    value: year,
+    label: String(year),
+  }));
   const budgetOverview = data?.charts?.budget_overview || {};
+  const internalRevenueOverview = data?.charts?.internal_revenue_overview || data?.internal_revenue || {};
   const budgetChartItems = [
     {
       key: "remaining",
@@ -145,10 +160,11 @@ const Dashboard = () => {
   ];
   const budgetChartTotal = budgetChartItems.reduce((sum, item) => sum + item.value, 0);
   const budgetFullAmount = budgetOverview.formatted?.full_budget || "PKR 0";
-  const budgetSegments = budgetChartItems.reduce(
+  const buildChartSegments = (items, total) =>
+    items.reduce(
     (segments, item) => {
-      if (budgetChartTotal <= 0 || item.value <= 0) return segments;
-      const percent = (item.value / budgetChartTotal) * 100;
+      if (total <= 0 || item.value <= 0) return segments;
+      const percent = (item.value / total) * 100;
       const midPercent = segments.runningTotal + percent / 2;
       const labelAngle = (midPercent / 100) * 360 - 90;
       const labelRadius = 12.5;
@@ -166,12 +182,37 @@ const Dashboard = () => {
     },
     { runningTotal: 0, items: [] }
   ).items;
+  const budgetSegments = buildChartSegments(budgetChartItems, budgetChartTotal);
   const remainingPercent = budgetChartTotal
     ? Math.round((Number(budgetOverview.remaining_budget || 0) / budgetChartTotal) * 100)
     : 0;
   const utilizedPercent = budgetChartTotal
     ? Math.round((Number(budgetOverview.utilized_budget || 0) / budgetChartTotal) * 100)
     : 0;
+  const revenueTotal = Number(internalRevenueOverview.total || 0);
+  const revenueRemaining = Number(internalRevenueOverview.remaining || 0);
+  const revenueUtilized = Number(internalRevenueOverview.utilized || 0);
+  const revenueChartItems = [
+    {
+      key: "remaining-revenue",
+      label: "Remaining Revenue",
+      value: Math.max(revenueRemaining, 0),
+      formatted: internalRevenueOverview.formatted?.remaining || "PKR 0",
+      color: REVENUE_CHART_COLORS.remaining,
+    },
+    {
+      key: "utilized-revenue",
+      label: "Utilized Revenue",
+      value: Math.max(revenueUtilized, 0),
+      formatted: internalRevenueOverview.formatted?.utilized || "PKR 0",
+      color: REVENUE_CHART_COLORS.utilized,
+    },
+  ];
+  const revenueChartTotal = revenueTotal > 0 ? revenueTotal : revenueChartItems.reduce((sum, item) => sum + item.value, 0);
+  const revenueSegments = buildChartSegments(revenueChartItems, revenueChartTotal);
+  const remainingRevenuePercent = revenueChartTotal ? Math.round((Math.max(revenueRemaining, 0) / revenueChartTotal) * 100) : 0;
+  const utilizedRevenuePercent = revenueChartTotal ? Math.round((Math.max(revenueUtilized, 0) / revenueChartTotal) * 100) : 0;
+  const revenueFullAmount = internalRevenueOverview.formatted?.total || "PKR 0";
   const totals = data?.totals || {};
   const formattedBudget = budgetOverview.formatted || {};
   const totalBudgetValue = getFirstValue(
@@ -213,6 +254,9 @@ const Dashboard = () => {
     data?.internal_revenue?.utilized,
     data?.internal_revenue?.formatted?.utilized
   );
+  const internalRevenueUtilizationRate =
+    data?.internal_revenue?.formatted?.utilization_rate ||
+    (totals.internal_revenue_utilization_rate != null ? `${totals.internal_revenue_utilization_rate}%` : null);
   const topStats = [
     {
       key: "total-budget",
@@ -255,9 +299,82 @@ const Dashboard = () => {
       key: "utilized-revenue",
       label: "Utilized Revenue",
       value: utilizedRevenueValue,
+      note: internalRevenueUtilizationRate ? `${internalRevenueUtilizationRate} utilized` : undefined,
       accent: "rose",
     },
   ];
+
+  const renderOverviewChart = ({ title, totalLabel, totalAmount, rows, segments, fallbackColor = "#ffd5d8" }) => (
+    <div className="budget-chart-layout">
+      <div className="budget-donut-wrap" aria-label={`${title} chart`}>
+        <svg className="budget-donut" viewBox="0 0 42 42" role="img">
+          <circle className="budget-donut-bg" cx="21" cy="21" r="15.915" />
+          {segments.length > 0 ? (
+            segments.map((segment) => (
+              <circle
+                key={segment.key}
+                className="budget-donut-segment"
+                cx="21"
+                cy="21"
+                r="15.915"
+                stroke={segment.color}
+                strokeDasharray={`${segment.percent} ${100 - segment.percent}`}
+                strokeDashoffset={segment.offset}
+              />
+            ))
+          ) : (
+            <circle
+              className="budget-donut-segment"
+              cx="21"
+              cy="21"
+              r="15.915"
+              stroke={fallbackColor}
+              strokeDasharray="100 0"
+              strokeDashoffset="25"
+            />
+          )}
+          {segments
+            .filter((segment) => segment.percent >= 3)
+            .map((segment) => (
+              <text
+                key={`${segment.key}-percent`}
+                className="budget-donut-percent"
+                x={segment.labelX}
+                y={segment.labelY}
+              >
+                {Math.round(segment.percent)}%
+              </text>
+            ))}
+        </svg>
+      </div>
+
+      <div className="budget-chart-legend">
+        <div className="budget-legend-heading">
+          <span>{title}</span>
+          <span>Amount</span>
+          <span>Share</span>
+        </div>
+        <div className="budget-legend-row budget-legend-total">
+          <span className="budget-legend-label">
+            <span className="budget-legend-dot budget-legend-dot-total" />
+            {totalLabel}
+          </span>
+          <strong>{totalAmount}</strong>
+          <small>100%</small>
+        </div>
+        {rows.map((row) => (
+          <div className="budget-legend-row" key={row.key}>
+            <span className="budget-legend-label">
+              <span className="budget-legend-dot" style={{ backgroundColor: row.color }} />
+              {row.label}
+            </span>
+            <strong>{row.formatted}</strong>
+            <small>{row.percent}%</small>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <div className="dashboard-page">
@@ -268,10 +385,20 @@ const Dashboard = () => {
             <div className="title-row">
               <Title level={2}>Overview</Title>
               <Tag color="green">Live</Tag>
+              <Tag color="blue">Year {dashboardYear}</Tag>
             </div>
             <Text className="subtitle">
-              Hi {user?.username || "there"}, here’s the current snapshot of your institution.
+              Hi {user?.username || "there"}, here’s the {dashboardYear} snapshot of your institution.
             </Text>
+          </div>
+          <div className="dashboard-year-filter">
+            <Text className="dashboard-year-label">Year</Text>
+            <Select
+              value={selectedYear}
+              onChange={setSelectedYear}
+              options={yearOptions}
+              style={{ width: 130 }}
+            />
           </div>
         </div>
 
@@ -293,81 +420,56 @@ const Dashboard = () => {
       <Row gutter={[18, 18]}>
         <Col xs={24}>
           <Card className="panel-card panel-card-budget budget-chart-card" title="Budget Overview" loading={loading}>
-            <div className="budget-chart-layout">
-              <div className="budget-donut-wrap" aria-label="Budget overview chart">
-                <svg className="budget-donut" viewBox="0 0 42 42" role="img">
-                  <circle className="budget-donut-bg" cx="21" cy="21" r="15.915" />
-                  {budgetSegments.length > 0 ? (
-                    budgetSegments.map((segment) => (
-                      <circle
-                        key={segment.key}
-                        className="budget-donut-segment"
-                        cx="21"
-                        cy="21"
-                        r="15.915"
-                        stroke={segment.color}
-                        strokeDasharray={`${segment.percent} ${100 - segment.percent}`}
-                        strokeDashoffset={segment.offset}
-                      />
-                    ))
-                  ) : (
-                    <circle
-                      className="budget-donut-segment"
-                      cx="21"
-                      cy="21"
-                      r="15.915"
-                      stroke="#ffd5d8"
-                      strokeDasharray="100 0"
-                      strokeDashoffset="25"
-                    />
-                  )}
-                  {budgetSegments
-                    .filter((segment) => segment.percent >= 3)
-                    .map((segment) => (
-                      <text
-                        key={`${segment.key}-percent`}
-                        className="budget-donut-percent"
-                        x={segment.labelX}
-                        y={segment.labelY}
-                      >
-                        {Math.round(segment.percent)}%
-                      </text>
-                    ))}
-                </svg>
-              </div>
+            {renderOverviewChart({
+              title: "Budget",
+              totalLabel: "Full Budget",
+              totalAmount: budgetFullAmount,
+              segments: budgetSegments,
+              rows: [
+                {
+                  key: "remaining-budget",
+                  label: "Remaining Budget",
+                  formatted: budgetOverview.formatted?.remaining_budget || "PKR 0",
+                  percent: remainingPercent,
+                  color: BUDGET_CHART_COLORS.remaining,
+                },
+                {
+                  key: "utilized-budget",
+                  label: "Utilized Budget",
+                  formatted: budgetOverview.formatted?.utilized_budget || "PKR 0",
+                  percent: utilizedPercent,
+                  color: BUDGET_CHART_COLORS.utilized,
+                },
+              ],
+            })}
+          </Card>
+        </Col>
 
-              <div className="budget-chart-legend">
-                <div className="budget-legend-heading">
-                  <span>Budget</span>
-                  <span>Amount</span>
-                  <span>Share</span>
-                </div>
-                <div className="budget-legend-row budget-legend-total">
-                  <span className="budget-legend-label">
-                    <span className="budget-legend-dot budget-legend-dot-total" />
-                    Full Budget
-                  </span>
-                  <strong>{budgetFullAmount}</strong>
-                  <small>100%</small>
-                </div>
-                <div className="budget-legend-row">
-                  <span className="budget-legend-label">
-                    <span className="budget-legend-dot" style={{ backgroundColor: BUDGET_CHART_COLORS.remaining }} />
-                    Remaining Budget
-                  </span>
-                  <strong>{budgetOverview.formatted?.remaining_budget || "PKR 0"}</strong>
-                  <small>{remainingPercent}%</small>
-                </div>
-                <div className="budget-legend-row">
-                  <span className="budget-legend-label">
-                    <span className="budget-legend-dot" style={{ backgroundColor: BUDGET_CHART_COLORS.utilized }} />
-                    Utilized Budget
-                  </span>
-                  <strong>{budgetOverview.formatted?.utilized_budget || "PKR 0"}</strong>
-                  <small>{utilizedPercent}%</small>
-                </div>
-              </div>
-            </div>
+        <Col xs={24}>
+          <Card className="panel-card panel-card-revenue budget-chart-card" title="Internal Revenue Overview" loading={loading}>
+            {renderOverviewChart({
+              title: "Revenue",
+              totalLabel: "Total Revenue",
+              totalAmount: revenueFullAmount,
+              segments: revenueSegments,
+              fallbackColor: "#ccfbf1",
+              rows: [
+                {
+                  key: "remaining-revenue",
+                  label: "Remaining Revenue",
+                  formatted: internalRevenueOverview.formatted?.remaining || "PKR 0",
+                  percent: remainingRevenuePercent,
+                  color: REVENUE_CHART_COLORS.remaining,
+                },
+                {
+                  key: "utilized-revenue",
+                  label: "Utilized Revenue",
+                  formatted: internalRevenueOverview.formatted?.utilized || "PKR 0",
+                  percent: utilizedRevenuePercent,
+                  color: REVENUE_CHART_COLORS.utilized,
+                },
+              ],
+            })}
           </Card>
         </Col>
 

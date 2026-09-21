@@ -19,6 +19,8 @@ import {
 } from "antd";
 import {
   CalculatorOutlined,
+  CheckOutlined,
+  CloseOutlined,
   DownloadOutlined,
   EditOutlined,
   PrinterOutlined,
@@ -579,7 +581,6 @@ const EstimatesManagement = () => {
   const [estimateRecordForm] = Form.useForm();
   const [archiveYearForm] = Form.useForm();
   const { token, user } = useSelector((state) => state.auth);
-  const canViewPayroll = hasAnyPermission(user, ["view_payroll"]);
   const [loading, setLoading] = useState(false);
   const [filterYear, setFilterYear] = useState(currentYear);
   const [statementRows, setStatementRows] = useState(summaryBaseRows);
@@ -594,13 +595,16 @@ const EstimatesManagement = () => {
   const [archivedEstimateYears, setArchivedEstimateYears] = useState(readArchivedEstimateYears);
   const [archiveYearModalOpen, setArchiveYearModalOpen] = useState(false);
   const selectedEstimateYearArchived = isEstimateYearArchived(filterYear, archivedEstimateYears);
+  const canViewEstimates = hasAnyPermission(user, ["view_payroll_estimates", "manage_payroll_estimates", "approve_payroll_estimates"]);
+  const canManageEstimates = hasAnyPermission(user, ["manage_payroll_estimates"]);
+  const canApproveEstimates = hasAnyPermission(user, ["approve_payroll_estimates"]);
 
   const loadEstimates = async (year = filterYear) => {
     if (useDummyEstimateData) {
       setFilterYear(year);
       return;
     }
-    if (!token || !canViewPayroll) return;
+    if (!token || !canViewEstimates) return;
 
     setLoading(true);
     try {
@@ -646,7 +650,7 @@ const EstimatesManagement = () => {
   useEffect(() => {
     loadEstimates(filterYear);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, canViewPayroll, filterYear]);
+  }, [token, canViewEstimates, filterYear]);
 
   const yearOptions = useMemo(
     () => {
@@ -926,6 +930,11 @@ const EstimatesManagement = () => {
   };
 
   const updateStatementCell = (rowId, field, value) => {
+    if (!canManageEstimates) {
+      message.warning("Only Accountant can update payroll estimates.");
+      return;
+    }
+
     if (selectedEstimateYearArchived) {
       message.warning("Archived estimate years cannot be changed.");
       return;
@@ -947,6 +956,11 @@ const EstimatesManagement = () => {
   };
 
   const openStatementEditForm = (record) => {
+    if (!canManageEstimates) {
+      message.info("Only Accountant can edit estimate rows.");
+      return;
+    }
+
     if (selectedEstimateYearArchived) {
       message.info("This estimate year is archived and locked.");
       return;
@@ -1107,13 +1121,46 @@ const EstimatesManagement = () => {
   };
 
   const submitStatementToHoi = () => {
+    if (!canManageEstimates) {
+      message.warning("Only Accountant can submit payroll estimates.");
+      return;
+    }
+
     if (selectedEstimateYearArchived) {
       message.warning("Archived estimate years cannot be submitted again.");
       return;
     }
 
     setStatementStatus("submitted");
-    message.success("Comparative statement submitted. Demo notification sent to HOI for approval.");
+    message.success("Comparative statement submitted to HOI for approval.");
+  };
+
+  const approveStatement = () => {
+    if (!canApproveEstimates) {
+      message.warning("Only HOI can approve payroll estimates.");
+      return;
+    }
+    if (statementStatus !== "submitted") {
+      message.info("Only submitted estimates can be approved.");
+      return;
+    }
+
+    setStatementStatus("approved");
+    message.success("Payroll estimates approved.");
+  };
+
+  const rejectStatement = () => {
+    if (!canApproveEstimates) {
+      message.warning("Only HOI can reject payroll estimates.");
+      return;
+    }
+    if (statementStatus !== "submitted") {
+      message.info("Only submitted estimates can be rejected.");
+      return;
+    }
+
+    setStatementStatus("rejected");
+    message.warning("Payroll estimates rejected.");
   };
 
   const openArchiveYearModal = () => {
@@ -1160,6 +1207,7 @@ const EstimatesManagement = () => {
 
   const openEstimateRecord = (record, type) => {
     if (record.id === "other-total") return;
+
     if (selectedEstimateYearArchived) {
       message.info("This estimate year is archived and locked.");
     }
@@ -1276,12 +1324,12 @@ const EstimatesManagement = () => {
     closeEstimateRecord();
   };
 
-  if (!canViewPayroll) {
-    return <AccessDenied title="Payroll access required" />;
+  if (!canViewEstimates) {
+    return <AccessDenied title="Estimates Management" />;
   }
 
   const renderEditableMoney = (field) => (value, record) => {
-    if (record.id === "total") return money(value);
+    if (record.id === "total" || !canManageEstimates || selectedEstimateYearArchived) return money(value);
 
     return (
       <InputNumber
@@ -1358,7 +1406,7 @@ const EstimatesManagement = () => {
       fixed: "right",
       width: 86,
       render: (_, record) =>
-        record.id === "total" ? null : (
+        record.id === "total" || !canManageEstimates || selectedEstimateYearArchived ? null : (
           <Button size="small" icon={<EditOutlined />} onClick={() => openStatementEditForm(record)}>
             Edit
           </Button>
@@ -1430,9 +1478,11 @@ const EstimatesManagement = () => {
         <Space wrap>
           <Select value={filterYear} onChange={changeFilterYear} options={yearOptions} style={{ width: 160 }} />
           {selectedEstimateYearArchived ? <Tag color="default">Archived</Tag> : null}
-          <Button danger onClick={openArchiveYearModal} disabled={selectedEstimateYearArchived}>
-            Archive Year
-          </Button>
+          {canManageEstimates ? (
+            <Button danger onClick={openArchiveYearModal} disabled={selectedEstimateYearArchived}>
+              Archive Year
+            </Button>
+          ) : null}
           <Button icon={<ReloadOutlined />} onClick={useDummyEstimateData ? resetDummyData : () => loadEstimates(filterYear)} loading={loading}>
             {useDummyEstimateData ? "Clear Data" : "Refresh"}
           </Button>
@@ -1468,7 +1518,7 @@ const EstimatesManagement = () => {
         </Col>
       </Row>
 
-      {canViewPayroll ? (
+      {canViewEstimates ? (
         <Card bordered={false} className="estimate-panel estimate-entry-panel" title="Calculated Revised Estimates from Payroll">
           <Tabs
             items={[
@@ -1564,25 +1614,63 @@ const EstimatesManagement = () => {
         title={
           <Space wrap>
             <span>Summary of Proposed Budget {proposedYearLabel} and Revised Estimates {fiscalYearFullLabel(filterYear - 1)}</span>
-            <Tag color={statementStatus === "submitted" ? "processing" : "default"}>
-              {statementStatus === "submitted" ? "Submitted to HOI" : "Draft"}
+            <Tag
+              color={{
+                draft: "default",
+                submitted: "processing",
+                approved: "success",
+                rejected: "error",
+              }[statementStatus] || "default"}
+            >
+              {{
+                draft: "Draft",
+                submitted: "Submitted to HOI",
+                approved: "Approved by HOI",
+                rejected: "Rejected by HOI",
+              }[statementStatus] || "Draft"}
             </Tag>
           </Space>
         }
         extra={
           <Space wrap>
-            <Button size="small" icon={<CalculatorOutlined />} onClick={regenerateStatement}>
-              Generate
-            </Button>
+            {canManageEstimates ? (
+              <Button size="small" icon={<CalculatorOutlined />} onClick={regenerateStatement}>
+                Generate
+              </Button>
+            ) : null}
             <Button size="small" icon={<DownloadOutlined />} onClick={downloadStatementSheet}>
               Sheet
             </Button>
             <Button size="small" icon={<PrinterOutlined />} onClick={printStatementPdf}>
               PDF
             </Button>
-            <Button type="primary" size="small" icon={<SendOutlined />} onClick={submitStatementToHoi}>
-              Submit to HOI
-            </Button>
+            {canManageEstimates ? (
+              <Button type="primary" size="small" icon={<SendOutlined />} onClick={submitStatementToHoi}>
+                Submit to HOI
+              </Button>
+            ) : null}
+            {canApproveEstimates ? (
+              <>
+                <Button
+                  type="primary"
+                  size="small"
+                  icon={<CheckOutlined />}
+                  onClick={approveStatement}
+                  disabled={statementStatus !== "submitted"}
+                >
+                  Approve
+                </Button>
+                <Button
+                  danger
+                  size="small"
+                  icon={<CloseOutlined />}
+                  onClick={rejectStatement}
+                  disabled={statementStatus !== "submitted"}
+                >
+                  Reject
+                </Button>
+              </>
+            ) : null}
           </Space>
         }
       >
@@ -1666,11 +1754,11 @@ const EstimatesManagement = () => {
         footer={
           <Space>
             <Button onClick={closeEstimateRecord}>Close</Button>
-            {estimateEditMode ? (
+            {estimateEditMode && canManageEstimates ? (
               <Button type="primary" icon={<SaveOutlined />} onClick={saveEstimateRecord}>
                 Save
               </Button>
-            ) : (
+            ) : canManageEstimates ? (
               <Button
                 type="primary"
                 icon={<EditOutlined />}
@@ -1679,7 +1767,7 @@ const EstimatesManagement = () => {
               >
                 Edit
               </Button>
-            )}
+            ) : null}
           </Space>
         }
       >

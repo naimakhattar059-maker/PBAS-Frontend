@@ -126,7 +126,6 @@ const escapeHtml = (value) =>
     .replace(/"/g, "&quot;");
 
 const findSummaryIndex = (rows, label) => rows.findIndex((row) => row[0] === label);
-const isDecorativeRow = (rowIndex) => [8, 9, 10].includes(rowIndex);
 const isBlankDataRow = (row) => row.every((value) => String(value || "").trim() === "");
 
 const applyFormulas = (rawRows) => {
@@ -250,6 +249,7 @@ const InternalRevenue = () => {
   const [recordType, setRecordType] = useState(null);
   const [recordDate, setRecordDate] = useState(() => dayjs(defaultRevenueMonth));
   const [nonPublicRecords, setNonPublicRecords] = useState([]);
+  const [approvedRequestUtilization, setApprovedRequestUtilization] = useState(0);
   const [recordForm] = Form.useForm();
   const inputRefs = useRef(new Map());
   const rowsRef = useRef(rows);
@@ -264,17 +264,17 @@ const InternalRevenue = () => {
     const lastDataRow = totalRowIndex > dataStartRow ? totalRowIndex : calculatedRows.length;
     const dataTotals = calculatedRows
       .slice(dataStartRow, lastDataRow)
-      .filter((row, rowIndex) => !isDecorativeRow(rowIndex + dataStartRow))
       .map((row) => numberValue(row[grandTotalColumn]));
     const totalReceipts = dataTotals.filter((value) => value > 0).reduce((sum, value) => sum + value, 0);
-    const totalExpenses = Math.abs(dataTotals.filter((value) => value < 0).reduce((sum, value) => sum + value, 0));
+    const sheetExpenses = Math.abs(dataTotals.filter((value) => value < 0).reduce((sum, value) => sum + value, 0));
+    const totalExpenses = sheetExpenses + Number(approvedRequestUtilization || 0);
 
     return {
       totalInternalRevenue: totalReceipts,
       remainingAmount: totalReceipts - totalExpenses,
       utilizedAmount: totalExpenses,
     };
-  }, [rows]);
+  }, [approvedRequestUtilization, rows]);
 
   useEffect(() => {
     rowsRef.current = rows;
@@ -358,7 +358,14 @@ const InternalRevenue = () => {
       .then((payload) => {
         if (!active) return;
         const savedCells = payload.cells || [];
+        if (savedCells.length === 0 && payload.latest_period && payload.latest_period !== period) {
+          const nextMonth = `${payload.latest_period}-01`;
+          setRevenueMonth(nextMonth);
+          localStorage.setItem(revenueMonthStorageKey, nextMonth);
+          return;
+        }
         const nextRows = savedCells.length ? mergeSavedCells(initialSheetRows, savedCells) : normalizeRows(initialSheetRows);
+        setApprovedRequestUtilization(Number(payload.summary?.approved_request_utilization || 0));
         setRows(nextRows);
         setDirtyCells(new Set());
         setLoadState("loaded");
@@ -476,7 +483,7 @@ const InternalRevenue = () => {
     const totalRowIndex = findSummaryIndex(rowsRef.current, "T. Exp");
     const summaryIndex = totalRowIndex >= 0 ? totalRowIndex : rowsRef.current.length;
     const existingBlankIndex = rowsRef.current.findIndex(
-      (row, rowIndex) => rowIndex >= dataStartRow && rowIndex < summaryIndex && !isDecorativeRow(rowIndex) && isBlankDataRow(row)
+      (row, rowIndex) => rowIndex >= dataStartRow && rowIndex < summaryIndex && isBlankDataRow(row)
     );
     return { existingBlankIndex, summaryIndex };
   };
@@ -801,7 +808,7 @@ const InternalRevenue = () => {
         <Card className="internal-revenue-summary-card internal-revenue-summary-utilized" bordered={false}>
           <Text className="internal-revenue-summary-label">Utilized Amount</Text>
           <Title level={3}>{formatCurrency(revenueSummary.utilizedAmount)}</Title>
-          <Text type="secondary">From total expense row</Text>
+          <Text type="secondary">Approved requests plus expense row</Text>
         </Card>
       </div>
 

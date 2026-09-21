@@ -21,3 +21,20 @@ export const updatePayrollEstimate = (token, id, payrollEstimate) =>
 
 export const deletePayrollEstimate = (token, id) =>
   apiRequest(`/api/v1/payroll_estimates/${id}`, { method: "DELETE", token });
+
+export const submitPayrollEstimate = (token, id) =>
+  apiRequest(`/api/v1/payroll_estimates/${id}/submit`, { method: "PATCH", token });
+
+export const approvePayrollEstimate = (token, id, note) =>
+  apiRequest(`/api/v1/payroll_estimates/${id}/approve`, {
+    method: "PATCH",
+    token,
+    body: { note },
+  });
+
+export const rejectPayrollEstimate = (token, id, note) =>
+  apiRequest(`/api/v1/payroll_estimates/${id}/reject`, {
+    method: "PATCH",
+    token,
+    body: { note },
+  });

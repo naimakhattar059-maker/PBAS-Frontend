@@ -42,6 +42,20 @@
   z-index: 1;
 }
 
+.dashboard-year-filter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 6px;
+}
+
+.dashboard-year-label {
+  color: #236277;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
 .report-controls {
   justify-content: flex-end;
   max-width: 720px;
@@ -277,6 +291,18 @@
   background: linear-gradient(90deg, #18c4b8, #38bdf8);
 }
 
+.panel-card-revenue {
+  background:
+    radial-gradient(circle at 10% 86%, rgba(15, 118, 110, 0.1), transparent 24%),
+    linear-gradient(135deg, #f0fdfa 0%, #ffffff 48%, #fff7f8 100%);
+  border-color: rgba(15, 118, 110, 0.18);
+  box-shadow: 0 14px 30px rgba(15, 118, 110, 0.1);
+}
+
+.panel-card-revenue::before {
+  background: linear-gradient(90deg, #0f766e, #e11d48);
+}
+
 .panel-card-activities {
   background:
     radial-gradient(circle at 92% 12%, rgba(20, 99, 255, 0.08), transparent 22%),
@@ -356,6 +382,28 @@
   align-items: center;
   gap: 44px;
   min-height: 250px;
+}
+
+@media (max-width: 1500px) {
+  .budget-chart-layout {
+    grid-template-columns: minmax(210px, 280px) minmax(280px, 1fr);
+    gap: 24px;
+  }
+}
+
+@media (max-width: 980px) {
+  .dashboard-hero {
+    flex-direction: column;
+  }
+
+  .budget-chart-layout {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .budget-chart-legend {
+    max-width: none;
+  }
 }
 
 .budget-donut-wrap {
