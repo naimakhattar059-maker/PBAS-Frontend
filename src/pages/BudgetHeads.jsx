@@ -6,6 +6,7 @@ import {
   createBudgetHead,
   listBudgetHeads,
   requestBudgetHeadChanges,
+  requestNewBudgetHead,
   reviewBudgetHead,
   updateBudgetHead,
 } from "../api/budgetHeads";
@@ -15,7 +16,7 @@ import "./BudgetHeads.css";
 
 const { Title, Text } = Typography;
 const statusLabels = {
-  pending_hod: ["Awaiting HOD review", "gold"],
+  pending_hoi: ["Awaiting HOI review", "gold"],
   changes_requested: ["Changes requested", "orange"],
   pending_admin: ["Awaiting Super Admin", "blue"],
   approved: ["Approved", "green"],
@@ -31,6 +32,8 @@ const BudgetHeads = () => {
   const [formOpen, setFormOpen] = useState(false);
   const [correctionHead, setCorrectionHead] = useState(null);
   const [correctionNote, setCorrectionNote] = useState("");
+  const [newHeadRequestOpen, setNewHeadRequestOpen] = useState(false);
+  const [newHeadNote, setNewHeadNote] = useState("");
   const canView = hasPermission(user, "view_budget_heads");
   const canManage = hasPermission(user, "manage_budget_heads");
   const canReview = hasPermission(user, "review_budget_heads");
@@ -74,10 +77,10 @@ const BudgetHeads = () => {
       setSaving(true);
       if (editingHead) {
         await updateBudgetHead(token, editingHead.id, values);
-        message.success("Budget head sent back to HOD for review");
+        message.success("Budget head sent back to HOI for review");
       } else {
         await createBudgetHead(token, values);
-        message.success("Budget head sent to HOD for review");
+        message.success("Budget head sent to HOI for review");
       }
       setFormOpen(false);
       form.resetFields();
@@ -115,10 +118,10 @@ const BudgetHeads = () => {
     { title: "Review note", dataIndex: "review_note", key: "review_note", render: (note) => note || "—" },
     { title: "Actions", key: "actions", render: (_, head) => (
       <Space wrap>
-        {canManage && ["pending_hod", "changes_requested"].includes(head.status) && (
+        {canManage && ["pending_hoi", "changes_requested"].includes(head.status) && (
           <Button onClick={() => openForm(head)}>Edit</Button>
         )}
-        {canReview && head.status === "pending_hod" && (
+        {canReview && head.status === "pending_hoi" && (
           <>
             <Button type="primary" loading={saving} onClick={() => runAction(() => reviewBudgetHead(token, head.id), "Sent to Super Admin for approval")}>Review and forward</Button>
             <Button onClick={() => { setCorrectionHead(head); setCorrectionNote(""); }}>Request changes</Button>
@@ -127,8 +130,8 @@ const BudgetHeads = () => {
         {canApprove && head.status === "pending_admin" && (
           <Button type="primary" loading={saving} onClick={() => runAction(() => approveBudgetHead(token, head.id), "Budget head approved")}>Approve</Button>
         )}
-        {!((canManage && ["pending_hod", "changes_requested"].includes(head.status)) ||
-          (canReview && head.status === "pending_hod") ||
+        {!((canManage && ["pending_hoi", "changes_requested"].includes(head.status)) ||
+          (canReview && head.status === "pending_hoi") ||
           (canApprove && head.status === "pending_admin")) && "—"}
       </Space>
     ) },
@@ -139,16 +142,19 @@ const BudgetHeads = () => {
       <div className="budget-heads-header">
         <div>
           <Title level={2}>Budget Heads</Title>
-          <Text type="secondary">Admin Officer allocates funds, HOD reviews, and Super Admin gives final approval.</Text>
+          <Text type="secondary">Admin Officer allocates funds, HOI reviews, and Super Admin gives final approval.</Text>
         </div>
-        {canManage && <Button type="primary" onClick={() => openForm()}>Add budget head</Button>}
+        <Space>
+          {canReview && <Button onClick={() => { setNewHeadNote(""); setNewHeadRequestOpen(true); }}>Request new head</Button>}
+          {canManage && <Button type="primary" onClick={() => openForm()}>Add budget head</Button>}
+        </Space>
       </div>
 
       <Card>
         <Table rowKey="id" columns={columns} dataSource={heads} loading={loading} scroll={{ x: 900 }} />
       </Card>
 
-      <Modal title={editingHead ? "Update budget head" : "Add budget head"} open={formOpen} onCancel={() => setFormOpen(false)} onOk={saveHead} confirmLoading={saving} okText="Send to HOD" destroyOnHidden>
+      <Modal title={editingHead ? "Update budget head" : "Add budget head"} open={formOpen} onCancel={() => setFormOpen(false)} onOk={saveHead} confirmLoading={saving} okText="Send to HOI" destroyOnHidden>
         <Form form={form} layout="vertical">
           <Form.Item name="name" label="Budget head name" rules={[{ required: true, whitespace: true }]}><Input /></Form.Item>
           <Form.Item name="code" label="Code" rules={[{ required: true, whitespace: true }]}><Input /></Form.Item>
@@ -163,6 +169,14 @@ const BudgetHeads = () => {
         if (saved) setCorrectionHead(null);
       }} confirmLoading={saving} okText="Send request">
         <Input.TextArea rows={4} value={correctionNote} onChange={(event) => setCorrectionNote(event.target.value)} placeholder="Describe what needs to be corrected or which new head is needed" />
+      </Modal>
+
+      <Modal title="Request new budget head" open={newHeadRequestOpen} onCancel={() => setNewHeadRequestOpen(false)} onOk={async () => {
+        if (!newHeadNote.trim()) return message.error("Describe the new budget head needed");
+        const saved = await runAction(() => requestNewBudgetHead(token, newHeadNote.trim()), "Request sent to Admin Officer");
+        if (saved) setNewHeadRequestOpen(false);
+      }} confirmLoading={saving} okText="Send request">
+        <Input.TextArea rows={4} value={newHeadNote} onChange={(event) => setNewHeadNote(event.target.value)} placeholder="Describe the new head and why it is needed" />
       </Modal>
     </div>
   );

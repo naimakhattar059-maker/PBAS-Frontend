@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import BudgetHeads from "../pages/BudgetHeads";
-import { createBudgetHead, listBudgetHeads, reviewBudgetHead, approveBudgetHead } from "../api/budgetHeads";
+import { createBudgetHead, listBudgetHeads, reviewBudgetHead, approveBudgetHead, requestNewBudgetHead } from "../api/budgetHeads";
 import { createTestStore } from "./testUtils";
 import { TestProviders } from "./TestProviders";
 
@@ -12,6 +12,7 @@ vi.mock("../api/budgetHeads", () => ({
   reviewBudgetHead: vi.fn(),
   requestBudgetHeadChanges: vi.fn(),
   approveBudgetHead: vi.fn(),
+  requestNewBudgetHead: vi.fn(),
 }));
 
 const renderFor = (role, permission) => {
@@ -35,20 +36,30 @@ describe("Budget head approval flow", () => {
     fireEvent.change(screen.getByLabelText("Budget head name"), { target: { value: "Library" } });
     fireEvent.change(screen.getByLabelText("Code"), { target: { value: "LIB" } });
     fireEvent.change(screen.getByLabelText("Allocated amount (PKR)"), { target: { value: "150000" } });
-    fireEvent.click(screen.getByRole("button", { name: "Send to HOD" }));
+    fireEvent.click(screen.getByRole("button", { name: "Send to HOI" }));
 
     await waitFor(() => expect(createBudgetHead).toHaveBeenCalledWith("token", expect.objectContaining({
       name: "Library", code: "LIB", allocated_amount: 150000,
     })));
   });
 
-  it("lets HOD forward a reviewed head", async () => {
-    listBudgetHeads.mockResolvedValue({ budget_heads: [{ id: 2, code: "LAB", name: "Lab", allocated_amount: 30000, status: "pending_hod" }] });
+  it("lets HOI forward a reviewed head", async () => {
+    listBudgetHeads.mockResolvedValue({ budget_heads: [{ id: 2, code: "LAB", name: "Lab", allocated_amount: 30000, status: "pending_hoi" }] });
     reviewBudgetHead.mockResolvedValue({});
-    renderFor("staff", "review_budget_heads");
+    renderFor("head_of_institute", "review_budget_heads");
 
     fireEvent.click(await screen.findByRole("button", { name: "Review and forward" }));
     await waitFor(() => expect(reviewBudgetHead).toHaveBeenCalledWith("token", 2));
+  });
+
+  it("lets HOI request a new head without an existing head", async () => {
+    requestNewBudgetHead.mockResolvedValue({ message: "sent" });
+    renderFor("head_of_institute", "review_budget_heads");
+
+    fireEvent.click(await screen.findByRole("button", { name: "Request new head" }));
+    fireEvent.change(screen.getByPlaceholderText("Describe the new head and why it is needed"), { target: { value: "New library head" } });
+    fireEvent.click(screen.getByRole("button", { name: "Send request" }));
+    await waitFor(() => expect(requestNewBudgetHead).toHaveBeenCalledWith("token", "New library head"));
   });
 
   it("shows final approval only to Super Admin", async () => {

@@ -17,3 +17,6 @@ export const requestBudgetHeadChanges = (token, id, note) =>
 
 export const approveBudgetHead = (token, id) =>
   apiRequest(`/api/v1/budget_heads/${id}/approve`, { method: "PATCH", token });
+
+export const requestNewBudgetHead = (token, note) =>
+  apiRequest("/api/v1/budget_heads/request_new", { method: "POST", token, body: { note } });

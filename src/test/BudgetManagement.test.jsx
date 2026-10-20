@@ -1,6 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import { listBudgets } from "../api/budgets";
+import { approveBudget, listBudgets } from "../api/budgets";
 import BudgetManagement from "../pages/BudgetManagement";
 import { createTestStore } from "./testUtils";
 import { TestProviders } from "./TestProviders";
@@ -10,6 +10,7 @@ vi.mock("../api/budgets", () => ({
   deleteBudget: vi.fn(),
   listBudgets: vi.fn(),
   updateBudget: vi.fn(),
+  approveBudget: vi.fn(),
 }));
 
 const renderBudgetManagement = () => {
@@ -18,7 +19,7 @@ const renderBudgetManagement = () => {
       user: {
         username: "Budget Admin",
         role: "admin",
-        permissions: ["view_budgets", "create_budgets", "update_budgets", "delete_budgets"],
+        permissions: ["view_budgets", "approve_budgets"],
       },
       token: "token",
     },
@@ -77,5 +78,21 @@ describe("BudgetManagement", () => {
     expect(screen.getByText("Transport Budget")).toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: "2026 to 2026" })).not.toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "2025 to 2025" })).toBeInTheDocument();
+  });
+
+  it("lets Super Admin approve a pending budget without showing Add Budget", async () => {
+    listBudgets.mockResolvedValue({ budgets: [{
+      id: 3, name: "Science Budget", start_year: 2026, end_year: 2026,
+      amount: 100000, remaining_amount: 100000, spent_amount: 0,
+      budget_type: "normal", approval_status: "pending_approval",
+    }] });
+    approveBudget.mockResolvedValue({ budget: { id: 3, approval_status: "approved" } });
+
+    renderBudgetManagement();
+
+    expect(screen.queryByRole("button", { name: "Add Budget" })).not.toBeInTheDocument();
+    fireEvent.click(await screen.findByRole("button", { name: "Actions for budget 3" }));
+    fireEvent.click(await screen.findByRole("button", { name: "Approve budget" }));
+    await waitFor(() => expect(approveBudget).toHaveBeenCalledWith("token", 3));
   });
 });

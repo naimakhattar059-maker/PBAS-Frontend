@@ -25,7 +25,7 @@ import {
 } from "@ant-design/icons";
 import dayjs from "dayjs";
 import { useSelector } from "react-redux";
-import { archiveBudget, createBudget, deleteBudget, listBudgets, updateBudget } from "../api/budgets";
+import { approveBudget, archiveBudget, createBudget, deleteBudget, listBudgets, updateBudget } from "../api/budgets";
 import AccessDenied from "../components/AccessDenied";
 import { hasAnyPermission, hasPermission } from "../utils/permissions";
 import "./BudgetManagement.css";
@@ -144,10 +144,11 @@ const BudgetManagement = () => {
   const [selectedYear, setSelectedYear] = useState("all");
   const startYear = Form.useWatch("start_year", form);
   const canViewBudgets = hasAnyPermission(currentUser, ["view_budgets"]);
-  const canCreateBudgets = hasPermission(currentUser, "create_budgets");
-  const canUpdateBudgets = hasPermission(currentUser, "update_budgets");
-  const canDeleteBudgets = hasPermission(currentUser, "delete_budgets");
-  const canManageBudgetActions = canUpdateBudgets || canDeleteBudgets;
+  const canCreateBudgets = currentUser?.role === "admin_officer" && hasPermission(currentUser, "create_budgets");
+  const canApproveBudgets = currentUser?.role === "admin" && hasPermission(currentUser, "approve_budgets");
+  const canUpdateBudgets = currentUser?.role === "admin_officer" && hasPermission(currentUser, "update_budgets");
+  const canDeleteBudgets = currentUser?.role === "admin_officer" && hasPermission(currentUser, "delete_budgets");
+  const canManageBudgetActions = canUpdateBudgets || canDeleteBudgets || canApproveBudgets;
 
   const isEditing = Boolean(editingId);
 
@@ -301,10 +302,10 @@ const BudgetManagement = () => {
     try {
       if (editingId) {
         await updateBudget(token, editingId, payload);
-        message.success("Budget updated");
+        message.success("Budget updated and sent for approval");
       } else {
         await createBudget(token, payload);
-        message.success("Budget created");
+        message.success("Budget created and sent for approval");
       }
       setModalOpen(false);
       setDiscardModalOpen(false);
@@ -390,47 +391,49 @@ const BudgetManagement = () => {
     });
   };
 
+  const handleApprove = async (budget) => {
+    setPopoverOpenId(null);
+    try {
+      await approveBudget(token, budget.id);
+      message.success("Budget approved");
+      loadBudgets();
+    } catch (err) {
+      message.error(err.message || "Could not approve budget");
+    }
+  };
+
   const actionMenu = (budget) => (
     <Space direction="vertical" className="budget-menu">
-      <Button
-        type="text"
-        icon={<EditOutlined />}
-        disabled={!canUpdateBudgets || isBudgetArchived(budget)}
-        onClick={() => handleEdit(budget)}
-      >
-        Edit
-      </Button>
-      <Button
-        type="text"
-        disabled={!Array.isArray(budget.audit_entries) || budget.audit_entries.length === 0}
-        onClick={() => {
-          setPopoverOpenId(null);
-          setAuditPreview({
-            open: true,
-            title: budget.name,
-            entries: budget.audit_entries || [],
-          });
-        }}
-      >
-        Audit
-      </Button>
-      <Button
-        danger
-        type="text"
-        disabled={!canUpdateBudgets || isBudgetArchived(budget)}
-        onClick={() => handleArchive(budget)}
-      >
-        Archive/Surrender
-      </Button>
-      <Button
-        danger
-        type="text"
-        icon={<DeleteOutlined />}
-        disabled={!canDeleteBudgets || isBudgetArchived(budget)}
-        onClick={() => handleDelete(budget)}
-      >
-        Delete
-      </Button>
+      {canApproveBudgets && budget.approval_status === "pending_approval" && !budget.archived && (
+        <Button type="text" onClick={() => handleApprove(budget)}>Approve budget</Button>
+      )}
+      {canUpdateBudgets && (
+        <Button type="text" icon={<EditOutlined />} disabled={isBudgetArchived(budget)} onClick={() => handleEdit(budget)}>
+          Edit
+        </Button>
+      )}
+      {canUpdateBudgets && (
+        <Button
+          type="text"
+          disabled={!Array.isArray(budget.audit_entries) || budget.audit_entries.length === 0}
+          onClick={() => {
+            setPopoverOpenId(null);
+            setAuditPreview({ open: true, title: budget.name, entries: budget.audit_entries || [] });
+          }}
+        >
+          Audit
+        </Button>
+      )}
+      {canUpdateBudgets && (
+        <Button danger type="text" disabled={isBudgetArchived(budget)} onClick={() => handleArchive(budget)}>
+          Archive/Surrender
+        </Button>
+      )}
+      {canDeleteBudgets && (
+        <Button danger type="text" icon={<DeleteOutlined />} disabled={isBudgetArchived(budget)} onClick={() => handleDelete(budget)}>
+          Delete
+        </Button>
+      )}
     </Space>
   );
 
@@ -475,7 +478,9 @@ const BudgetManagement = () => {
       key: "status",
       width: 130,
       render: (_, budget) =>
-        isBudgetArchived(budget) ? <Tag color="default">Archived</Tag> : <Tag color="green">Active</Tag>,
+        isBudgetArchived(budget) ? <Tag color="default">Archived</Tag> :
+          budget.approval_status === "pending_approval" ? <Tag color="gold">Awaiting Super Admin</Tag> :
+            <Tag color="green">Active</Tag>,
     },
     {
       title: "Budget Amount",
@@ -507,23 +512,28 @@ const BudgetManagement = () => {
             key: "actions",
             align: "right",
             width: 72,
-            render: (_, budget) => (
-              <Popover
-                trigger="click"
-                placement="bottomRight"
-                content={actionMenu(budget)}
-                overlayClassName="budget-menu-popover"
-                open={popoverOpenId === budget.id}
-                onOpenChange={(open) => setPopoverOpenId(open ? budget.id : null)}
-              >
-                <Button
-                  type="text"
-                  className="budget-more-button"
-                  icon={<MoreOutlined />}
-                  aria-label={`Actions for budget ${budget.id}`}
-                />
-              </Popover>
-            ),
+            render: (_, budget) => {
+              if (!canUpdateBudgets && !canDeleteBudgets &&
+                  !(canApproveBudgets && budget.approval_status === "pending_approval" && !budget.archived)) return null;
+
+              return (
+                <Popover
+                  trigger="click"
+                  placement="bottomRight"
+                  content={actionMenu(budget)}
+                  overlayClassName="budget-menu-popover"
+                  open={popoverOpenId === budget.id}
+                  onOpenChange={(open) => setPopoverOpenId(open ? budget.id : null)}
+                >
+                  <Button
+                    type="text"
+                    className="budget-more-button"
+                    icon={<MoreOutlined />}
+                    aria-label={`Actions for budget ${budget.id}`}
+                  />
+                </Popover>
+              );
+            },
           },
         ]
       : []),
@@ -556,7 +566,7 @@ const BudgetManagement = () => {
         <div>
           <Title level={3}>Budget Management</Title>
           <Text type="secondary">
-            Create budgets, tag them with head/category, and track remaining balance after approvals.
+            Track budgets, their approval, and remaining balance.
           </Text>
         </div>
         {canCreateBudgets ? (
