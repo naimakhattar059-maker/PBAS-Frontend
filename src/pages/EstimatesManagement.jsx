@@ -30,7 +30,7 @@ import {
 } from "@ant-design/icons";
 import { useSelector } from "react-redux";
 import AccessDenied from "../components/AccessDenied";
-import { hasAnyPermission } from "../utils/permissions";
+import { canAccessEstimates, hasAnyPermission } from "../utils/permissions";
 import { listPayrollStaffs } from "../api/payrollStaffs";
 import { money } from "../utils/payrollEstimates";
 import "./EstimatesManagement.css";
@@ -595,7 +595,7 @@ const EstimatesManagement = () => {
   const [archivedEstimateYears, setArchivedEstimateYears] = useState(readArchivedEstimateYears);
   const [archiveYearModalOpen, setArchiveYearModalOpen] = useState(false);
   const selectedEstimateYearArchived = isEstimateYearArchived(filterYear, archivedEstimateYears);
-  const canViewEstimates = hasAnyPermission(user, ["view_payroll_estimates", "manage_payroll_estimates", "approve_payroll_estimates"]);
+  const canViewEstimates = canAccessEstimates(user);
   const canManageEstimates = hasAnyPermission(user, ["manage_payroll_estimates"]);
   const canApproveEstimates = hasAnyPermission(user, ["approve_payroll_estimates"]);
 

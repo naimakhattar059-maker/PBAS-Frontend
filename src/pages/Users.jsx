@@ -30,13 +30,20 @@ const ROLE_OPTIONS = [
   { value: "admin_officer", label: "Admin Officer" },
   { value: "accountant", label: "Accountant" },
   { value: "office_assistant", label: "Office Assistant" },
+  { value: "staff", label: "Staff / HOD" },
 ];
+
+const roleOptionsFor = (user) =>
+  user?.role === "head_of_institute"
+    ? ROLE_OPTIONS.filter((option) => !["head_of_institute", "staff"].includes(option.value))
+    : ROLE_OPTIONS;
 
 const roleColors = {
   head_of_institute: "purple",
   admin_officer: "cyan",
   accountant: "gold",
   office_assistant: "blue",
+  staff: "green",
 };
 
 const formatLabel = (value) =>
@@ -65,6 +72,7 @@ const fileToDataUrl = (file) =>
 const Users = () => {
   const { token, user: currentUser } = useSelector((state) => state.auth);
   const [form] = Form.useForm();
+  const selectedRole = Form.useWatch("roleSelection", form);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [rows, setRows] = useState([]);
@@ -77,6 +85,8 @@ const Users = () => {
   const canCreateUsers = hasPermission(currentUser, "create_users");
   const canUpdateUsers = hasPermission(currentUser, "update_users");
   const canToggleStatus = hasPermission(currentUser, "change_user_status");
+  const assignableRoleOptions = roleOptionsFor(currentUser);
+  const defaultRole = assignableRoleOptions[0]?.value;
 
   const loadUsers = async () => {
     setLoading(true);
@@ -107,7 +117,7 @@ const Users = () => {
         department: values.department,
         designation: values.designation,
         role: values.roleSelection,
-        staff_sub_role: null,
+        staff_sub_role: values.roleSelection === "staff" ? values.staffSubRole : null,
         attachment_image_data: selectedFile
           ? await fileToDataUrl(selectedFile)
           : values.attachment_image_data || null,
@@ -137,6 +147,11 @@ const Users = () => {
   };
 
   const startEdit = (record) => {
+    if (!assignableRoleOptions.some((option) => option.value === record.role)) {
+      message.warning("You cannot manage this user's role.");
+      return;
+    }
+
     setEditingId(record.id);
     setModalOpen(true);
     form.setFieldsValue({
@@ -147,6 +162,7 @@ const Users = () => {
       designation: record.designation,
       department: record.department,
       roleSelection: record.role,
+      staffSubRole: record.staff_sub_role || "staff",
       attachment_image_data: record.attachment_image_data || null,
       attachment_image: undefined,
     });
@@ -156,7 +172,7 @@ const Users = () => {
     setEditingId(null);
     form.resetFields();
     form.setFieldsValue({
-      roleSelection: "head_of_institute",
+      roleSelection: defaultRole,
       attachment_image_data: null,
       attachment_image: undefined,
     });
@@ -354,7 +370,7 @@ const Users = () => {
           layout="vertical"
           form={form}
           onFinish={handleSubmit}
-          initialValues={{ roleSelection: "head_of_institute" }}
+          initialValues={{ roleSelection: defaultRole }}
           disabled={saving}
         >
           <Form.Item label="Full name" name="username" rules={[{ required: true, message: "Name is required" }]}>
@@ -391,13 +407,18 @@ const Users = () => {
           <Form.Item label="Role" name="roleSelection" rules={[{ required: true, message: "Select a role" }]}>
             <Select
               size="small"
-              options={ROLE_OPTIONS}
+              options={assignableRoleOptions}
               placeholder="Select role"
               allowClear
               showSearch
               optionFilterProp="label"
             />
           </Form.Item>
+          {selectedRole === "staff" && (
+            <Form.Item label="Staff responsibility" name="staffSubRole" rules={[{ required: true, message: "Select a responsibility" }]}>
+              <Select size="small" options={[{ value: "hod", label: "Head of Department (HOD)" }, { value: "staff", label: "Staff" }]} />
+            </Form.Item>
+          )}
           <Form.Item
             label="Designation"
             name="designation"

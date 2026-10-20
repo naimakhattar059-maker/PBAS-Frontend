@@ -20,7 +20,7 @@ import { createAuditLog } from '../api/auditLogs';
 import { listNotifications } from '../api/notifications';
 import { logout } from '../store/authSlice';
 import { getAvatarInitial } from '../utils/userAvatar';
-import { hasAnyPermission, hasPermission } from '../utils/permissions';
+import { canAccessEstimates, hasAnyPermission, hasPermission } from '../utils/permissions';
 import './AppLayout.css';
 
 const { Header, Sider, Content } = Layout;
@@ -37,12 +37,13 @@ const navItems = [
   { key: '/users', icon: <UserOutlined />, label: 'User Management', permission: 'view_users' },
   { key: '/departments', icon: <ApartmentOutlined />, label: 'Resource Request Management', permission: 'view_requests' },
   { key: '/budget', icon: <FundOutlined />, label: 'Budget Management', permission: 'view_budgets' },
+  { key: '/budget-heads', icon: <FundOutlined />, label: 'Budget Heads', permission: 'view_budget_heads' },
   { key: '/payroll', icon: <CalculatorOutlined />, label: 'Payroll Management', permission: 'view_payroll' },
   {
     key: '/estimates',
     icon: <FileTextOutlined />,
     label: 'Estimates Management',
-    permissions: ['view_payroll_estimates', 'manage_payroll_estimates', 'approve_payroll_estimates'],
+    access: canAccessEstimates,
   },
   { key: '/internal-revenue', icon: <BankOutlined />, label: 'Internal Revenue', permission: 'view_budgets' },
   { key: '/reports', icon: <FileTextOutlined />, label: 'Reports', permission: 'view_reports' },
@@ -96,9 +97,10 @@ const AppLayout = ({ children }) => {
     loadUnread();
   }, [token, user]);
 
-  const visibleNavItems = navItems.filter((item) =>
-    item.permissions ? hasAnyPermission(user, item.permissions) : hasPermission(user, item.permission)
-  );
+  const visibleNavItems = navItems.filter((item) => {
+    if (item.access) return item.access(user);
+    return item.permissions ? hasAnyPermission(user, item.permissions) : hasPermission(user, item.permission);
+  });
   const currentNav = visibleNavItems.find((i) => i.key === location.pathname);
   const headerLabel = currentNav?.headerLabel || currentNav?.label || 'Dashboard (P.G Budget System)';
   const profileName = user?.username || 'User';

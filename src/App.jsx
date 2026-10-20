@@ -10,6 +10,7 @@ import Requests from "./pages/Requests";
 import Payroll from "./pages/Payroll";
 import EstimatesManagement from "./pages/EstimatesManagement";
 import BudgetManagement from "./pages/BudgetManagement";
+import BudgetHeads from "./pages/BudgetHeads";
 import InternalRevenue from "./pages/InternalRevenue";
 import Reports from "./pages/Reports";
 import AuditLogs from "./pages/AuditLogs";
@@ -36,6 +37,7 @@ const App = () => {
           <Route path="/users" element={<Users />} />
           <Route path="/departments" element={<Requests />} />
           <Route path="/budget" element={<BudgetManagement />} />
+          <Route path="/budget-heads" element={<BudgetHeads />} />
           <Route path="/expenses" element={<Placeholder title="Expense Management" />} />
           <Route path="/payroll" element={<Payroll />} />
           <Route path="/estimates" element={<EstimatesManagement />} />

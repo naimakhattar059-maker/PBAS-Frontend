@@ -1,0 +1,5 @@
+.budget-heads-page { padding: 24px; }
+.budget-heads-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 20px; }
+.budget-heads-header h2 { margin-bottom: 4px; }
+.budget-head-amount { width: 100%; }
+@media (max-width: 640px) { .budget-heads-header { flex-direction: column; } }

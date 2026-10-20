@@ -3,6 +3,7 @@ import { render, screen } from "@testing-library/react";
 import Reports from "../pages/Reports";
 import Notifications from "../pages/Notifications";
 import BudgetManagement from "../pages/BudgetManagement";
+import EstimatesManagement from "../pages/EstimatesManagement";
 import { createTestStore } from "./testUtils";
 import { TestProviders } from "./TestProviders";
 
@@ -75,6 +76,27 @@ describe("Protected pages", () => {
     );
 
     expect(screen.getByText("Notifications")).toBeInTheDocument();
+    expect(screen.getByText(/does not have permission/i)).toBeInTheDocument();
+  });
+
+  it("denies estimates to an Admin Officer even with cached estimate permissions", () => {
+    const store = createTestStore({
+      auth: {
+        user: {
+          username: "Admin Officer",
+          role: "admin_officer",
+          permissions: ["view_payroll_estimates", "manage_payroll_estimates"],
+        },
+        token: "token",
+      },
+    });
+
+    render(
+      <TestProviders store={store}>
+        <EstimatesManagement />
+      </TestProviders>
+    );
+
     expect(screen.getByText(/does not have permission/i)).toBeInTheDocument();
   });
 });
