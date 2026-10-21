@@ -26,6 +26,7 @@ import {
 import dayjs from "dayjs";
 import { useSelector } from "react-redux";
 import { approveBudget, archiveBudget, createBudget, deleteBudget, listBudgets, updateBudget } from "../api/budgets";
+import { listBudgetHeads } from "../api/budgetHeads";
 import AccessDenied from "../components/AccessDenied";
 import { hasAnyPermission, hasPermission } from "../utils/permissions";
 import "./BudgetManagement.css";
@@ -135,6 +136,9 @@ const BudgetManagement = () => {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [budgets, setBudgets] = useState([]);
+  const [approvedHeads, setApprovedHeads] = useState([]);
+  const [approvedEstimates, setApprovedEstimates] = useState([]);
+  const [approvedStatements, setApprovedStatements] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [popoverOpenId, setPopoverOpenId] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
@@ -232,6 +236,12 @@ const BudgetManagement = () => {
     try {
       const payload = await listBudgets(token);
       setBudgets(payload.budgets || []);
+      setApprovedEstimates(payload.approved_estimates || []);
+      setApprovedStatements(payload.approved_estimate_submissions || []);
+      if (canCreateBudgets) {
+        const headsData = await listBudgetHeads(token);
+        setApprovedHeads((headsData.budget_heads || []).filter((head) => head.status === "approved"));
+      }
     } catch (err) {
       message.error(err.message || "Could not load budgets");
     } finally {
@@ -290,6 +300,9 @@ const BudgetManagement = () => {
       amount: values.amount,
       budget_type: values.budget_type,
       budget_head: values.budget_head?.trim() || null,
+      budget_head_record_id: values.budget_head_record_id || null,
+      payroll_estimate_id: values.payroll_estimate_id || null,
+      estimate_submission_id: values.estimate_submission_id || null,
       budget_category: values.budget_category?.trim() || null,
     };
 
@@ -334,6 +347,9 @@ const BudgetManagement = () => {
       amount: Number(budget.amount),
       budget_type: budget.budget_type,
       budget_head: budget.budget_head || "",
+      budget_head_record_id: budget.budget_head_record_id || undefined,
+      payroll_estimate_id: budget.payroll_estimate_id || undefined,
+      estimate_submission_id: budget.estimate_submission_id || undefined,
       budget_category: budget.budget_category || "",
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -766,6 +782,15 @@ const BudgetManagement = () => {
 
           <Form.Item label="Budget head" name="budget_head">
             <Input placeholder="e.g. Primary budget head" maxLength={120} />
+          </Form.Item>
+          <Form.Item label="Approved budget head" name="budget_head_record_id" rules={[{ required: true, message: "Select an approved budget head" }]}>
+            <Select allowClear placeholder="Select approved head" options={approvedHeads.map((head) => ({ value: head.id, label: `${head.code} — ${head.name} (PKR ${head.allocated_amount})` }))} />
+          </Form.Item>
+          <Form.Item label="Approved payroll estimate (if applicable)" name="payroll_estimate_id">
+            <Select allowClear placeholder="Select approved estimate" options={approvedEstimates.map((estimate) => ({ value: estimate.id, label: `${estimate.year} — ${estimate.full_name} (PKR ${estimate.total_estimated_salary})` }))} />
+          </Form.Item>
+          <Form.Item label="Approved estimate statement (if applicable)" name="estimate_submission_id">
+            <Select allowClear placeholder="Select approved statement" options={approvedStatements.map((row) => ({ value: row.id, label: `Estimate statement ${row.year}` }))} />
           </Form.Item>
 
           <Form.Item

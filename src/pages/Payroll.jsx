@@ -34,6 +34,7 @@ import {
 import { useSelector } from "react-redux";
 import AccessDenied from "../components/AccessDenied";
 import { hasAnyPermission, hasPermission } from "../utils/permissions";
+import { archivePayrollYearByYear, listPayrollYearAllocations, savePayrollYearAllocation } from "../api/payrollYearAllocations";
 import {
   approvePayrollRun,
   createPayrollRun,
@@ -47,7 +48,7 @@ import {
   createPayrollStaff,
   updatePayrollStaff,
 } from "../api/payrollStaffs";
-import { updatePayrollRunItem } from "../api/payrollRunItems";
+import { fetchPayslip, updatePayrollRunItem } from "../api/payrollRunItems";
 import "./Payroll.css";
 
 const { Title, Text } = Typography;
@@ -157,26 +158,8 @@ const toTitle = (value) =>
 const money = (value) => `PKR ${new Intl.NumberFormat("en-PK").format(Number(value || 0))}`;
 
 const currentYear = new Date().getFullYear();
-const payrollAllocationStorageKey = "payrollAnnualAllocationsV1";
-const payrollArchiveStorageKey = "payrollArchivedYearsV1";
-
-const readAnnualAllocations = () => {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(payrollAllocationStorageKey) || "{}");
-    return parsed && typeof parsed === "object" ? parsed : {};
-  } catch {
-    return {};
-  }
-};
-
-const readArchivedYears = () => {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(payrollArchiveStorageKey) || "{}");
-    return parsed && typeof parsed === "object" ? parsed : {};
-  } catch {
-    return {};
-  }
-};
+const readAnnualAllocations = () => ({});
+const readArchivedYears = () => ({});
 
 const getRankDeduction = (bps, basicPay = 0) => {
   const rank = Number(bps || 0);
@@ -342,7 +325,7 @@ const Payroll = () => {
       archived: false,
     };
 
-  const saveAnnualAllocation = (year, value) => {
+  const saveAnnualAllocation = async (year, value) => {
     if (isArchivedYear(year, archivedPayrollYears)) {
       message.error("Archived payroll years cannot be changed.");
       return;
@@ -350,7 +333,9 @@ const Payroll = () => {
 
     const next = { ...annualAllocations, [year]: Number(value || 0) };
     setAnnualAllocations(next);
-    localStorage.setItem(payrollAllocationStorageKey, JSON.stringify(next));
+    try {
+      await savePayrollYearAllocation(token, year, Number(value || 0));
+    } catch (error) { message.error(error.message); }
   };
 
   const archivePayrollYear = (record) => {
@@ -360,7 +345,10 @@ const Payroll = () => {
       okText: "Archive year",
       okButtonProps: { danger: true },
       centered: true,
-      onOk: () => {
+      onOk: async () => {
+        try {
+          await archivePayrollYearByYear(token, record.year);
+        } catch (error) { message.error(error.message); return; }
         const next = {
           ...archivedPayrollYears,
           [record.year]: {
@@ -369,7 +357,6 @@ const Payroll = () => {
           },
         };
         setArchivedPayrollYears(next);
-        localStorage.setItem(payrollArchiveStorageKey, JSON.stringify(next));
         message.success(`${record.year} payroll archived`);
       },
     });
@@ -379,6 +366,10 @@ const Payroll = () => {
     setLoading(true);
     try {
       const payload = await listPayrollRuns(token);
+      const allocationsPayload = await listPayrollYearAllocations(token);
+      const allocationRows = allocationsPayload.allocations || [];
+      setAnnualAllocations(Object.fromEntries(allocationRows.map((row) => [row.year, row.amount])));
+      setArchivedPayrollYears(Object.fromEntries(allocationRows.filter((row) => row.archived).map((row) => [row.year, { archived_at: row.archived_at, surrendered: row.surrendered_amount }])));
       setPayrollRuns(payload.payroll_runs || []);
       setSummary(payload.summary || {});
       setPayrollMeta(
@@ -399,6 +390,30 @@ const Payroll = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  const printPayslip = async (id) => {
+    try {
+      const { payslip } = await fetchPayslip(token, id);
+      const printWindow = window.open("", "_blank");
+      if (!printWindow) return message.error("Allow popups to print the payslip");
+      const lines = [
+        "PBAS PAYSLIP", `${payslip.month} ${payslip.year}`,
+        `Employee: ${payslip.full_name} (${payslip.personnel_no})`,
+        `Department: ${payslip.department}`, `Designation: ${payslip.post_description}`,
+        `Gross pay: ${money(payslip.gross_pay)}`,
+        ...Object.entries(payslip.allowance_breakdown || {}).map(([name, value]) => `${name}: ${money(value)}`),
+        ...Object.entries(payslip.deduction_breakdown || {}).map(([name, value]) => `${name}: ${money(value)}`),
+        `Net pay: ${money(payslip.net_pay)}`, `Paid: ${money(payslip.paid_amount)}`,
+        `Payment status: ${payslip.payment_status}`, `Reference: ${payslip.payment_reference || "—"}`,
+      ];
+      printWindow.document.body.style.cssText = "font: 16px Arial; padding: 40px; line-height: 1.8";
+      const pre = printWindow.document.createElement("pre");
+      pre.style.fontFamily = "Arial";
+      pre.textContent = lines.join("\n");
+      printWindow.document.body.appendChild(pre);
+      printWindow.print();
+    } catch (error) { message.error(error.message); }
   };
 
   useEffect(() => {
@@ -1030,7 +1045,7 @@ const Payroll = () => {
       title: "Actions",
       key: "actions",
       render: (_, record) => (
-        <Button
+        <Space><Button size="small" onClick={() => printPayslip(record.id)}>Payslip</Button><Button
           size="small"
           disabled={selectedRunArchived || !canManagePayroll || !["approved", "paid"].includes(selectedRun?.status)}
           onClick={() => {
@@ -1046,7 +1061,7 @@ const Payroll = () => {
           }}
         >
           Record payment
-        </Button>
+        </Button></Space>
       ),
     },
   ];
@@ -1114,7 +1129,7 @@ const Payroll = () => {
           <Button
             size="small"
             danger
-            disabled={!canManagePayroll}
+            disabled={!canApprovePayroll}
             onClick={() => archivePayrollYear(record)}
           >
             Archive year

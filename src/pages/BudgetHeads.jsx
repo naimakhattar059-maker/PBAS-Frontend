@@ -118,20 +118,22 @@ const BudgetHeads = () => {
     { title: "Review note", dataIndex: "review_note", key: "review_note", render: (note) => note || "—" },
     { title: "Actions", key: "actions", render: (_, head) => (
       <Space wrap>
-        {canManage && ["pending_hoi", "changes_requested"].includes(head.status) && (
+        {canManage && ["pending_hoi", "changes_requested", "approved"].includes(head.status) && (
           <Button onClick={() => openForm(head)}>Edit</Button>
         )}
         {canReview && head.status === "pending_hoi" && (
           <>
             <Button type="primary" loading={saving} onClick={() => runAction(() => reviewBudgetHead(token, head.id), "Sent to Super Admin for approval")}>Review and forward</Button>
-            <Button onClick={() => { setCorrectionHead(head); setCorrectionNote(""); }}>Request changes</Button>
           </>
+        )}
+        {canReview && ["pending_hoi", "pending_admin", "approved"].includes(head.status) && (
+          <Button onClick={() => { setCorrectionHead(head); setCorrectionNote(""); }}>Request changes</Button>
         )}
         {canApprove && head.status === "pending_admin" && (
           <Button type="primary" loading={saving} onClick={() => runAction(() => approveBudgetHead(token, head.id), "Budget head approved")}>Approve</Button>
         )}
-        {!((canManage && ["pending_hoi", "changes_requested"].includes(head.status)) ||
-          (canReview && head.status === "pending_hoi") ||
+        {!((canManage && ["pending_hoi", "changes_requested", "approved"].includes(head.status)) ||
+          (canReview && ["pending_hoi", "pending_admin", "approved"].includes(head.status)) ||
           (canApprove && head.status === "pending_admin")) && "—"}
       </Space>
     ) },

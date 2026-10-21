@@ -25,3 +25,9 @@ export const createInternalRevenueRecord = (token, record) =>
     token,
     body: { internal_revenue_record: record },
   });
+
+export const listRevenueHeads = (token) =>
+  apiRequest("/api/v1/revenue_heads", { method: "GET", token });
+
+export const createRevenueHead = (token, revenueHead) =>
+  apiRequest("/api/v1/revenue_heads", { method: "POST", token, body: { revenue_head: revenueHead } });

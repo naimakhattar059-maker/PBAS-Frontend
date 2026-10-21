@@ -5,8 +5,10 @@ import dayjs from "dayjs";
 import { useSelector } from "react-redux";
 import {
   createInternalRevenueRecord,
+  createRevenueHead,
   listInternalRevenueCells,
   listInternalRevenueRecords,
+  listRevenueHeads,
   saveInternalRevenueCells,
 } from "../api/internalRevenue";
 import AccessDenied from "../components/AccessDenied";
@@ -249,6 +251,8 @@ const InternalRevenue = () => {
   const [recordType, setRecordType] = useState(null);
   const [recordDate, setRecordDate] = useState(() => dayjs(defaultRevenueMonth));
   const [nonPublicRecords, setNonPublicRecords] = useState([]);
+  const [revenueHeads, setRevenueHeads] = useState([]);
+  const [newHead, setNewHead] = useState({ name: "", code: "" });
   const [approvedRequestUtilization, setApprovedRequestUtilization] = useState(0);
   const [recordForm] = Form.useForm();
   const inputRefs = useRef(new Map());
@@ -256,6 +260,7 @@ const InternalRevenue = () => {
   const pendingSaveCellsRef = useRef(new Map());
   const saveTimerRef = useRef(null);
   const canViewInternalRevenue = hasPermission(user, "view_budgets");
+  const canManageRevenue = hasPermission(user, "manage_internal_revenue");
   const period = periodFromMonth(revenueMonth);
 
   const revenueSummary = useMemo(() => {
@@ -380,6 +385,22 @@ const InternalRevenue = () => {
       active = false;
     };
   }, [canViewInternalRevenue, period, token]);
+
+  useEffect(() => {
+    if (token && canViewInternalRevenue) listRevenueHeads(token)
+      .then((payload) => setRevenueHeads(payload.revenue_heads || []))
+      .catch((error) => message.error(error.message));
+  }, [token, canViewInternalRevenue]);
+
+  const addRevenueHead = async () => {
+    try {
+      await createRevenueHead(token, newHead);
+      const payload = await listRevenueHeads(token);
+      setRevenueHeads(payload.revenue_heads || []);
+      setNewHead({ name: "", code: "" });
+      message.success("Revenue head created");
+    } catch (error) { message.error(error.message); }
+  };
 
   useEffect(() => {
     if (!canViewInternalRevenue || !token) return;
@@ -531,12 +552,14 @@ const InternalRevenue = () => {
   const saveNonPublicRecord = async (record) => {
     const payload = await createInternalRevenueRecord(token, record);
     setNonPublicRecords((current) => [payload.record, ...current]);
+    listRevenueHeads(token).then((result) => setRevenueHeads(result.revenue_heads || []));
     return payload.record;
   };
 
   const submitRecordForm = async (values) => {
     if (recordType === "non_public") {
-      const fundLabel = nonPublicFundOptions.find((option) => option.value === values.fund)?.label || "Non Public";
+      const selectedHead = revenueHeads.find((head) => head.id === values.revenue_head_id);
+      const fundLabel = selectedHead?.name || "Non Public";
       const expenseLabel = nonPublicExpenseOptions.find((option) => option.value === values.expense_head)?.label || "Expense";
       const entryNo = values.entry_no || "";
       const notes = values.notes ? ` - ${values.notes}` : "";
@@ -549,7 +572,8 @@ const InternalRevenue = () => {
         entriesToSave.push({
           period: nextPeriod,
           entry_no: entryNo,
-          fund: values.fund,
+          fund: fundLabel,
+          revenue_head_id: values.revenue_head_id,
           transaction_type: "receipt",
           amount: receiptAmount,
           notes: values.notes,
@@ -564,7 +588,8 @@ const InternalRevenue = () => {
         entriesToSave.push({
           period: nextPeriod,
           entry_no: entryNo,
-          fund: values.fund,
+          fund: fundLabel,
+          revenue_head_id: values.revenue_head_id,
           transaction_type: "expense",
           expense_head: values.expense_head,
           amount: expenseAmount,
@@ -788,9 +813,9 @@ const InternalRevenue = () => {
             value={dayjs(revenueMonth)}
             onChange={handleMonthChange}
           />
-          <Button icon={<ReloadOutlined />} onClick={resetSheet}>Restore File Data</Button>
-          <Button icon={<SaveOutlined />} onClick={saveAll}>Save</Button>
-          <Button type="primary" icon={<PlusOutlined />} onClick={openRecordModal}>Add Record</Button>
+          {canManageRevenue && <Button icon={<ReloadOutlined />} onClick={resetSheet}>Restore File Data</Button>}
+          {canManageRevenue && <Button icon={<SaveOutlined />} onClick={saveAll}>Save</Button>}
+          {canManageRevenue && <Button type="primary" icon={<PlusOutlined />} onClick={openRecordModal}>Add Record</Button>}
         </Space>
       </div>
 
@@ -811,6 +836,15 @@ const InternalRevenue = () => {
           <Text type="secondary">Approved requests plus expense row</Text>
         </Card>
       </div>
+
+      <Card title="Revenue heads" style={{ marginBottom: 16 }}>
+        <Space wrap>{revenueHeads.map((head) => <Tag key={head.id}>{head.name}: {formatCurrency(head.balance)}</Tag>)}</Space>
+        {canManageRevenue && <Space wrap style={{ marginTop: 12 }}>
+          <Input placeholder="Head code" value={newHead.code} onChange={(event) => setNewHead({ ...newHead, code: event.target.value })} />
+          <Input placeholder="Head name" value={newHead.name} onChange={(event) => setNewHead({ ...newHead, name: event.target.value })} />
+          <Button onClick={addRevenueHead}>Add revenue head</Button>
+        </Space>}
+      </Card>
 
       <Card
         bordered={false}
@@ -887,7 +921,7 @@ const InternalRevenue = () => {
                           }}
                           aria-label={`Cell ${rowIndex + 1}, ${columnIndex + 1}`}
                           value={value}
-                          readOnly={!editable}
+                          readOnly={!editable || !canManageRevenue}
                           inputMode={columnIndex === 0 ? "text" : "decimal"}
                           onFocus={() => setSelectedCell({ row: rowIndex, column: columnIndex })}
                           onChange={(event) => updateCell(rowIndex, columnIndex, event.target.value)}
@@ -955,8 +989,8 @@ const InternalRevenue = () => {
               <Form.Item label="Entry no." name="entry_no">
                 <Input placeholder="Entry no" />
               </Form.Item>
-              <Form.Item label="Fund" name="fund" rules={[{ required: true, message: "Select fund" }]}>
-                <Select placeholder="Select fund" options={nonPublicFundOptions} />
+              <Form.Item label="Revenue head" name="revenue_head_id" rules={[{ required: true, message: "Select revenue head" }]}>
+                <Select placeholder="Select revenue head" options={revenueHeads.filter((head) => head.active).map((head) => ({ value: head.id, label: `${head.name} (PKR ${head.balance})` }))} />
               </Form.Item>
               <Form.Item label="Receipt amount" name="receipt_amount">
                 <InputNumber min={0} precision={2} placeholder="0" style={{ width: "100%" }} />

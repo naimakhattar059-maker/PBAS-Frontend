@@ -26,3 +26,6 @@ export const approveRequest = (token, id, note) =>
 
 export const rejectRequest = (token, id, note) =>
   apiRequest(`/api/v1/requests/${id}/reject`, { method: "PATCH", token, body: { note } });
+
+export const completeRequest = (token, id, handoverDetails) =>
+  apiRequest(`/api/v1/requests/${id}/complete`, { method: "PATCH", token, body: { handover_details: handoverDetails } });

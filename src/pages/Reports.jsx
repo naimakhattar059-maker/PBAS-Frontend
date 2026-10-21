@@ -23,6 +23,7 @@ const reportTypeOptions = [
   { label: "Payroll", value: "payroll" },
   { label: "Budgets", value: "budgets" },
   { label: "Notifications", value: "notifications" },
+  { label: "Financial summary", value: "financial" },
 ];
 
 const periodPickerMap = {
@@ -73,7 +74,7 @@ const Reports = () => {
   const loadReports = async () => {
     setLoading(true);
     try {
-      const payload = await fetchReports(token);
+      const payload = await fetchReports(token, period, selectedDate.format("YYYY-MM-DD"));
       setData(payload);
     } catch (err) {
       message.error(err.message || "Failed to load reports");
@@ -87,7 +88,7 @@ const Reports = () => {
       loadReports();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token, canViewReports]);
+  }, [token, canViewReports, period, selectedDate]);
 
   const requestColumns = useMemo(
     () => [
@@ -125,6 +126,7 @@ const Reports = () => {
       ...makeRows(data?.payroll_statuses || [], "Payroll"),
       ...makeRows(data?.budget_types || [], "Budgets"),
       ...makeRows(data?.notification_statuses || [], "Notifications"),
+      ...makeRows(Object.entries(data?.financial_summary || {}).map(([name, value]) => ({ name, value })), "Financial"),
     ];
 
     if (reportType === "all") {

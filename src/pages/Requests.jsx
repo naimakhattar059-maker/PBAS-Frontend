@@ -23,6 +23,7 @@ import AccessDenied from "../components/AccessDenied";
 import { hasAnyPermission, hasPermission } from "../utils/permissions";
 import {
   approveRequest,
+  completeRequest,
   createRequest,
   deleteRequest,
   listRequests,
@@ -32,6 +33,7 @@ import {
   verifyRequest,
 } from "../api/requests";
 import { listBudgetOptions } from "../api/budgets";
+import { listRevenueHeads } from "../api/internalRevenue";
 import "./BudgetManagement.css";
 
 const { Title, Text } = Typography;
@@ -62,6 +64,7 @@ const statusColors = {
   submitted: "processing",
   verified: "blue",
   approved: "green",
+  completed: "purple",
   rejected: "red",
 };
 
@@ -98,6 +101,7 @@ const Requests = () => {
   const [saving, setSaving] = useState(false);
   const [items, setItems] = useState([]);
   const [budgets, setBudgets] = useState([]);
+  const [revenueHeads, setRevenueHeads] = useState([]);
   const [editingId, setEditingId] = useState(null);
   const [modalOpen, setModalOpen] = useState(false);
   const [discardModalOpen, setDiscardModalOpen] = useState(false);
@@ -127,7 +131,7 @@ const Requests = () => {
           acc[item.status] = (acc[item.status] || 0) + 1;
           return acc;
         },
-        { draft: 0, submitted: 0, verified: 0, approved: 0, rejected: 0 }
+        { draft: 0, submitted: 0, verified: 0, approved: 0, completed: 0, rejected: 0 }
       ),
     [items]
   );
@@ -158,6 +162,7 @@ const Requests = () => {
       loadRequests();
       if (canCreateRequests) {
         loadBudgets();
+        listRevenueHeads(token).then((payload) => setRevenueHeads(payload.revenue_heads || [])).catch((error) => message.error(error.message));
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -200,6 +205,8 @@ const Requests = () => {
       requested_by: record.requested_by,
       priority: record.priority,
       amount: record.amount,
+      quantity: record.quantity,
+      revenue_head_id: record.revenue_head_id || undefined,
       details: record.details,
       attachment_data: record.attachment_data || null,
       attachment_name: record.attachment_name || null,
@@ -230,10 +237,12 @@ const Requests = () => {
       requested_by: values.requested_by?.trim(),
       priority: values.priority,
       amount: values.amount || 0,
+      quantity: values.quantity || null,
       details: values.details?.trim(),
       attachment_name: selectedFile?.name || values.attachment_name || null,
       attachment_data,
       budget_id: values.request_type === "budget" ? values.budget_id || null : null,
+      revenue_head_id: values.request_type === "resource" ? values.revenue_head_id || null : null,
     };
 
     try {
@@ -277,6 +286,15 @@ const Requests = () => {
         <Button key="edit" size="small" icon={<EditOutlined />} onClick={() => openEdit(record)}>
           Edit
         </Button>
+      ),
+      record.actions?.can_complete && (
+        <Button key="handover" size="small" onClick={() => {
+          Modal.confirm({
+            title: "Complete resource handover",
+            content: <Input.TextArea id="handover-details" placeholder="Recipient, quantity and handover details" />,
+            onOk: () => runAction(completeRequest, record.id, document.getElementById("handover-details")?.value),
+          });
+        }}>Record handover</Button>
       ),
       canManageBeforeSubmit && canSubmitRecord(record) && (
         <Button key="submit" size="small" type="primary" icon={<SendOutlined />} onClick={() => runAction(submitRequest, record.id)}>
@@ -540,6 +558,7 @@ const Requests = () => {
               { value: "submitted", label: "Submitted" },
               { value: "verified", label: "Verified" },
               { value: "approved", label: "Approved" },
+              { value: "completed", label: "Completed" },
               { value: "rejected", label: "Rejected" },
             ]}
           />
@@ -627,6 +646,13 @@ const Requests = () => {
               <Form.Item label="Amount" name="amount">
                 <InputNumber min={0} precision={2} style={{ width: "100%" }} />
               </Form.Item>
+              <Form.Item noStyle shouldUpdate={(prev, next) => prev.request_type !== next.request_type}>
+                {({ getFieldValue }) => getFieldValue("request_type") === "resource" ? (
+                  <Form.Item label="Resource quantity" name="quantity" rules={[{ required: true, message: "Enter resource quantity" }]}>
+                    <InputNumber min={1} precision={0} style={{ width: "100%" }} />
+                  </Form.Item>
+                ) : null}
+              </Form.Item>
             </Col>
           </Row>
           <Form.Item noStyle shouldUpdate={(prev, next) => prev.request_type !== next.request_type}>
@@ -641,6 +667,13 @@ const Requests = () => {
                 </Form.Item>
               ) : null
             }
+          </Form.Item>
+          <Form.Item noStyle shouldUpdate={(prev, next) => prev.request_type !== next.request_type}>
+            {({ getFieldValue }) => getFieldValue("request_type") === "resource" ? (
+              <Form.Item label="Internal revenue head" name="revenue_head_id" rules={[{ required: true, message: "Choose a revenue head" }]}>
+                <Select options={revenueHeads.filter((head) => head.active).map((head) => ({ value: head.id, label: `${head.name} — PKR ${head.balance} available` }))} />
+              </Form.Item>
+            ) : null}
           </Form.Item>
           <Form.Item label="Attachment" name="attachment" valuePropName="fileList" getValueFromEvent={(event) => event?.fileList}>
             <Upload accept="*/*" beforeUpload={() => false} maxCount={1} listType="text">

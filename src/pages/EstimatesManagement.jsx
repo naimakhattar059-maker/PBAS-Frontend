@@ -32,6 +32,7 @@ import { useSelector } from "react-redux";
 import AccessDenied from "../components/AccessDenied";
 import { canAccessEstimates, hasAnyPermission } from "../utils/permissions";
 import { listPayrollStaffs } from "../api/payrollStaffs";
+import { approveEstimateSubmission, listEstimateSubmissions, rejectEstimateSubmission, reviewEstimateSubmission, submitEstimateSubmission } from "../api/estimateSubmissions";
 import { money } from "../utils/payrollEstimates";
 import "./EstimatesManagement.css";
 
@@ -585,6 +586,8 @@ const EstimatesManagement = () => {
   const [filterYear, setFilterYear] = useState(currentYear);
   const [statementRows, setStatementRows] = useState(summaryBaseRows);
   const [statementStatus, setStatementStatus] = useState("draft");
+  const [statementId, setStatementId] = useState(null);
+  const [estimateSnapshot, setEstimateSnapshot] = useState(null);
   const [editingStatementRow, setEditingStatementRow] = useState(null);
   const [regularAllowanceRows, setRegularAllowanceRows] = useState([]);
   const [payOfficerRows, setPayOfficerRows] = useState(documentPayOfficerRows);
@@ -596,8 +599,28 @@ const EstimatesManagement = () => {
   const [archiveYearModalOpen, setArchiveYearModalOpen] = useState(false);
   const selectedEstimateYearArchived = isEstimateYearArchived(filterYear, archivedEstimateYears);
   const canViewEstimates = canAccessEstimates(user);
-  const canManageEstimates = hasAnyPermission(user, ["manage_payroll_estimates"]);
+  const canManageEstimates = hasAnyPermission(user, ["manage_payroll_estimates"]) && ["draft", "rejected"].includes(statementStatus);
   const canApproveEstimates = hasAnyPermission(user, ["approve_payroll_estimates"]);
+  const canReviewEstimates = hasAnyPermission(user, ["review_payroll_estimates"]);
+
+  useEffect(() => {
+    if (!token || !canViewEstimates) return;
+    listEstimateSubmissions(token).then((payload) => {
+      const submission = (payload.estimate_submissions || []).find((row) => Number(row.year) === Number(filterYear));
+      setStatementStatus(submission?.status || "draft");
+      setStatementId(submission?.id || null);
+      setEstimateSnapshot(submission?.snapshot || null);
+    }).catch((error) => message.error(error.message));
+  }, [token, canViewEstimates, filterYear]);
+
+  useEffect(() => {
+    if (!estimateSnapshot || loading) return;
+    if (Array.isArray(estimateSnapshot.statement_rows)) setStatementRows(estimateSnapshot.statement_rows);
+    if (Array.isArray(estimateSnapshot.regular_allowance_rows)) setRegularAllowanceRows(estimateSnapshot.regular_allowance_rows);
+    if (Array.isArray(estimateSnapshot.pay_officer_rows)) setPayOfficerRows(estimateSnapshot.pay_officer_rows);
+    if (Array.isArray(estimateSnapshot.pay_other_rows)) setPayOtherRows(estimateSnapshot.pay_other_rows);
+    if (Array.isArray(estimateSnapshot.other_expenditure_rows)) setOtherExpenditureRows(estimateSnapshot.other_expenditure_rows);
+  }, [estimateSnapshot, loading]);
 
   const loadEstimates = async (year = filterYear) => {
     if (useDummyEstimateData) {
@@ -908,6 +931,7 @@ const EstimatesManagement = () => {
   };
 
   const changeFilterYear = (year) => {
+    setEstimateSnapshot(null);
     setFilterYear(year);
   };
 
@@ -1120,7 +1144,7 @@ const EstimatesManagement = () => {
     printWindow.print();
   };
 
-  const submitStatementToHoi = () => {
+  const submitStatementToHoi = async () => {
     if (!canManageEstimates) {
       message.warning("Only Accountant can submit payroll estimates.");
       return;
@@ -1131,36 +1155,54 @@ const EstimatesManagement = () => {
       return;
     }
 
-    setStatementStatus("submitted");
-    message.success("Comparative statement submitted to HOI for approval.");
+    try {
+      const snapshot = {
+        statement_rows: statementRows,
+        regular_allowance_rows: regularAllowanceRows,
+        pay_officer_rows: payOfficerRows,
+        pay_other_rows: payOtherRows,
+        other_expenditure_rows: otherExpenditureRows,
+      };
+      const result = await submitEstimateSubmission(token, filterYear, snapshot);
+      setStatementStatus(result.estimate_submission.status);
+      setStatementId(result.estimate_submission.id);
+      setEstimateSnapshot(snapshot);
+      message.success("Comparative statement submitted to HOI for review.");
+    } catch (error) { message.error(error.message); }
   };
 
-  const approveStatement = () => {
-    if (!canApproveEstimates) {
-      message.warning("Only HOI can approve payroll estimates.");
+  const approveStatement = async () => {
+    if (!canReviewEstimates && !canApproveEstimates) {
+      message.warning("Only HOI or Super Admin can review estimates.");
       return;
     }
-    if (statementStatus !== "submitted") {
-      message.info("Only submitted estimates can be approved.");
+    if ((canReviewEstimates && statementStatus !== "submitted") || (canApproveEstimates && statementStatus !== "reviewed")) {
+      message.info("This statement is not ready for your approval step.");
       return;
     }
-
-    setStatementStatus("approved");
-    message.success("Payroll estimates approved.");
+    try {
+      const result = canReviewEstimates
+        ? await reviewEstimateSubmission(token, statementId)
+        : await approveEstimateSubmission(token, statementId);
+      setStatementStatus(result.estimate_submission.status);
+      message.success(canReviewEstimates ? "Forwarded to Super Admin" : "Payroll estimates approved");
+    } catch (error) { message.error(error.message); }
   };
 
-  const rejectStatement = () => {
-    if (!canApproveEstimates) {
-      message.warning("Only HOI can reject payroll estimates.");
+  const rejectStatement = async () => {
+    if (!canReviewEstimates && !canApproveEstimates) {
+      message.warning("Only HOI or Super Admin can reject estimates.");
       return;
     }
-    if (statementStatus !== "submitted") {
-      message.info("Only submitted estimates can be rejected.");
+    if ((canReviewEstimates && statementStatus !== "submitted") || (canApproveEstimates && statementStatus !== "reviewed")) {
+      message.info("This statement is not ready for your review step.");
       return;
     }
-
-    setStatementStatus("rejected");
-    message.warning("Payroll estimates rejected.");
+    try {
+      const result = await rejectEstimateSubmission(token, statementId);
+      setStatementStatus(result.estimate_submission.status);
+      message.warning("Payroll estimates rejected.");
+    } catch (error) { message.error(error.message); }
   };
 
   const openArchiveYearModal = () => {
@@ -1618,6 +1660,7 @@ const EstimatesManagement = () => {
               color={{
                 draft: "default",
                 submitted: "processing",
+                reviewed: "warning",
                 approved: "success",
                 rejected: "error",
               }[statementStatus] || "default"}
@@ -1625,8 +1668,9 @@ const EstimatesManagement = () => {
               {{
                 draft: "Draft",
                 submitted: "Submitted to HOI",
-                approved: "Approved by HOI",
-                rejected: "Rejected by HOI",
+                reviewed: "Reviewed by HOI; awaiting Super Admin",
+                approved: "Approved by Super Admin",
+                rejected: "Rejected",
               }[statementStatus] || "Draft"}
             </Tag>
           </Space>
@@ -1649,23 +1693,23 @@ const EstimatesManagement = () => {
                 Submit to HOI
               </Button>
             ) : null}
-            {canApproveEstimates ? (
+            {canReviewEstimates || canApproveEstimates ? (
               <>
                 <Button
                   type="primary"
                   size="small"
                   icon={<CheckOutlined />}
                   onClick={approveStatement}
-                  disabled={statementStatus !== "submitted"}
+                  disabled={canReviewEstimates ? statementStatus !== "submitted" : statementStatus !== "reviewed"}
                 >
-                  Approve
+                  {canReviewEstimates ? "Forward to Super Admin" : "Approve"}
                 </Button>
                 <Button
                   danger
                   size="small"
                   icon={<CloseOutlined />}
                   onClick={rejectStatement}
-                  disabled={statementStatus !== "submitted"}
+                  disabled={canReviewEstimates ? statementStatus !== "submitted" : statementStatus !== "reviewed"}
                 >
                   Reject
                 </Button>

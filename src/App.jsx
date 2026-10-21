@@ -11,12 +11,12 @@ import Payroll from "./pages/Payroll";
 import EstimatesManagement from "./pages/EstimatesManagement";
 import BudgetManagement from "./pages/BudgetManagement";
 import BudgetHeads from "./pages/BudgetHeads";
+import Expenses from "./pages/Expenses";
 import InternalRevenue from "./pages/InternalRevenue";
 import Reports from "./pages/Reports";
 import AuditLogs from "./pages/AuditLogs";
 import Notifications from "./pages/Notifications";
 import Settings from "./pages/Settings";
-import Placeholder from "./pages/Placeholder";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AppLayout from "./components/AppLayout";
 import "./App.css";
@@ -38,7 +38,7 @@ const App = () => {
           <Route path="/departments" element={<Requests />} />
           <Route path="/budget" element={<BudgetManagement />} />
           <Route path="/budget-heads" element={<BudgetHeads />} />
-          <Route path="/expenses" element={<Placeholder title="Expense Management" />} />
+          <Route path="/expenses" element={<Expenses />} />
           <Route path="/payroll" element={<Payroll />} />
           <Route path="/estimates" element={<EstimatesManagement />} />
           <Route path="/internal-revenue" element={<InternalRevenue />} />

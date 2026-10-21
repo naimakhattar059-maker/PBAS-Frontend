@@ -20,8 +20,8 @@ const renderInternalRevenue = () => {
     auth: {
       user: {
         username: "Budget Admin",
-        role: "admin",
-        permissions: ["view_budgets"],
+        role: "accountant",
+        permissions: ["view_budgets", "manage_internal_revenue"],
       },
       token: "token",
     },

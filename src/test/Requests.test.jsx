@@ -2,12 +2,14 @@ import { fireEvent, render, screen, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { listBudgetOptions } from "../api/budgets";
 import { listRequests } from "../api/requests";
+import { listRevenueHeads } from "../api/internalRevenue";
 import Requests from "../pages/Requests";
 import { createTestStore } from "./testUtils";
 import { TestProviders } from "./TestProviders";
 
 vi.mock("../api/requests", () => ({
   approveRequest: vi.fn(),
+  completeRequest: vi.fn(),
   createRequest: vi.fn(),
   deleteRequest: vi.fn(),
   listRequests: vi.fn(),
@@ -20,6 +22,8 @@ vi.mock("../api/requests", () => ({
 vi.mock("../api/budgets", () => ({
   listBudgetOptions: vi.fn(),
 }));
+
+vi.mock("../api/internalRevenue", () => ({ listRevenueHeads: vi.fn() }));
 
 const baseRequest = {
   id: 1,
@@ -43,6 +47,7 @@ const renderRequestsForUser = (user, request) => {
 
   listRequests.mockResolvedValue({ requests: [{ ...baseRequest, ...request }] });
   listBudgetOptions.mockResolvedValue({ budgets: [] });
+  listRevenueHeads.mockResolvedValue({ revenue_heads: [] });
 
   return render(
     <TestProviders store={store}>
