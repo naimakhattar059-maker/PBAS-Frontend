@@ -31,3 +31,9 @@ export const listRevenueHeads = (token) =>
 
 export const createRevenueHead = (token, revenueHead) =>
   apiRequest("/api/v1/revenue_heads", { method: "POST", token, body: { revenue_head: revenueHead } });
+
+export const updateRevenueHead = (token, id, revenueHead) =>
+  apiRequest(`/api/v1/revenue_heads/${id}`, { method: "PATCH", token, body: { revenue_head: revenueHead } });
+
+export const deleteRevenueHead = (token, id) =>
+  apiRequest(`/api/v1/revenue_heads/${id}`, { method: "DELETE", token });

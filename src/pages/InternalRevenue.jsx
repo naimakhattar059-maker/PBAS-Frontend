@@ -6,9 +6,11 @@ import { useSelector } from "react-redux";
 import {
   createInternalRevenueRecord,
   createRevenueHead,
+  deleteRevenueHead,
   listInternalRevenueCells,
   listInternalRevenueRecords,
   listRevenueHeads,
+  updateRevenueHead,
   saveInternalRevenueCells,
 } from "../api/internalRevenue";
 import AccessDenied from "../components/AccessDenied";
@@ -253,6 +255,7 @@ const InternalRevenue = () => {
   const [nonPublicRecords, setNonPublicRecords] = useState([]);
   const [revenueHeads, setRevenueHeads] = useState([]);
   const [newHead, setNewHead] = useState({ name: "", code: "" });
+  const [editingHeadId, setEditingHeadId] = useState(null);
   const [approvedRequestUtilization, setApprovedRequestUtilization] = useState(0);
   const [recordForm] = Form.useForm();
   const inputRefs = useRef(new Map());
@@ -394,12 +397,28 @@ const InternalRevenue = () => {
 
   const addRevenueHead = async () => {
     try {
-      await createRevenueHead(token, newHead);
+      if (editingHeadId) await updateRevenueHead(token, editingHeadId, newHead);
+      else await createRevenueHead(token, newHead);
       const payload = await listRevenueHeads(token);
       setRevenueHeads(payload.revenue_heads || []);
       setNewHead({ name: "", code: "" });
-      message.success("Revenue head created");
+      setEditingHeadId(null);
+      message.success(editingHeadId ? "Revenue head updated" : "Revenue head created");
     } catch (error) { message.error(error.message); }
+  };
+
+  const removeRevenueHead = (head) => {
+    Modal.confirm({
+      title: `Delete ${head.name}?`,
+      content: "Revenue heads with transactions can be deactivated instead.",
+      onOk: async () => {
+        try {
+          await deleteRevenueHead(token, head.id);
+          setRevenueHeads((current) => current.filter((row) => row.id !== head.id));
+          message.success("Revenue head deleted");
+        } catch (error) { message.error(error.message); }
+      },
+    });
   };
 
   useEffect(() => {
@@ -838,11 +857,26 @@ const InternalRevenue = () => {
       </div>
 
       <Card title="Revenue heads" style={{ marginBottom: 16 }}>
-        <Space wrap>{revenueHeads.map((head) => <Tag key={head.id}>{head.name}: {formatCurrency(head.balance)}</Tag>)}</Space>
+        <Space wrap>{revenueHeads.map((head) => <Space key={head.id} size={4}>
+          <Tag color={head.active ? "blue" : "default"}>{head.name}: {formatCurrency(head.balance)}{head.active ? "" : " (inactive)"}</Tag>
+          {canManageRevenue && <Button size="small" onClick={() => {
+            setEditingHeadId(head.id);
+            setNewHead({ name: head.name, code: head.code });
+          }}>Edit</Button>}
+          {canManageRevenue && <Button size="small" onClick={async () => {
+            try {
+              await updateRevenueHead(token, head.id, { active: !head.active });
+              const payload = await listRevenueHeads(token);
+              setRevenueHeads(payload.revenue_heads || []);
+            } catch (error) { message.error(error.message); }
+          }}>{head.active ? "Deactivate" : "Activate"}</Button>}
+          {canManageRevenue && <Button size="small" danger onClick={() => removeRevenueHead(head)}>Delete</Button>}
+        </Space>)}</Space>
         {canManageRevenue && <Space wrap style={{ marginTop: 12 }}>
           <Input placeholder="Head code" value={newHead.code} onChange={(event) => setNewHead({ ...newHead, code: event.target.value })} />
           <Input placeholder="Head name" value={newHead.name} onChange={(event) => setNewHead({ ...newHead, name: event.target.value })} />
-          <Button onClick={addRevenueHead}>Add revenue head</Button>
+          <Button onClick={addRevenueHead}>{editingHeadId ? "Save revenue head" : "Add revenue head"}</Button>
+          {editingHeadId && <Button onClick={() => { setEditingHeadId(null); setNewHead({ name: "", code: "" }); }}>Cancel</Button>}
         </Space>}
       </Card>
 
