@@ -168,6 +168,11 @@
   gap: 16px;
 }
 
+.payroll-rank-source {
+  display: block;
+  margin-bottom: 12px;
+}
+
 .payroll-summary-card {
   border-radius: 18px;
   min-height: 116px;

@@ -90,36 +90,6 @@ const Reports = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token, canViewReports, period, selectedDate]);
 
-  const requestColumns = useMemo(
-    () => [
-      { title: "Title", dataIndex: "title", key: "title" },
-      { title: "Subtitle", dataIndex: "subtitle", key: "subtitle" },
-      { title: "Status", dataIndex: "status", key: "status", render: (value) => <Tag>{value}</Tag> },
-      { title: "Path", dataIndex: "path", key: "path" },
-    ],
-    []
-  );
-
-  const payrollColumns = useMemo(
-    () => [
-      { title: "Title", dataIndex: "title", key: "title" },
-      { title: "Subtitle", dataIndex: "subtitle", key: "subtitle" },
-      { title: "Status", dataIndex: "status", key: "status", render: (value) => <Tag>{value}</Tag> },
-      { title: "Path", dataIndex: "path", key: "path" },
-    ],
-    []
-  );
-
-  const notificationColumns = useMemo(
-    () => [
-      { title: "Title", dataIndex: "title", key: "title" },
-      { title: "Body", dataIndex: "subtitle", key: "subtitle" },
-      { title: "Status", dataIndex: "status", key: "status", render: (value) => <Tag color={value === "read" ? "green" : "orange"}>{value}</Tag> },
-      { title: "Path", dataIndex: "path", key: "path" },
-    ],
-    []
-  );
-
   const reportRows = useMemo(() => {
     const rows = [
       ...makeRows(data?.request_statuses || [], "Requests"),
@@ -247,18 +217,7 @@ const Reports = () => {
       </Row>
 
       <Row gutter={[16, 16]}>
-        <Col xs={24} xl={14}>
-          <Card className="panel-card" title="Workflow requests" loading={loading}>
-            <Table
-              size="small"
-              columns={requestColumns}
-              dataSource={data?.recent_requests || []}
-              rowKey={(row, index) => `${row.title}-${index}`}
-              pagination={false}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} xl={10}>
+        <Col xs={24}>
           <Card className="panel-card" title="Status breakdown" loading={loading}>
             <Space direction="vertical" style={{ width: "100%" }} size={16}>
               <div>
@@ -299,31 +258,6 @@ const Reports = () => {
                 </Text>
               </div>
             </Space>
-          </Card>
-        </Col>
-      </Row>
-
-      <Row gutter={[16, 16]} style={{ marginTop: 16 }}>
-        <Col xs={24} xl={12}>
-          <Card className="panel-card" title="Payroll records" loading={loading}>
-            <Table
-              size="small"
-              columns={payrollColumns}
-              dataSource={data?.recent_payrolls || []}
-              rowKey={(row, index) => `${row.title}-${index}`}
-              pagination={false}
-            />
-          </Card>
-        </Col>
-        <Col xs={24} xl={12}>
-          <Card className="panel-card" title="Notifications" loading={loading}>
-            <Table
-              size="small"
-              columns={notificationColumns}
-              dataSource={data?.recent_notifications || []}
-              rowKey={(row, index) => `${row.title}-${index}`}
-              pagination={false}
-            />
           </Card>
         </Col>
       </Row>

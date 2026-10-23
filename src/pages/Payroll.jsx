@@ -209,13 +209,49 @@ const estimateGroupLabel = (value) => {
 };
 
 const comparePayrollRank = (a, b) => {
-  const groupOrder = { gazetted: 1, non_gazetted: 2 };
-  const aGroup = groupOrder[a.estimate_pay_group] || 3;
-  const bGroup = groupOrder[b.estimate_pay_group] || 3;
-
-  if (aGroup !== bGroup) return aGroup - bGroup;
   if (Number(b.bps || 0) !== Number(a.bps || 0)) return Number(b.bps || 0) - Number(a.bps || 0);
+  const designationOrder = String(a.post_description || "").localeCompare(String(b.post_description || ""));
+  if (designationOrder !== 0) return designationOrder;
   return String(a.full_name || "").localeCompare(String(b.full_name || ""));
+};
+
+const payrollDetailAmounts = (record) => {
+  const basic = Number(record.monthly_basic_pay ?? record.basic_pay ?? 0);
+  const gross = Number(record.gross_pay ?? (basic + payrollAllowanceTotal(record)));
+  const net = Number(record.net_pay ?? Math.max(gross - payrollDeductionTotal(record), 0));
+
+  return {
+    basic,
+    allowances: gross - basic,
+    deductions: gross - net,
+    gross,
+    net,
+  };
+};
+
+const summarizePayrollByRank = (records) => {
+  const groups = new Map();
+
+  records.forEach((record) => {
+    const bps = Number(record.bps || 0);
+    const key = bps > 0 ? String(bps) : "unassigned";
+    const group = groups.get(key) || {
+      key,
+      rank: bps > 0 ? `BPS ${bps}` : "BPS not set",
+      employees: 0,
+      basic: 0,
+      allowances: 0,
+      deductions: 0,
+      gross: 0,
+      net: 0,
+    };
+    const amounts = payrollDetailAmounts(record);
+    group.employees += 1;
+    Object.keys(amounts).forEach((field) => { group[field] += amounts[field]; });
+    groups.set(key, group);
+  });
+
+  return [...groups.values()].sort((a, b) => Number(b.key) - Number(a.key));
 };
 
 const fiscalYearLabel = (year) => {
@@ -276,6 +312,20 @@ const Payroll = () => {
       selectedRunRecord ||
       null,
     [payrollRuns, selectedRunId, selectedRunSnapshot, selectedRunRecord]
+  );
+  const latestDetailedRun = payrollRuns.find((run) => (run.items || []).length > 0);
+  const rankDetailRecords = useMemo(
+    () => [...(latestDetailedRun?.items || staffMembers.filter((staff) => staff.active))].sort(comparePayrollRank),
+    [latestDetailedRun, staffMembers]
+  );
+  const rankSummary = useMemo(() => summarizePayrollByRank(rankDetailRecords), [rankDetailRecords]);
+  const selectedRunRankedItems = useMemo(
+    () => [...(selectedRun?.items || [])].sort(comparePayrollRank),
+    [selectedRun]
+  );
+  const selectedRunRankSummary = useMemo(
+    () => summarizePayrollByRank(selectedRunRankedItems),
+    [selectedRunRankedItems]
   );
   const selectedRunArchived = selectedRun ? isArchivedYear(selectedRun.year, archivedPayrollYears) : false;
   const selectedStaff =
@@ -1001,22 +1051,22 @@ const Payroll = () => {
     {
       title: "Basic Pay",
       key: "basic_pay",
-      render: (_, record) => money(payrollBasicPay(record)),
+      render: (_, record) => money(payrollDetailAmounts(record).basic),
     },
     {
       title: "Allowances",
       key: "allowances",
-      render: (_, record) => money(payrollAllowanceTotal(record)),
+      render: (_, record) => money(payrollDetailAmounts(record).allowances),
     },
     {
       title: "Deductions",
       key: "deductions",
-      render: (_, record) => money(payrollDeductionTotal(record)),
+      render: (_, record) => money(payrollDetailAmounts(record).deductions),
     },
     {
       title: "Net Pay",
       key: "net_pay",
-      render: (_, record) => money(payrollNetPay(record)),
+      render: (_, record) => money(payrollDetailAmounts(record).net),
     },
     {
       title: "Paid Amount",
@@ -1064,6 +1114,26 @@ const Payroll = () => {
         </Button></Space>
       ),
     },
+  ];
+
+  const rankSummaryColumns = [
+    { title: "Rank / BPS", dataIndex: "rank", key: "rank" },
+    { title: "Employees", dataIndex: "employees", key: "employees" },
+    { title: "Basic Pay", dataIndex: "basic", key: "basic", render: money },
+    { title: "Allowances", dataIndex: "allowances", key: "allowances", render: money },
+    { title: "Deductions", dataIndex: "deductions", key: "deductions", render: money },
+    { title: "Gross Pay", dataIndex: "gross", key: "gross", render: money },
+    { title: "Net Pay", dataIndex: "net", key: "net", render: money },
+  ];
+
+  const rankDetailColumns = [
+    { title: "Rank / BPS", dataIndex: "bps", key: "bps", render: (bps) => bps ? `BPS ${bps}` : "BPS not set" },
+    { title: "Employee", dataIndex: "full_name", key: "full_name" },
+    { title: "Designation", dataIndex: "post_description", key: "post_description", render: (value) => value || "—" },
+    { title: "Basic Pay", key: "basic", render: (_, record) => money(payrollDetailAmounts(record).basic) },
+    { title: "Allowances", key: "allowances", render: (_, record) => money(payrollDetailAmounts(record).allowances) },
+    { title: "Deductions", key: "deductions", render: (_, record) => money(payrollDetailAmounts(record).deductions) },
+    { title: "Net Pay", key: "net", render: (_, record) => money(payrollDetailAmounts(record).net) },
   ];
 
   const overviewCards = [
@@ -1186,6 +1256,37 @@ const Payroll = () => {
           pagination={false}
           size="small"
           scroll={{ x: 900 }}
+        />
+      </Card>
+
+      <Card bordered={false} className="payroll-panel payroll-panel-staff" title="Rank-wise payroll details">
+        <Text type="secondary" className="payroll-rank-source">
+          {latestDetailedRun
+            ? `Salary figures from ${latestDetailedRun.month} ${latestDetailedRun.year} payroll cycle, grouped by BPS.`
+            : "Current active staff salary figures, grouped by BPS."}
+        </Text>
+        <Table
+          className="payroll-table"
+          loading={loading}
+          columns={rankSummaryColumns}
+          dataSource={rankSummary}
+          rowKey="key"
+          pagination={false}
+          size="small"
+          scroll={{ x: 900 }}
+          locale={{ emptyText: <Empty description="No payroll details available yet" /> }}
+        />
+        <Divider style={{ margin: "16px 0" }} />
+        <Table
+          className="payroll-table"
+          loading={loading}
+          columns={rankDetailColumns}
+          dataSource={rankDetailRecords}
+          rowKey="id"
+          pagination={{ pageSize: 8, size: "small" }}
+          size="small"
+          scroll={{ x: 1050 }}
+          locale={{ emptyText: <Empty description="No payroll staff available yet" /> }}
         />
       </Card>
 
@@ -1356,10 +1457,24 @@ const Payroll = () => {
 
             <Divider style={{ margin: "16px 0" }} />
 
+            <Title level={5}>Pay by rank / BPS</Title>
+            <Table
+              className="payroll-table"
+              columns={rankSummaryColumns}
+              dataSource={selectedRunRankSummary}
+              rowKey="key"
+              size="small"
+              pagination={false}
+              scroll={{ x: 900 }}
+              locale={{ emptyText: <Empty description="Generate this payroll cycle to see rank totals" /> }}
+            />
+
+            <Divider style={{ margin: "16px 0" }} />
+
             <Table
               className="payroll-table"
               columns={paymentColumns}
-              dataSource={selectedRun.items || []}
+              dataSource={selectedRunRankedItems}
               rowKey="id"
               size="small"
               pagination={false}
